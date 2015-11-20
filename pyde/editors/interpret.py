@@ -7,16 +7,22 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------
 import sys
+from io import StringIO
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
+import pyde
+from pyde.application import app
+from PyQt4 import QtGui, Qsci
+from pyde.pyde_widget import PydeWidget
+from pyde.editor import PydeEditor
+from inspect import signature
 
-
-class InterpretEdit(QsciScintilla):
+class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
     def __init__(self, parent=None):
-        super(InterpretEdit, self).__init__(parent)
+        super(PyInerpretEditor, self).__init__(parent)
 
         # Set the default font
         font = QFont()
@@ -39,9 +45,6 @@ class InterpretEdit(QsciScintilla):
         # Set style for Python comments (style number 1) to a fixed-width
         # courier.
         #
-        lexer = QsciLexerPython()
-        lexer.setDefaultFont(font)
-        self.setLexer(lexer)
         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier'.encode())
 
         # Don't want to see the horizontal scrollbar at all
@@ -51,14 +54,84 @@ class InterpretEdit(QsciScintilla):
         self.SendScintilla(QsciScintilla.SCI_SETVSCROLLBAR, 0)
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
+        
+        self.globals = {}
+        self.globals['app'] = pyde.application.app
+        from pyde import actions
+        
+        for a in dir(actions):
+            if not a.startswith('__'):
+                obj = getattr(actions, a)
+                if callable(obj):
+                    self.globals[a] = obj
+         
+        self.locals = {}
+        self.prompt_begin_line = 0
+        
+        lexer = QsciLexerPython(self)
 
-    def keyPressEvent(self, event):
-        # Shift + Tab is not the same as trying to catch a Shift modifier and a tab Key.
-        # Shift + Tab is a Backtab!!
-        if event.key() in [Qt.Key_Enter, Qt.Key_Return]:
-            cmd = self.text(self.getCursorPosition()[0])
-            self.insert(str(self.parent().sizes()))
-#             self.insert('\n' + str(eval(cmd)) + '\n')
-            self.setCursorPosition(self.lines(), 0)
+        self.setAutoCompletionThreshold(1)
+        self.setAutoCompletionShowSingle(True)
+        self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
+        
+        lexer.setDefaultFont(font)
+        
+        self.setLexer(lexer)
+        self.content_assist_list = Qsci.QsciAPIs(self.lexer())
+        self.autoCompleteFromAll()
+        
+        self.prepare_assist_globals()
+
+    def evaluate(self):
+        if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
+            self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
         else:
-            return super().keyPressEvent(event)
+            current_line = self.getCursorPosition()[0]
+            text_lines = []
+            for i in range(self.prompt_begin_line,current_line+1):
+                text_lines.append(self.text(i))
+             
+            cmd = '\n'.join(text_lines)
+            
+            buffer = StringIO()
+            sys.stdout = buffer
+            
+            try:
+                 
+                ret = eval(cmd, self.globals, self.locals)
+                if ret:
+                    ret_str = '\n' + str(ret) + '\n'
+                else:
+                    ret_str = '\n'
+                     
+                stdout_text = buffer.getvalue()
+                if stdout_text:
+                    ret_str += stdout_text
+                 
+                self.insert(ret_str)
+            except SyntaxError:
+                exec(cmd, self.globals, self.locals)
+                self.insert('\n')
+            except:
+                self.insert('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
+            
+            sys.stdout = sys.__stdout__
+            self.setCursorPosition(self.lines(), 0)
+            self.prompt_begin_line = self.lines() - 1
+
+    def prepare_assist_globals(self):
+        for name, obj in self.globals.items():
+            try:
+                sig = signature(obj)
+            except:
+                sig = ''
+                
+            self.content_assist_list.add(name + str(sig))
+
+        self.content_assist_list.add('"asdfas"')
+            
+        self.content_assist_list.prepare()
+    
+    def content_assist(self):
+        self.prepare_assist_globals()
+        self.autoCompleteFromAll()
