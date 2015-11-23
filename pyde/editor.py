@@ -8,11 +8,14 @@ class PydeEditor(PydeWidget, QsciScintilla):
         QsciScintilla.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
     
+    def pos(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+    
     def forward_char(self):
-        self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS) + 1)
+        self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.pos() + 1)
         
     def backward_char(self):
-        self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS) - 1)
+        self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.pos() - 1)
         
     def content_assist(self):
         self.autoCompleteFromAll()

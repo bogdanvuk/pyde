@@ -1,4 +1,3 @@
-import pyde.plugins.mark_ring
 from PyQt4.QtGui import QWidget
 from PyQt4.QtCore import pyqtSlot, QObject
 from pyde.application import app
@@ -31,7 +30,6 @@ class MarkActivator(QObject):
         
 #     def new_view(self):
 #         print("VIEW ADDED!")
-
 
 app.register_global("mark_activator", MarkActivator())
 # app.view_added.connect(app.globals.mark_activator.new_view)

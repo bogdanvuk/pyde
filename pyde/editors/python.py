@@ -11,13 +11,14 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
+from PyQt4 import Qsci
 
 
 class PythonEdit(PydeEditor):
     ARROW_MARKER_NUM = 8
 
     def __init__(self, parent=None):
-        super(PythonEdit, self).__init__(parent)
+        super().__init__(parent)
 
         # Set the default font
         font = QFont()
@@ -57,9 +58,18 @@ class PythonEdit(PydeEditor):
         # Set style for Python comments (style number 1) to a fixed-width
         # courier.
         #
-        lexer = QsciLexerPython()
+        lexer = QsciLexerPython(self)
         lexer.setDefaultFont(font)
         self.setLexer(lexer)
+        
+        self.setAutoCompletionThreshold(0)
+#         self.setAutoCompletionShowSingle(True)
+        self.setAutoCompletionShowSingle(False)
+        self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
+        self.content_assist_list = Qsci.QsciAPIs(self.lexer())
+        self.content_assist_list.prepare()
+#         self.autoCompleteFromAll()
+        
         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier'.encode())
 
         # Don't want to see the horizontal scrollbar at all

@@ -29,7 +29,8 @@ class MarkAction(object):
             
         def prev(self):
             mark = self[self.pos]
-            self.pos -= 1
+            if self.pos:
+                self.pos -= 1
             return mark
         
         def next(self):
@@ -49,7 +50,7 @@ class MarkAction(object):
         self.sets['global'] = MarkAction.MarkStack()
         self.sets['global'].editor = None
     
-    def add_set(self, name, editor=None, set_class = MarkAction.MarkRing):
+    def add_set(self, name, editor=None, set_class = MarkRing):
         self.sets[name] = set_class()
         self.sets[name].editor = editor
     
@@ -58,18 +59,18 @@ class MarkAction(object):
         if (self.sets[set_name].editor is None) or (self.sets[set_name].editor == editor): 
             line, pos = editor.getCursorPosition()
             self.sets[set_name].append(Mark(editor, line, pos))
-            print(self.sets[set_name])
-            print(self.sets[set_name].pos)
-            print("ADD")
+#             print(self.sets[set_name])
+#             print(self.sets[set_name].pos)
+#             print("ADD")
     
     def prev(self, ring='global'):
         try:
             mark = self.sets[ring].prev()
             mark.editor.setCursorPosition(mark.line, mark.pos)
             mark.editor.setFocus()
-            print(self.sets[ring])
-            print(self.sets[ring].pos)
-            print("PREV")
+#             print(self.sets[ring])
+#             print(self.sets[ring].pos)
+#             print("PREV")
         except IndexError:
             pass
         
@@ -78,18 +79,18 @@ class MarkAction(object):
             mark = self.sets[set_name].next()
             mark.editor.setCursorPosition(mark.line, mark.pos)
             mark.editor.setFocus()
-            print(self.sets[set_name])
-            print(self.sets[set_name].pos)
-            print("NEXT")
+#             print(self.sets[set_name])
+#             print(self.sets[set_name].pos)
+#             print("NEXT")
         except IndexError:
             pass
         
     
     def pop(self, set_name='global'):
         mark = self.sets[set_name].pop()
-        print(self.sets[set_name])
-        print(self.sets[set_name].pos)
-        print("POP")
+#         print(self.sets[set_name])
+#         print(self.sets[set_name].pos)
+#         print("POP")
         return mark
     
     def cur(self, set_name='global'):

@@ -85,9 +85,9 @@ class PyInerpretEditor(PydeEditor):
         self.content_assist_list = Qsci.QsciAPIs(self.lexer())
         self.autoCompleteFromAll()
          
-        self.prepare_assist_globals()
+#         self.prepare_assist_globals()
         
-        self.SCN_AUTOCSELECTION.connect(self.autoc_end)
+#         self.SCN_AUTOCSELECTION.connect(self.autoc_end)
 
     def evaluate(self):
         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
