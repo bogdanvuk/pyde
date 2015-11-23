@@ -9,3 +9,4 @@ sydpy.egg-info/
 *.bak
 env_gen/
 dist/
+pyde.egg-info/

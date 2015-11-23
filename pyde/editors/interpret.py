@@ -26,7 +26,7 @@ class PyInerpretEditor(PydeEditor):
 
         # Set the default font
         font = QFont()
-        font.setFamily('Courier')
+        font.setFamily('DejaVu Sans Mono')
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
@@ -45,7 +45,8 @@ class PyInerpretEditor(PydeEditor):
         # Set style for Python comments (style number 1) to a fixed-width
         # courier.
         #
-        self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'Courier'.encode())
+#         self.SendScintilla(QsciScintilla.SCI_STYLESETFONT, 1, 'DejaVu Sans Mono'.encode())
+        
 
         # Don't want to see the horizontal scrollbar at all
         # Use raw message to Scintilla here (all messages are documented
@@ -55,21 +56,25 @@ class PyInerpretEditor(PydeEditor):
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
         
-        self.globals = {}
-        self.globals['app'] = pyde.application.app
-        from pyde import actions
-        
-        for a in dir(actions):
-            if not a.startswith('__'):
-                obj = getattr(actions, a)
-                if callable(obj):
-                    self.globals[a] = obj
+#         self.globals = {}
+#         self.globals['app'] = pyde.application.app
+#         from pyde import actions
+#         
+#         for a in dir(actions):
+#             if not a.startswith('__'):
+#                 obj = getattr(actions, a)
+#                 if callable(obj):
+#                     self.globals[a] = obj
          
         self.locals = {}
         self.prompt_begin_line = 0
         
         lexer = QsciLexerPython(self)
-
+        
+#         self.c = QtGui.QCompleter(['"helaaa"', 'helabb', 'helccc', 'world'])
+#         self.c.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
+#         self.c.setWidget(self)
+# 
         self.setAutoCompletionThreshold(1)
         self.setAutoCompletionShowSingle(True)
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
@@ -79,8 +84,10 @@ class PyInerpretEditor(PydeEditor):
         self.setLexer(lexer)
         self.content_assist_list = Qsci.QsciAPIs(self.lexer())
         self.autoCompleteFromAll()
-        
+         
         self.prepare_assist_globals()
+        
+        self.SCN_AUTOCSELECTION.connect(self.autoc_end)
 
     def evaluate(self):
         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
@@ -98,8 +105,8 @@ class PyInerpretEditor(PydeEditor):
             
             try:
                  
-                ret = eval(cmd, self.globals, self.locals)
-                if ret:
+                ret = eval(cmd, app.globals, self.locals)
+                if ret is not None:
                     ret_str = '\n' + str(ret) + '\n'
                 else:
                     ret_str = '\n'
@@ -110,7 +117,7 @@ class PyInerpretEditor(PydeEditor):
                  
                 self.insert(ret_str)
             except SyntaxError:
-                exec(cmd, self.globals, self.locals)
+                exec(cmd, app.globals, self.locals)
                 self.insert('\n')
             except:
                 self.insert('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
@@ -119,8 +126,11 @@ class PyInerpretEditor(PydeEditor):
             self.setCursorPosition(self.lines(), 0)
             self.prompt_begin_line = self.lines() - 1
 
+    def autoc_end(self):
+        print("ENDED!")
+
     def prepare_assist_globals(self):
-        for name, obj in self.globals.items():
+        for name, obj in app.globals.items():
             try:
                 sig = signature(obj)
             except:
@@ -128,10 +138,14 @@ class PyInerpretEditor(PydeEditor):
                 
             self.content_assist_list.add(name + str(sig))
 
-        self.content_assist_list.add('"asdfas"')
+        self.content_assist_list.add('backward/bla/abla')
+        self.content_assist_list.add('backward_chab')
+        self.content_assist_list.add('backward_chbb')
             
         self.content_assist_list.prepare()
     
     def content_assist(self):
+#        self.SendScintilla(QsciScintilla.SCI_AUTOCSHOW, 4, '"helaaa" helabb helccc world'.encode())
+#         self.c.complete()
         self.prepare_assist_globals()
         self.autoCompleteFromAll()

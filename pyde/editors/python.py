@@ -10,9 +10,10 @@ import sys
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
+from pyde.editor import PydeEditor
 
 
-class PythonEdit(QsciScintilla):
+class PythonEdit(PydeEditor):
     ARROW_MARKER_NUM = 8
 
     def __init__(self, parent=None):
@@ -75,11 +76,3 @@ class PythonEdit(QsciScintilla):
             self.markerDelete(nline, self.ARROW_MARKER_NUM)
         else:
             self.markerAdd(nline, self.ARROW_MARKER_NUM)
-
-    def keyPressEvent(self, event):
-        # Shift + Tab is not the same as trying to catch a Shift modifier and a tab Key.
-        # Shift + Tab is a Backtab!!
-        if event.key() == Qt.Key_Backtab:
-            self.autoCompleteFromDocument()
-        else:
-            return super().keyPressEvent(event)

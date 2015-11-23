@@ -1,6 +1,6 @@
 import sys
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import QObject, pyqtSlot
+from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal
 import PyQt4
 from PyQt4.QtGui import QWidget
 
@@ -30,16 +30,44 @@ class Buffer(QtGui.QTextEdit):
         else:
             return QtGui.QTextEdit.keyPressEvent(self, event)
 
+class objdict(dict):
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError("No such attribute: " + name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("No such attribute: " + name)
+
+# class MarkActivator(QObject):
+#         
+#     def new_view(self):
+#         print("VIEW ADDED!")
+
 class App(QtGui.QApplication):
+
+    view_added = pyqtSignal(QWidget) #['QWidget'])
 
     def __init__(self):
         super().__init__([])
         self.focusChanged.connect(self.focus_changed)
-    
+       
     def init_ui(self):
         self.centralLayout = self.win.centralLayout
         self.key_bindings = {}
         self.focus_history = []
+        self.actions = {}
+        self.globals = objdict()
+        self.globals['app'] = self
+#         self.activator = MarkActivator()
+#         self.view_added.connect(self.activator.new_view)
     
     def add_layout(self, widget):
         self.centralLayout.addWidget(widget, 0, 0, 1, 1)
@@ -55,8 +83,8 @@ class App(QtGui.QApplication):
                     contexts[c]()
                     return True
 
-            event.ignore()
-            return True
+#             event.ignore()
+#             return True
                 
         return False
     
@@ -68,11 +96,19 @@ class App(QtGui.QApplication):
         return self.focusWidget()
 #         return self.focus_history[-1]
     
+    def register_global(self, name, obj):
+        self.globals[name] = obj
+    
     def bind_key(self, action, key, modifier=QtCore.Qt.NoModifier, context="App"):
         key_pair = (key, modifier)
         if key_pair not in self.key_bindings:
             self.key_bindings[key_pair] = {}
         
         self.key_bindings[key_pair][context] = action
+    
+    def add_view(self, view, location=[0]):
+        app.centralWidget.add_view(view, location)
+        self.view_added.emit(view)
+        print("EMITTED")
 
 app = App()

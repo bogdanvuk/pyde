@@ -9,10 +9,9 @@ def set_layout():
     app.add_layout(PydeFrame(QtCore.Qt.Vertical, [5, 1]))
     
 def reload_buffers():
-    app.centralWidget.widget(0).insertWidget(0, PythonEdit())
-    app.centralWidget.widget(1).insertWidget(0, PyInerpretEditor())
+    app.add_view(PythonEdit(), [0])
+    app.add_view(PyInerpretEditor(), [1])
+#     app.centralWidget.widget(0).insertWidget(0, )
+#     app.centralWidget.widget(1).insertWidget(0, PyInerpretEditor())
     app.centralWidget.widget(1).currentWidget().setFocus()
-
-    
-    
 
