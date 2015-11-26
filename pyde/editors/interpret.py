@@ -7,6 +7,7 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------
 import sys
+
 from io import StringIO
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -17,7 +18,209 @@ from PyQt4 import QtGui, Qsci
 from pyde.pyde_widget import PydeWidget
 from pyde.editor import PydeEditor
 from inspect import signature
+import ast
+import pyde.pyposast
+from pyde.plugins.templating import Template
 
+def patch_ast(tree):
+    tree.is_leaf = True
+    tree.parent = None
+    
+    if not hasattr(tree, 'uid'):
+        tree.nontext = True
+    else:
+        tree.nontext = False
+        for _, value in ast.iter_fields(tree):
+            if isinstance(value, list):
+                for item in value:
+                    if isinstance(item, ast.AST):
+                        patch_ast(item)
+                        item.parent = tree
+                        if not item.nontext:
+                            tree.is_leaf = False
+            elif isinstance(value, ast.AST):
+                patch_ast(value)
+                value.parent = tree
+                if not value.nontext:
+                    tree.is_leaf = False
+
+def node_iter(node):
+    for _, value in ast.iter_fields(node):
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, ast.AST):
+                    yield item
+        elif isinstance(value, ast.AST):
+            yield value
+            
+def tree_iter(tree):
+    for node in node_iter(tree):
+        yield node
+        yield from tree_iter(node)
+
+def higher_pos(pos1, pos2):
+    if pos1[0] > pos2[0]:
+        return 1
+    elif pos1[0] < pos2[0]:
+        return 2
+    else:
+        if pos1[1] > pos2[1]:
+            return 1
+        elif pos1[1] < pos2[1]:
+            return 2
+        else:
+            return 0
+            
+def context_at_pos(tree, lineno, col):
+    context = []
+    for node in tree_iter(tree):
+        if not node.nontext:
+            if higher_pos((lineno, col), (node.first_line, node.first_col)) in [0, 1] and \
+                higher_pos((lineno, col), (node.last_line, node.last_col)) in [0, 2]:
+                context.append(node)
+#                 while (node.parent is not None):
+#                     context.insert(0, node.parent)
+#                     node = node.parent
+#                 
+#                 return context
+                
+    return context
+
+class PyInterpretParser(QObject):
+    
+    class PositionUpdater(object):
+        def __init__(self, tree, text):
+            self.tree = tree
+            self.cur_end = len(text)
+            self.lines = text.split('\n')
+            self.col_cur_end = []
+            for line in self.lines:
+                self.col_cur_end.append(len(line))
+
+        def patch(self):
+            self._patch(self.tree)
+
+        def _patch(self, node):
+            
+            if hasattr(node, 'lineno'):
+                node.lineno -= 1
+                line_offset = sum(self.col_cur_end[:node.lineno]) + node.lineno # compensate for end of line
+                node.col_pos = (node.col_offset, self.col_cur_end[node.lineno])
+                node.pos = (line_offset + node.col_pos[0], line_offset + node.col_pos[1])
+                node.text = self.lines[node.lineno][node.col_pos[0]:node.col_pos[1]]
+                
+                try:
+                    print(type(node).__name__, ':', node.text, ':', (node.lineno, node.col_offset), ':', node.col_pos, ':', node.pos, ':', ast.dump(node))
+                except AttributeError:
+                    print(type(node).__name__)
+            
+            
+            if hasattr(node, 'lineno') or isinstance(node, ast.mod):      
+                node.is_leaf = True
+            
+                for child in reversed(list(node_iter(node))):
+                    if not self._patch(child):
+                        node.is_leaf = False
+
+                if node.is_leaf:
+                    self.col_cur_end[node.lineno] = node.col_offset - 1
+                    
+                return False
+            else:
+                return True
+            
+    def __init__(self, editor):
+        super().__init__()
+        self.editor = editor
+        self.editor.SCN_MODIFIED.connect(self.text_modified)
+        self.incremental_state = 'connector'
+        self.tree = None
+    
+    def leaf_node_at(self, pos):
+        if self.tree is not None:
+            return self.context_at_pos(self, pos)[-1]
+        else:
+            return None 
+    
+    def context_at_pos(self, lineno, col):
+        if self.tree is not None:
+            return context_at_pos(self.tree, lineno, col)
+        else:
+            return None 
+
+    def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
+                   foldPrev, token, annotationLinesAdded):
+        
+        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
+            ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
+            self.parse(self.editor.active_text())
+#             text = text.decode()
+#             has_nonalnum = any(not (c.isalnum() or c == '_') for c in text)
+#             has_alnum = any(c.isalnum() or c == '_' for c in text)
+#                 
+#             if self.incremental_state == 'connector':
+#                 if has_alnum:
+#                     self.parse(self.editor.active_text())
+#                     self.incremental_state = 'literal'
+#             elif self.incremental_state == 'literal':        
+#                 if has_nonalnum:
+#                     self.parse(self.editor.active_text())
+#                     self.incremental_state = 'connector'
+
+    def parse(self, text):
+        self.tree = None
+        try:
+#             self.tree = ast.parse(text, mode='single')
+            self.tree = pyde.pyposast.parse(text)
+            patch_ast(self.tree)
+            self.text = text
+#             self.PositionUpdater(self.tree, text).patch()
+            self.incremental_state = 'connector'
+        except SyntaxError as e:
+            print(e)
+            try:
+                if e.text[e.offset-2] == '.':
+                    self.tree = pyde.pyposast.parse(text[])
+                    patch_ast(self.tree)
+                    self.text = text
+            except SyntaxError as e:
+                pass
+            
+
+            
+
+class PyInterpretContentAssist(QObject):
+    def __init__(self):
+        super().__init__()
+        app.globals.content_assist.complete.connect(self.complete)
+    
+    def complete(self, acceptor):
+        editor = app.active_widget()
+        context = editor.cur_context()
+        
+#         for i,c in enumerate(reversed(context)):
+#             if not isinstance(c, (ast.Attribute, ast.Name, ast.Call, ast.Subscript)):
+#                 obj = eval(compile(ast.Expression(context[i+1]), '(none)', 'eval'))
+        if context:
+            if isinstance(context[-1], ast.Expression):
+                for name, obj in app.globals.items():
+                    try:
+                        sig = signature(obj)
+                    except:
+                        sig = ''
+                        
+                    acceptor[name] = name + str(sig)
+            elif isinstance(context[-1], ast.Attribute):
+                try:
+                    obj = eval(compile(ast.Expression(context[-1].value), '(none)', 'eval'))
+                    for d in dir(obj):
+                        acceptor[d] = d        
+                except:
+                    pass
+    
+            acceptor['proba_templ'] = Template(text='proba {p0} i {p1} bla')
+        
+        
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
@@ -30,6 +233,8 @@ class PyInerpretEditor(PydeEditor):
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
+        self.parser = PyInterpretParser(self)
+        self.ca = PyInterpretContentAssist()
         fontmetrics = QFontMetrics(font)
 
         # Brace matching: enable for a brace immediately before or after
@@ -67,7 +272,7 @@ class PyInerpretEditor(PydeEditor):
 #                     self.globals[a] = obj
          
         self.locals = {}
-        self.prompt_begin_line = 0
+        self.prompt_begin = 0
         
         lexer = QsciLexerPython(self)
         
@@ -75,8 +280,8 @@ class PyInerpretEditor(PydeEditor):
 #         self.c.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
 #         self.c.setWidget(self)
 # 
-        self.setAutoCompletionThreshold(1)
-        self.setAutoCompletionShowSingle(True)
+        self.setAutoCompletionThreshold(0)
+#         self.setAutoCompletionShowSingle(True)
         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
         
         lexer.setDefaultFont(font)
@@ -89,19 +294,28 @@ class PyInerpretEditor(PydeEditor):
         
 #         self.SCN_AUTOCSELECTION.connect(self.autoc_end)
 
+    def cur_context(self):
+        lineno, col = self.getCursorPosition()
+        active_range_start_line, _ = self.lineIndexFromPosition(self.prompt_begin)
+        return self.parser.context_at_pos(lineno - active_range_start_line + 1, col - 1)
+
+    def active_range(self):
+        return (self.prompt_begin, self.length())
+
+    def active_text(self):
+        start, stop = self.active_range()
+        return self.text()[start:stop]
+
     def evaluate(self):
         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
             self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
         else:
-            current_line = self.getCursorPosition()[0]
-            text_lines = []
-            for i in range(self.prompt_begin_line,current_line+1):
-                text_lines.append(self.text(i))
-             
-            cmd = '\n'.join(text_lines)
+            cmd = self.active_text()
             
-            buffer = StringIO()
-            sys.stdout = buffer
+#             buffer = StringIO()
+#             sys.stdout = buffer
+            
+            self.pos = self.length()
             
             try:
                  
@@ -111,9 +325,9 @@ class PyInerpretEditor(PydeEditor):
                 else:
                     ret_str = '\n'
                      
-                stdout_text = buffer.getvalue()
-                if stdout_text:
-                    ret_str += stdout_text
+#                 stdout_text = buffer.getvalue()
+#                 if stdout_text:
+#                     ret_str += stdout_text
                  
                 self.insert(ret_str)
             except SyntaxError:
@@ -122,9 +336,10 @@ class PyInerpretEditor(PydeEditor):
             except:
                 self.insert('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
             
-            sys.stdout = sys.__stdout__
-            self.setCursorPosition(self.lines(), 0)
-            self.prompt_begin_line = self.lines() - 1
+#             sys.stdout = sys.__stdout__
+#             self.setCursorPosition(self.lines(), 0)
+            self.pos = self.length()
+            self.prompt_begin = self.length()
 
     def autoc_end(self):
         print("ENDED!")

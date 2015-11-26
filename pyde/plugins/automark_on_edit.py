@@ -10,7 +10,6 @@ class MarkActivator(QObject):
     @pyqtSlot(QWidget)
     def new_view(self, obj):
         obj.textChanged.connect(self.text_changed)
-        print("VIEW ADDED!")
         
     @pyqtSlot()
     def text_changed(self):

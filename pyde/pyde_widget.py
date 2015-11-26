@@ -1,5 +1,6 @@
 from PyQt4.QtGui import QWidget
 from pyde.application import app
+from PyQt4.QtCore import QObject
 
 class PydeWidget(object):
     

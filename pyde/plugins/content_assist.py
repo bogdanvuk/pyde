@@ -22,9 +22,10 @@ class ContentAssist(QObject):
         self.active_editor = app.active_widget()
         self.active_editor.SCN_AUTOCSELECTION.connect(self.close)
         
-        self.ca_start = self.active_editor.pos()
+        self.ca_start = self.active_editor.pos
         
         self.active_dict = {}
+
         self.complete.emit(self.active_dict)
         for key in self.active_dict:
             self.active_editor.content_assist_list.add(key)
@@ -34,27 +35,27 @@ class ContentAssist(QObject):
         while (not self.active_editor.content_assist_list.isPrepared()):
             pass
         
-        self.active_editor.autoCompleteFromAll()
+        self.active_editor.autoCompleteFromAPIs()
         
 #     def close(self):
 #         print('CLOS')
     def close(self, selected, param):
-        self.active_editor.SCN_AUTOCSELECTION.disconnect(self.close)
+#         self.active_editor.SCN_AUTOCSELECTION.disconnect(self.close)
         self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         
-        cur_pos = self.active_editor.pos()
+        cur_pos = self.active_editor.pos
         
         text = self.active_editor.text()
         
         for i in range(cur_pos-1, 0, -1):
-            if text[i] in string.whitespace:
+            if not (text[i].isalnum() or text[i] == '_'):
                 search_word_start_pos = i + 1
                 break
         else:
             search_word_start_pos = 0
             
         for i in range(cur_pos, len(text)):
-            if text[i] in string.whitespace:
+            if not (text[i].isalnum() or text[i] == '_'):
                 search_word_end_pos = i
                 break
         else:
@@ -67,8 +68,6 @@ class ContentAssist(QObject):
             selected_obj.apply(self.active_editor)
         else:
             self.active_editor.insert(str(selected_obj))
-            
-        print(text)
-        print(param)
+            self.active_editor.pos += len(str(selected_obj))
     
 app.register_global("content_assist", ContentAssist())

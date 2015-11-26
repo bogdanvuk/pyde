@@ -13,5 +13,5 @@ def reload_buffers():
     app.add_view(PyInerpretEditor(), [1])
 #     app.centralWidget.widget(0).insertWidget(0, )
 #     app.centralWidget.widget(1).insertWidget(0, PyInerpretEditor())
-#     app.centralWidget.widget(1).currentWidget().setFocus()
+    app.centralWidget.widget(1).currentWidget().setFocus()
 

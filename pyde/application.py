@@ -51,6 +51,9 @@ class objdict(dict):
 #     def new_view(self):
 #         print("VIEW ADDED!")
 
+class KeyPressNotConsumed(Exception):
+    pass
+
 class App(QtGui.QApplication):
 
     view_added = pyqtSignal(QWidget) #['QWidget'])
@@ -66,6 +69,7 @@ class App(QtGui.QApplication):
         self.actions = {}
         self.globals = objdict()
         self.globals['app'] = self
+        self.views = []
 #         self.activator = MarkActivator()
 #         self.view_added.connect(self.activator.new_view)
     
@@ -80,8 +84,11 @@ class App(QtGui.QApplication):
             base_names = [widget.__class__.__name__] + [b.__name__ for b in widget.__class__.__bases__]
             for c in contexts:
                 if c in base_names:
-                    contexts[c]()
-                    return True
+                    try:
+                        contexts[c]()
+                        return True
+                    except KeyPressNotConsumed:
+                        pass
 
 #             event.ignore()
 #             return True
@@ -109,6 +116,6 @@ class App(QtGui.QApplication):
     def add_view(self, view, location=[0]):
         app.centralWidget.add_view(view, location)
         self.view_added.emit(view)
-        print("EMITTED")
+        self.views.append(view)
 
 app = App()
