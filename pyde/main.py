@@ -3,11 +3,27 @@ import sys
 from pyde.application import app
 from pyde.main_win import MainWindow
 from PyQt4.QtCore import QObject
+import json
+import os
 
 # import pyde.editors
 # print(dir(pyde.editors))
 
 if __name__ == "__main__":
+#     with open('/home/bvukobratovic/Downloads/grammars-v4-master/python3/parse.js') as data_file:    
+#         data = json.load(data_file)
+
+    import subprocess
+    os.chdir('/home/bvukobratovic/projects/pyde/grammars')
+#     p = subprocess.Popen(['java', '-cp', '.', 'python3.Main', 'python3.Python3', 'file_input', '-json', "app.bla\n"], stdout=subprocess.PIPE).communicate()[0]
+#     p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3 file_input -json "app.bla\n"'], stdout=subprocess.PIPE).communicate()[0]
+#     p = subprocess.Popen(['echo', 'java', 'python3.Main', 'python3.Python3 file_input -json "app.bla\\n"'], stdout=subprocess.PIPE).communicate()[0]
+#     p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3 file_input -json "app.bla\\n"'], stdout=subprocess.PIPE).communicate()[0]
+    p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3', 'file_input', '-json', 'app.bla\\n'], stdout=subprocess.PIPE).communicate()[0]
+    print(p.decode())
+    
+    sys.exit(0)
+    
     import ast
     
     class v(ast.NodeVisitor):
