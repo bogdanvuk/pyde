@@ -314,6 +314,10 @@ class PyInterpretContentAssist(QObject):
 #             if not isinstance(c, (ast.Attribute, ast.Name, ast.Call, ast.Subscript)):
 #                 obj = eval(compile(ast.Expression(context[i+1]), '(none)', 'eval'))
         if (not context) or (context[-1]['ctype'] == 'file_input') or (context[-1]['ctype'] == 'atom'):
+            if context[-1]['ctype'] == 'atom':
+                tokens = editor.parser.tree['tokens']
+                app.globals.content_assist.set_start(tokens[context[-1]['start']]['start'])
+            
             for name, obj in app.globals.items():
                 try:
                     sig = signature(obj)
@@ -325,9 +329,12 @@ class PyInterpretContentAssist(QObject):
             try:
                 tokens = editor.parser.tree['tokens']
                 tok_start = context[-2]['start']
+                tok_stop = context[-2]['stop']
                 
-                tok_stop = context[-2]['stop'] - 1
-                if tokens[tok_stop]['type'] == "DOT":
+                if tokens[tok_stop]['type'] == "NAME":
+                    app.globals.content_assist.set_start(tokens[tok_stop]['start'])
+                    tok_stop -= 2
+                elif tokens[tok_stop]['type'] == "DOT":
                     tok_stop -= 1
                 
                 tok_start = tokens[tok_start]['start'] + editor.prompt_begin    
@@ -340,7 +347,6 @@ class PyInterpretContentAssist(QObject):
             except:
                 pass
 
-        print(acceptor)
         acceptor['proba_templ'] = Template(text='proba {p0} i {p1} bla')
         
         
@@ -403,15 +409,15 @@ class PyInerpretEditor(PydeEditor):
 #         self.c.setCompletionMode(QtGui.QCompleter.UnfilteredPopupCompletion)
 #         self.c.setWidget(self)
 # 
-        self.setAutoCompletionThreshold(0)
+#         self.setAutoCompletionThreshold(0)
 #         self.setAutoCompletionShowSingle(True)
-        self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
+#         self.setAutoCompletionSource(Qsci.QsciScintilla.AcsAPIs)
         
         lexer.setDefaultFont(font)
         
         self.setLexer(lexer)
         self.content_assist_list = Qsci.QsciAPIs(self.lexer())
-        self.autoCompleteFromAll()
+#         self.autoCompleteFromAll()
          
 #         self.prepare_assist_globals()
         

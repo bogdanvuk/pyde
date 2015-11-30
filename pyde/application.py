@@ -78,22 +78,21 @@ class App(QtGui.QApplication):
         self.centralWidget = widget
 
     def key_press_fire_action(self, event, widget):
+        fired = False
         key_pair = (event.key(), int(event.modifiers()))
         if key_pair in self.key_bindings:
             contexts = self.key_bindings[key_pair]
             base_names = [widget.__class__.__name__] + [b.__name__ for b in widget.__class__.__bases__]
             for c in contexts:
                 if c in base_names:
-                    try:
-                        contexts[c]()
-                        return True
-                    except KeyPressNotConsumed:
-                        pass
+                    for action in contexts[c]: 
+                        action()
+                        fired = True
 
 #             event.ignore()
 #             return True
                 
-        return False
+        return fired
     
 #     @pyqtSlot(QWidget, QWidget)
     def focus_changed(self, old, new):
@@ -111,7 +110,10 @@ class App(QtGui.QApplication):
         if key_pair not in self.key_bindings:
             self.key_bindings[key_pair] = {}
         
-        self.key_bindings[key_pair][context] = action
+        if context not in self.key_bindings[key_pair]:
+            self.key_bindings[key_pair][context] = []
+        
+        self.key_bindings[key_pair][context].append(action)
     
     def add_view(self, view, location=[0]):
         app.centralWidget.add_view(view, location)
