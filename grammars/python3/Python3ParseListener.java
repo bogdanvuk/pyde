@@ -2,6 +2,7 @@ package python3;
 
 import java.io.StringWriter;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Stack;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -28,6 +29,10 @@ public class Python3ParseListener extends Python3BaseListener {
 //    	System.out.print(" ");
 //    	System.out.println(ctx.toInfoString(parser));
 
+    	if (parser.getRuleNames()[ctx.getRuleIndex()].equals("power")) {
+    		assert true;
+    	}
+    	
     	if (!childrenStack.isEmpty()) {
     		this.jsonStack.push(new JSONObject());
     		childrenStack.peek().put(this.jsonStack.peek());
@@ -47,27 +52,81 @@ public class Python3ParseListener extends Python3BaseListener {
 //    	System.out.print("\n");
     }
     
+    public int[] getChildIDFromPointer(ParserRuleContext ctx, Object value) {
+    	if (value != null) {
+	   		for (int i = 0; i < ctx.getChildCount(); i++) {
+				if ( ctx.getChild(i) instanceof TerminalNode ) {
+					Token symbol = ((TerminalNode) ctx.getChild(i)).getSymbol();
+					if (value.equals(symbol)) {
+						return new int[] {1, symbol.getTokenIndex()};
+					}
+				} else if (value.equals(ctx.getChild(i))) {
+					return new int[] {2, i};
+				}
+			}
+    	}
+  		
+   		return new int[] {0, 0};
+    }
+    
     public void exitEveryRule(ParserRuleContext ctx) {
     	try {
+    		JSONArray fields = new JSONArray();
 //    		jsonStack.peek().put("_fields", ctx.start.getTokenIndex());
         	for(Field field : ctx.getClass().getDeclaredFields())
         	{
-        		for (int i = 0; i < ctx.getChildCount(); i++) {
-        			try {
-        				if ( ctx.getChild(i) instanceof TerminalNode ) {
-        					Token symbol = ((TerminalNode) ctx.getChild(i)).getSymbol();
-        					if (field.get(ctx).equals(symbol)) {
-        						jsonStack.peek().put(field.getName(), parser.getVocabulary().getSymbolicName(symbol.getType()));
-        						break;
-        					}
-        				} else if (field.get(ctx).equals(ctx.getChild(i))) {
-							jsonStack.peek().put(field.getName(), i);
-							break;
-						}
-					} catch (IllegalArgumentException | IllegalAccessException e) {
-					}
+        		try {
+	        		
+	        		if (field.getType().isAssignableFrom(List.class)) {
+	        			List<Object> list = (List<Object>) field.get(ctx);
+	        			JSONArray field_ids = new JSONArray ();
+	        			for (Object value : list) {
+		        			int[] ret = getChildIDFromPointer(ctx, value);
+		        			if (ret[0] == 1) {
+		        				field_ids.put(String.format("%d", ret[1]));
+		        			} else if (ret[0] == 2) {
+		        				field_ids.put(ret[1]);
+		        			}
+	        			}
+
+	        			jsonStack.peek().put(field.getName(), field_ids);
+		        		fields.put(field.getName());
+
+	        		} else {
+	        			Object value = field.get(ctx);
+	        			int[] ret = getChildIDFromPointer(ctx, value);
+	        			if (ret[0] == 1) {
+	        				jsonStack.peek().put(field.getName(), String.format("%d", ret[1]));
+	        				fields.put(field.getName());
+	        			} else if (ret[0] == 2) {
+	        				jsonStack.peek().put(field.getName(), ret[1]);
+	        				fields.put(field.getName());
+	        			}
+	        		}
+	        	} catch (IllegalArgumentException | IllegalAccessException e) {
         		}
+//	        			
+//	        		
+//	        		
+//	        		
+//	        		if (value != null) {
+//		        		for (int i = 0; i < ctx.getChildCount(); i++) {
+//	        				if ( ctx.getChild(i) instanceof TerminalNode ) {
+//	        					Token symbol = ((TerminalNode) ctx.getChild(i)).getSymbol();
+//	        					if (value.equals(symbol)) {
+////	        						jsonStack.peek().put(field.getName(), parser.getVocabulary().getSymbolicName(symbol.getType()));
+//	        						break;
+//	        					}
+//	        				} else if (field.get(ctx).equals(ctx.getChild(i))) {
+//
+//								break;
+//							}
+//		        		}
+//	        		}
+//        		} catch (IllegalArgumentException | IllegalAccessException e) {
+//        		}
         	}
+        	jsonStack.peek().put("_fields", fields);
 			jsonStack.peek().put("start", ctx.start.getTokenIndex());
 	    	jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
 			jsonStack.pop().put("children", childrenStack.pop());

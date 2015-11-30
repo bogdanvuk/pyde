@@ -557,8 +557,11 @@ factor
 
 /// power: atom trailer* ['**' factor]
 power
- : atom trailer* ( '**' factor )?
+ : atom_group ( '**' factor )?
  ;
+
+atom_group
+ : head=atom tail+=trailer*;
 
 /// atom: ('(' [yield_expr|testlist_comp] ')' |
 ///        '[' [testlist_comp] ']' |

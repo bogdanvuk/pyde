@@ -21,6 +21,9 @@ from inspect import signature
 import ast
 import pyde.pyposast
 from pyde.plugins.templating import Template
+import subprocess
+import json
+import os
 
 def patch_ast(tree):
     tree.is_leaf = True
@@ -86,55 +89,193 @@ def context_at_pos(tree, lineno, col):
                 
     return context
 
+# class PyInterpretParser(QObject):
+#     
+#     class PositionUpdater(object):
+#         def __init__(self, tree, text):
+#             self.tree = tree
+#             self.cur_end = len(text)
+#             self.lines = text.split('\n')
+#             self.col_cur_end = []
+#             for line in self.lines:
+#                 self.col_cur_end.append(len(line))
+# 
+#         def patch(self):
+#             self._patch(self.tree)
+# 
+#         def _patch(self, node):
+#             
+#             if hasattr(node, 'lineno'):
+#                 node.lineno -= 1
+#                 line_offset = sum(self.col_cur_end[:node.lineno]) + node.lineno # compensate for end of line
+#                 node.col_pos = (node.col_offset, self.col_cur_end[node.lineno])
+#                 node.pos = (line_offset + node.col_pos[0], line_offset + node.col_pos[1])
+#                 node.text = self.lines[node.lineno][node.col_pos[0]:node.col_pos[1]]
+#                 
+#                 try:
+#                     print(type(node).__name__, ':', node.text, ':', (node.lineno, node.col_offset), ':', node.col_pos, ':', node.pos, ':', ast.dump(node))
+#                 except AttributeError:
+#                     print(type(node).__name__)
+#             
+#             
+#             if hasattr(node, 'lineno') or isinstance(node, ast.mod):      
+#                 node.is_leaf = True
+#             
+#                 for child in reversed(list(node_iter(node))):
+#                     if not self._patch(child):
+#                         node.is_leaf = False
+# 
+#                 if node.is_leaf:
+#                     self.col_cur_end[node.lineno] = node.col_offset - 1
+#                     
+#                 return False
+#             else:
+#                 return True
+#             
+#     def __init__(self, editor):
+#         super().__init__()
+#         self.editor = editor
+#         self.editor.SCN_MODIFIED.connect(self.text_modified)
+#         self.incremental_state = 'connector'
+#         self.tree = None
+#     
+#     def leaf_node_at(self, pos):
+#         if self.tree is not None:
+#             return self.context_at_pos(self, pos)[-1]
+#         else:
+#             return None 
+#     
+#     def context_at_pos(self, lineno, col):
+#         if self.tree is not None:
+#             return context_at_pos(self.tree, lineno, col)
+#         else:
+#             return None 
+# 
+#     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
+#                    foldPrev, token, annotationLinesAdded):
+#         
+#         if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
+#             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
+#             self.parse(self.editor.active_text())
+# #             text = text.decode()
+# #             has_nonalnum = any(not (c.isalnum() or c == '_') for c in text)
+# #             has_alnum = any(c.isalnum() or c == '_' for c in text)
+# #                 
+# #             if self.incremental_state == 'connector':
+# #                 if has_alnum:
+# #                     self.parse(self.editor.active_text())
+# #                     self.incremental_state = 'literal'
+# #             elif self.incremental_state == 'literal':        
+# #                 if has_nonalnum:
+# #                     self.parse(self.editor.active_text())
+# #                     self.incremental_state = 'connector'
+# 
+#     def parse(self, text):
+#         self.tree = None
+#         try:
+# #             self.tree = ast.parse(text, mode='single')
+#             self.tree = pyde.pyposast.parse(text)
+#             patch_ast(self.tree)
+#             self.text = text
+# #             self.PositionUpdater(self.tree, text).patch()
+#             self.incremental_state = 'connector'
+#         except SyntaxError as e:
+#             print(e)
+#             try:
+#                 if e.text[e.offset-2] == '.':
+#                     self.tree = pyde.pyposast.parse(text[])
+#                     patch_ast(self.tree)
+#                     self.text = text
+#             except SyntaxError as e:
+#                 pass
+#             
+
+class NodeVisitor(object):
+    """
+    A node visitor base class that walks the abstract syntax tree and calls a
+    visitor function for every node found.  This function may return a value
+    which is forwarded by the `visit` method.
+
+    This class is meant to be subclassed, with the subclass adding visitor
+    methods.
+
+    Per default the visitor functions for the nodes are ``'visit_'`` +
+    class name of the node.  So a `TryFinally` node visit function would
+    be `visit_TryFinally`.  This behavior can be changed by overriding
+    the `visit` method.  If no visitor function exists for a node
+    (return value `None`) the `generic_visit` visitor is used instead.
+
+    Don't use the `NodeVisitor` if you want to apply changes to nodes during
+    traversing.  For this a special visitor exists (`NodeTransformer`) that
+    allows modifications.
+    """
+
+    def visit(self, node):
+        """Visit a node."""
+        method = 'visit_' + node['ctype']
+        visitor = getattr(self, method, self.generic_visit)
+        return visitor(node)
+    
+    def visit_all_enter(self, node):
+        pass
+    
+    def visit_all_exit(self, node):
+        pass
+
+    def generic_visit(self, node):
+        """Called if no explicit visitor function exists for a node."""
+        children = list(range(len(node['children'])))
+        for field in node['_fields']:
+            if isinstance(field, int):
+                child = node['children'][field]
+                self.visit_all_enter(child)
+                self.visit(child)
+                self.visit_all_exit(child)
+                children.remove(field)
+                
+        for c in children:
+            child = node['children'][c]
+            self.visit_all_enter(child)
+            self.visit(child)
+            self.visit_all_exit(child)
+
+class ContextVisitor(NodeVisitor):
+
+    class FoundLeafException(Exception):
+        pass
+    
+    def context_at(self, node, pos, tokens):
+        self.context = []
+        self.pos = pos
+        self.tokens = tokens
+        try:
+            self.visit(node)
+        except self.FoundLeafException:
+            pass
+    
+    def visit_all_enter(self, node):
+        """Visit a node."""
+        self.context.append(node)
+  
+        if not node['children']:
+            tok_start = self.tokens[node['start']]['start']
+            tok_stop = self.tokens[node['stop']]['stop']
+            if self.pos >= tok_start and self.pos <= tok_stop:
+                raise self.FoundLeafException
+    
+    def visit_all_exit(self, node):
+        self.context.pop()
+        
+
 class PyInterpretParser(QObject):
     
-    class PositionUpdater(object):
-        def __init__(self, tree, text):
-            self.tree = tree
-            self.cur_end = len(text)
-            self.lines = text.split('\n')
-            self.col_cur_end = []
-            for line in self.lines:
-                self.col_cur_end.append(len(line))
-
-        def patch(self):
-            self._patch(self.tree)
-
-        def _patch(self, node):
-            
-            if hasattr(node, 'lineno'):
-                node.lineno -= 1
-                line_offset = sum(self.col_cur_end[:node.lineno]) + node.lineno # compensate for end of line
-                node.col_pos = (node.col_offset, self.col_cur_end[node.lineno])
-                node.pos = (line_offset + node.col_pos[0], line_offset + node.col_pos[1])
-                node.text = self.lines[node.lineno][node.col_pos[0]:node.col_pos[1]]
-                
-                try:
-                    print(type(node).__name__, ':', node.text, ':', (node.lineno, node.col_offset), ':', node.col_pos, ':', node.pos, ':', ast.dump(node))
-                except AttributeError:
-                    print(type(node).__name__)
-            
-            
-            if hasattr(node, 'lineno') or isinstance(node, ast.mod):      
-                node.is_leaf = True
-            
-                for child in reversed(list(node_iter(node))):
-                    if not self._patch(child):
-                        node.is_leaf = False
-
-                if node.is_leaf:
-                    self.col_cur_end[node.lineno] = node.col_offset - 1
-                    
-                return False
-            else:
-                return True
-            
     def __init__(self, editor):
         super().__init__()
         self.editor = editor
-        self.editor.SCN_MODIFIED.connect(self.text_modified)
+#         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.incremental_state = 'connector'
         self.tree = None
+        os.environ['CLASSPATH'] += ':/home/bvukobratovic/projects/pyde/grammars'
     
     def leaf_node_at(self, pos):
         if self.tree is not None:
@@ -154,40 +295,11 @@ class PyInterpretParser(QObject):
         if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self.parse(self.editor.active_text())
-#             text = text.decode()
-#             has_nonalnum = any(not (c.isalnum() or c == '_') for c in text)
-#             has_alnum = any(c.isalnum() or c == '_' for c in text)
-#                 
-#             if self.incremental_state == 'connector':
-#                 if has_alnum:
-#                     self.parse(self.editor.active_text())
-#                     self.incremental_state = 'literal'
-#             elif self.incremental_state == 'literal':        
-#                 if has_nonalnum:
-#                     self.parse(self.editor.active_text())
-#                     self.incremental_state = 'connector'
 
     def parse(self, text):
-        self.tree = None
-        try:
-#             self.tree = ast.parse(text, mode='single')
-            self.tree = pyde.pyposast.parse(text)
-            patch_ast(self.tree)
-            self.text = text
-#             self.PositionUpdater(self.tree, text).patch()
-            self.incremental_state = 'connector'
-        except SyntaxError as e:
-            print(e)
-            try:
-                if e.text[e.offset-2] == '.':
-                    self.tree = pyde.pyposast.parse(text[])
-                    patch_ast(self.tree)
-                    self.text = text
-            except SyntaxError as e:
-                pass
-            
-
-            
+#         os.chdir('/home/bvukobratovic/projects/pyde/grammars/python3')
+        p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3', 'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
+        self.tree = json.loads(p.decode())
 
 class PyInterpretContentAssist(QObject):
     def __init__(self):
@@ -201,24 +313,35 @@ class PyInterpretContentAssist(QObject):
 #         for i,c in enumerate(reversed(context)):
 #             if not isinstance(c, (ast.Attribute, ast.Name, ast.Call, ast.Subscript)):
 #                 obj = eval(compile(ast.Expression(context[i+1]), '(none)', 'eval'))
-        if context:
-            if isinstance(context[-1], ast.Expression):
-                for name, obj in app.globals.items():
-                    try:
-                        sig = signature(obj)
-                    except:
-                        sig = ''
-                        
-                    acceptor[name] = name + str(sig)
-            elif isinstance(context[-1], ast.Attribute):
+        if (not context) or (context[-1]['ctype'] == 'file_input') or (context[-1]['ctype'] == 'atom'):
+            for name, obj in app.globals.items():
                 try:
-                    obj = eval(compile(ast.Expression(context[-1].value), '(none)', 'eval'))
-                    for d in dir(obj):
-                        acceptor[d] = d        
+                    sig = signature(obj)
                 except:
-                    pass
-    
-            acceptor['proba_templ'] = Template(text='proba {p0} i {p1} bla')
+                    sig = ''
+                    
+                acceptor[name] = name + str(sig)
+        elif context[-1]['ctype'] == 'trailer':
+            try:
+                tokens = editor.parser.tree['tokens']
+                tok_start = context[-2]['start']
+                
+                tok_stop = context[-2]['stop'] - 1
+                if tokens[tok_stop]['type'] == "DOT":
+                    tok_stop -= 1
+                
+                tok_start = tokens[tok_start]['start'] + editor.prompt_begin    
+                tok_stop = tokens[tok_stop]['stop'] + editor.prompt_begin
+                text = editor.text()[tok_start:tok_stop+1]
+                
+                obj = eval(text, app.globals, editor.locals)
+                for d in dir(obj):
+                    acceptor[d] = d        
+            except:
+                pass
+
+        print(acceptor)
+        acceptor['proba_templ'] = Template(text='proba {p0} i {p1} bla')
         
         
 class PyInerpretEditor(PydeEditor):
@@ -297,7 +420,11 @@ class PyInerpretEditor(PydeEditor):
     def cur_context(self):
         lineno, col = self.getCursorPosition()
         active_range_start_line, _ = self.lineIndexFromPosition(self.prompt_begin)
-        return self.parser.context_at_pos(lineno - active_range_start_line + 1, col - 1)
+        self.parser.parse(self.active_text())
+        cv = ContextVisitor()
+        cv.context_at(self.parser.tree['tree'], self.pos - self.prompt_begin - 1, self.parser.tree['tokens'])
+#         return self.parser.context_at_pos(lineno - active_range_start_line + 1, col - 1)
+        return cv.context
 
     def active_range(self):
         return (self.prompt_begin, self.length())

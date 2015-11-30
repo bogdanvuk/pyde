@@ -638,6 +638,16 @@ public interface Python3Listener extends ParseTreeListener {
 	 */
 	void exitPower(Python3Parser.PowerContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link Python3Parser#atom_group}.
+	 * @param ctx the parse tree
+	 */
+	void enterAtom_group(Python3Parser.Atom_groupContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link Python3Parser#atom_group}.
+	 * @param ctx the parse tree
+	 */
+	void exitAtom_group(Python3Parser.Atom_groupContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link Python3Parser#atom}.
 	 * @param ctx the parse tree
 	 */
