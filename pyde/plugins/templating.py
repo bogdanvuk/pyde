@@ -5,6 +5,7 @@ import re
 import string
 from PyQt4.Qsci import QsciScintilla
 from collections import OrderedDict
+from inspect import signature
 
 class Template(object):
    
@@ -18,6 +19,29 @@ class Template(object):
     def param_val(self, key):
         return key
 #         self.params[key]
+
+class TemplFunc(Template):
+    def __init__(self, func):
+        self.func = func
+        self.sig = signature(func)
+        params = []
+        for _,p in self.sig.parameters.items():
+            params.append('{' + p.name + '}')
+        
+        self.text = self.func.__name__ + '(' + ','.join(params) + ')'        
+        
+    def apply(self, editor):
+        app.globals.templ.insert(self, editor)
+        
+    def param_val(self, key):
+        a = self.sig.parameters['path'].annotation
+        if a:
+            if a == str:
+                return "''"
+            else:
+                return str(a())
+        else:
+            return str(self.sig.parameters[key])
 
 class TemplParam(object):
     vtype = str
@@ -102,6 +126,8 @@ class TemplActuator(object):
             for _, p in tmpl_ctx.positions.items():
                 i+=1
                 editor.setIndicatorRange(self.indicators[editor], p.pos, len(p), i)
+            
+            editor.setIndicatorRange(self.indicators[editor], p.pos, len(p), i)
             
             self.next()
         else:

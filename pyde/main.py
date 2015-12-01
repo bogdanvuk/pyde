@@ -5,12 +5,19 @@ from pyde.main_win import MainWindow
 from PyQt4.QtCore import QObject
 import json
 import os
+from inspect import signature
 
 # import pyde.editors
 # print(dir(pyde.editors))
 
+class Custom(object):
+    pass
+
+def proba(name:str, path:Custom()):
+    pass
+
 if __name__ == "__main__":
-   
+
     app.win = MainWindow()
     app.init_ui()
     
