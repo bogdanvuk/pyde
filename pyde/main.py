@@ -7,15 +7,6 @@ import json
 import os
 from inspect import signature
 
-# import pyde.editors
-# print(dir(pyde.editors))
-
-class Custom(object):
-    pass
-
-def proba(name:str, path:Custom()):
-    pass
-
 if __name__ == "__main__":
 
     app.win = MainWindow()
@@ -30,16 +21,6 @@ if __name__ == "__main__":
     
     from pyde.dflt_keybindings import bind_keys
     bind_keys()
-
-#     class MarkActivator(QObject):
-#            
-#         def new_view(self):
-#             print("VIEW ADDED!")
-# 
-# 
-#     app.register_global('proba', MarkActivator())
-#     app.view_added.connect(app.globals.mark_activator.new_view)
-#     print("CONNECTED")
 
     from desktop import reload_desktop  # @UnresolvedImport
     reload_desktop()

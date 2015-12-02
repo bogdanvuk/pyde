@@ -28,7 +28,7 @@
  *  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package linpath;
+package pyinterface;
 
 import org.antlr.v4.gui.Trees;
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -288,7 +288,7 @@ public class Main {
 					e1.printStackTrace();
 				}
 
-//				parser.addParseListener(new Python3ParseListener((Python3Parser) parser, jsTree));
+				parser.addParseListener(new AntlrParseListener(parser, jsTree));
 			}
 
 			if ( printTree || gui || psFile!=null ) {
