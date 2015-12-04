@@ -1,10 +1,7 @@
 from pyde.application import app
-from PyQt4.QtGui import QWidget
-from PyQt4.QtCore import pyqtSlot, QObject, pyqtSignal
+from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
-import string
 from difflib import SequenceMatcher
-import difflib
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)
