@@ -24,9 +24,8 @@ class ContentAssist(QObject):
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
         
-        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
-            ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
-            
+        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0):
+            print('modified')
             self.show()
 
     
@@ -35,37 +34,49 @@ class ContentAssist(QObject):
     
     def fill_query(self):
         if self.active:
+            text = self.active_editor.text()[self.ca_start:self.active_editor.pos]
             common_text = ""
-            for k in self.sieve():
-                if not common_text:
-                    common_text = k
-                else:
+
+            for k in sorted(self.sieve()):
+                if common_text:
                     s = SequenceMatcher(None, common_text, k)
-                    common_text = common_text[0:s.find_longest_match(0, len(common_text), 0, len(k)).size]
-        
-        self.active_editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.ca_start, self.active_editor.pos)
-        self.active_editor.insert(common_text)
-        self.active_editor.pos = self.ca_start + len(common_text)
+                    match = s.find_longest_match(0, len(common_text), 0, len(k))
+                    if text or (match.b == 0):
+                        common_text = k[match.b:match.b + match.size]
+                        if not common_text:
+                            break
+                else:
+                    common_text = k
+
+        if common_text:
+            self.active_editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.ca_start, self.active_editor.pos - self.ca_start)
+            self.active_editor.insert(common_text)
+            self.active_editor.pos = self.ca_start + len(common_text)
         self.show()
     
     def sieve(self):
-        text = self.active_editor.text()[self.ca_start:self.active_editor.pos]
+        text = self.active_editor.text()[self.ca_start:self.active_editor.pos+1]
 #         for k in difflib.get_close_matches(text, self.active_dict.keys(), n=100, cutoff=0.6):  
         for k in self.active_dict:
-            if text in k:
+
+            if (not text) or (text in k):
                 yield k
     
     def show(self):
+        print('show: ' + self.active_editor.text()[self.ca_start:self.active_editor.pos+1])
         self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
                                  self.active_editor.pos - self.ca_start, 
                                  ' '.join(sorted(self.sieve())).encode())
         self.active = True
 
     def activate(self):
+        print('activated')
         self.active_editor = app.active_widget()
         self.active_editor.SCN_AUTOCSELECTION.connect(self.close_selected)
         self.active_editor.SCN_AUTOCCANCELLED.connect(self.close_canceled)
+        self.active_editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
         self.active_editor.SCN_MODIFIED.connect(self.text_modified)
+        self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
         
         self.ca_start = self.active_editor.pos
         
@@ -74,7 +85,12 @@ class ContentAssist(QObject):
         self.complete.emit(self.active_dict)
         self.show()
 
+    def close_char_deleted(self):
+        self.show()
+        
     def close_canceled(self):
+        print('canceled')
+#         self.active_editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.active = False
 
     def close_selected(self, selected, param):
@@ -82,7 +98,7 @@ class ContentAssist(QObject):
         self.active = False
 #         self.active_editor.SCN_AUTOCSELECTION.disconnect(self.close)
         self.active_editor.SCN_MODIFIED.disconnect(self.text_modified)
-        self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
+#         self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         
         cur_pos = self.active_editor.pos
         

@@ -298,6 +298,7 @@ class PyInterpretParser(QObject):
 
     def parse(self, text):
 #         os.chdir('/home/bvukobratovic/projects/pyde/grammars/python3')
+        print(text)
         p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3', 'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
         self.tree = json.loads(p.decode())
 
