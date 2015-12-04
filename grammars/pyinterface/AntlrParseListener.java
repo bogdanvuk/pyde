@@ -1,25 +1,28 @@
-package python3;
+package pyinterface;
 
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Stack;
 
+import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
-public class Python3ParseListener extends Python3BaseListener {
-	Python3Parser parser;
+public class AntlrParseListener implements ParseTreeListener {
+	Parser parser;
 	JSONObject jsonTop;
 	Stack<JSONArray> childrenStack = new Stack<JSONArray>();
 	Stack<JSONObject> jsonStack = new Stack<JSONObject>();
 	
-	public Python3ParseListener(Python3Parser parser, JSONObject json) {
+	public AntlrParseListener(Parser parser, JSONObject json) {
         this.parser = parser;
         this.jsonStack.push(json);
     }
@@ -129,6 +132,7 @@ public class Python3ParseListener extends Python3BaseListener {
         	jsonStack.peek().put("_fields", fields);
 			jsonStack.peek().put("start", ctx.start.getTokenIndex());
 	    	jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
+	    	jsonStack.peek().put("grammar", parser.getGrammarFileName());
 			jsonStack.pop().put("children", childrenStack.pop());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -139,20 +143,16 @@ public class Python3ParseListener extends Python3BaseListener {
 //    	System.out.println(ctx.toInfoString(parser));
     }
 
-//	
-//	/**
-//	 * Enter a parse tree produced by {@link Python3Parser#trailer}.
-//	 * @param ctx the parse tree
-//	 */
-//	public void enterTrailer(Python3Parser.TrailerContext ctx) {
-//		System.out.print(ctx.getText());
-//	}
-//	/**
-//	 * Exit a parse tree produced by {@link Python3Parser#trailer}.
-//	 * @param ctx the parse tree
-//	 */
-//	public void exitTrailer(Python3Parser.TrailerContext ctx) {
-//		System.out.print(ctx.getText());
-//	}
-
+    /**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void visitTerminal(TerminalNode node) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void visitErrorNode(ErrorNode node) { }
 }

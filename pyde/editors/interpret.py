@@ -20,7 +20,7 @@ from pyde.editor import PydeEditor
 from inspect import signature
 import ast
 import pyde.pyposast
-from pyde.plugins.templating import Template
+from pyde.plugins.templating import Template, TemplFunc
 import subprocess
 import json
 import os
@@ -315,17 +315,21 @@ class PyInterpretContentAssist(QObject):
 #             if not isinstance(c, (ast.Attribute, ast.Name, ast.Call, ast.Subscript)):
 #                 obj = eval(compile(ast.Expression(context[i+1]), '(none)', 'eval'))
         if (not context) or (context[-1]['ctype'] == 'file_input') or (context[-1]['ctype'] == 'atom'):
-            if context[-1]['ctype'] == 'atom':
+
+            if context and context[-1]['ctype'] == 'atom':
                 tokens = editor.parser.tree['tokens']
                 app.globals.content_assist.set_start(tokens[context[-1]['start']]['start'])
             
             for name, obj in app.globals.items():
-                try:
-                    sig = signature(obj)
-                except:
-                    sig = ''
-                    
-                acceptor[name] = name + str(sig)
+#                 try:
+#                     sig = signature(obj)
+#                 except:
+#                     sig = ''
+                if callable(obj):
+                    acceptor[name] = TemplFunc(obj) #name + str(sig)
+                else:
+                    acceptor[name] = name
+                
         elif context[-1]['ctype'] == 'trailer':
             try:
                 tokens = editor.parser.tree['tokens']

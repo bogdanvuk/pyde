@@ -105,6 +105,9 @@ class App(QtGui.QApplication):
     def register_global(self, name, obj):
         self.globals[name] = obj
     
+    def bind_plugin(self, plugin, ):
+        pass
+    
     def bind_key(self, action, key, modifier=QtCore.Qt.NoModifier, context="App"):
         key_pair = (key, modifier)
         if key_pair not in self.key_bindings:
