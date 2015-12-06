@@ -103,7 +103,7 @@ class DependencyContainer(DependencyScope):
     def create_scope(self, feature):
         self[feature] = DependencyScope()
     
-    def provide(self, feature, provider):
+    def provide(self, feature, provider, inst_feature=None, inst_args=(), inst_kwargs={}):
         if not self.allowReplace:
             assert not (feature in self.providers), "Duplicate feature: %r" % feature
 
@@ -116,6 +116,9 @@ class DependencyContainer(DependencyScope):
             feature_ext = feature_ext[1:]
 
         self[feature_ext] = provider
+        
+        if inst_feature:
+            self.demanders.append(Demander(feature_ext, inst_feature, list(inst_args), dict(inst_kwargs)))
         
         for d in self.demanders:
             if (d.feature == feature) or (d.inst_feature == feature):
@@ -166,8 +169,8 @@ class DependencyContainer(DependencyScope):
                 
         del self[feature]
     
-    def create_on_demand(self, feature, inst_feature=None, args=(), kwargs={}):
-        self.demanders.append(Demander(feature, inst_feature, list(args), dict(kwargs)))
+#     def create_on_demand(self, feature, inst_feature=None, args=(), kwargs={}):
+#         self.demanders.append(Demander(feature, inst_feature, list(args), dict(kwargs)))
 
 ddic = DependencyContainer()
 
@@ -210,36 +213,35 @@ class CreationFeature(object):
 
 Dependency = namedtuple('Dependency', ['feature', 'scope', 'assertion'])
 Dependency.__new__.__defaults__ = (None, None, NoAssertion)
-    
-class Test:
-    def __init__(self, a, b: Dependency(feature='scope.'), c: Dependency(feature='mark')):
-        self.b = b
-        self.c = c
- 
-class Test1:
-    def __init__(self, a, b: Dependency(feature='scope.'), c: Dependency(feature='scope.subscope.')):
-        self.b = b
-        self.c = c
- 
-     
-class Mark:
-    pass
- 
-def bla():
-    pass    
- 
-ddic.provide('test', Test)
-ddic.create_on_demand('test', '.', args=(1,))
- 
-ddic.provide('mark', Mark)
-ddic.create_scope('scope')
-ddic.provide('scope.test1', Test1)
-ddic.create_on_demand('scope.test1', 'scope.subscope.Test1', args=(1,))
- 
-ddic.create_scope('scope.subscope')
-ddic.provide('scope.', bla)
-ddic.provide('scope.subscope.', bla)
 
-ddic.unprovide('scope.' + str(id(bla)))
- 
-pass
+#      
+# class Test:
+#     def __init__(self, a, b: Dependency(feature='scope.'), c: Dependency(feature='mark')):
+#         self.b = b
+#         self.c = c
+#   
+# class Test1:
+#     def __init__(self, a, b: Dependency(feature='scope.'), c: Dependency(feature='scope.subscope.')):
+#         self.b = b
+#         self.c = c
+#   
+#       
+# class Mark:
+#     pass
+#   
+# def bla():
+#     pass    
+#   
+# ddic.provide('test', Test, '.', inst_args=(1,))
+#   
+# ddic.provide('mark', Mark)
+# ddic.create_scope('scope')
+# ddic.provide('scope.test1', Test1, 'scope.subscope.Test1', inst_args=(1,))
+#   
+# ddic.create_scope('scope.subscope')
+# ddic.provide('scope.', bla)
+# ddic.provide('scope.subscope.', bla)
+#  
+# ddic.unprovide('scope.' + str(id(bla)))
+#   
+# pass

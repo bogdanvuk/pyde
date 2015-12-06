@@ -3,6 +3,7 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal
 import PyQt4
 from PyQt4.QtGui import QWidget
+from pyde.ddi import RequiredFeature
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8  # @UndefinedVariable
@@ -55,12 +56,16 @@ class KeyPressNotConsumed(Exception):
     pass
 
 class App(QtGui.QApplication):
-
+    win_cls = RequiredFeature('cls.win')
     view_added = pyqtSignal(QWidget) #['QWidget'])
 
     def __init__(self):
         super().__init__([])
         self.focusChanged.connect(self.focus_changed)
+    
+    def exec_(self):
+        self.win = self.win_cls()
+        return QtGui.QApplication.exec_()
        
     def init_ui(self):
         self.centralLayout = self.win.centralLayout
@@ -123,4 +128,4 @@ class App(QtGui.QApplication):
         self.view_added.emit(view)
         self.views.append(view)
 
-app = App()
+# app = App()

@@ -1,5 +1,6 @@
 from pyde.pyde_widget import PydeWidget
 from PyQt4 import QtGui, QtCore
+from pyde.ddi import Dependency
 
 class MainWindow(PydeWidget, QtGui.QMainWindow):
     
@@ -22,6 +23,7 @@ class MainWindow(PydeWidget, QtGui.QMainWindow):
         
         QtCore.QMetaObject.connectSlotsByName(self)
         self.centralLayout = gridLayout
+        self.show()
 
 #     def keyPressEvent(self, event):
 # #         print("key_press")
