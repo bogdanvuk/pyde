@@ -102,8 +102,48 @@ class DependencyContainer(DependencyScope):
 
     def create_scope(self, feature):
         self[feature] = DependencyScope()
+
+    def check_demands(self, feature_trigger=None):
+        for d in self.demanders:
+            self.process_demander(d, feature_trigger)
+
+    def process_demander(self, demander, feature_trigger=None):
+        if demander.inst_feature == '' or anonymous(demander.inst_feature) or (demander.inst_feature not in self):
+            provider = self[demander.feature]
+        
+            _, _, _, _, _, _, annotations = getfullargspec(provider)
+            
+            dependencies = {}
+            for name, a in annotations.items():
+                if isinstance(a, Dependency):
+                    dependency = None
+                    if (not anonymous(a.feature)) and (a.feature in self):
+                        dependency = self[a.feature]
+                    elif (feature_trigger is not None) and anonymous(a.feature) and feature_scope(a.feature) == feature_scope(feature_trigger):
+                        dependency = self[feature_trigger]
+                    
+                    if dependency:
+                        dependencies[name] = dependency
+                        if not a.assertion(dependencies[name]):
+                            break
+                    else:
+                        break
+
+            else:
+                args, kwargs = update_args(provider, demander.args, demander.kwargs, dependencies)
+                demander_inst = provider(*args, **kwargs)
+                if demander.inst_feature != '':
+                    demander_inst._dependents = {}
+                    demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
     
-    def provide(self, feature, provider, inst_feature=None, inst_args=(), inst_kwargs={}):
+                    for _, dep_provider in dependencies.items():
+                        if not hasattr(dep_provider, '_dependents'):
+                            dep_provider._dependents = {}
+                            
+                        dep_provider._dependents[demander_inst_feature] = demander_inst
+
+    
+    def provide(self, feature, provider):
         if not self.allowReplace:
             assert not (feature in self.providers), "Duplicate feature: %r" % feature
 
@@ -117,49 +157,16 @@ class DependencyContainer(DependencyScope):
 
         self[feature_ext] = provider
         
-        if inst_feature:
-            self.demanders.append(Demander(feature_ext, inst_feature, list(inst_args), dict(inst_kwargs)))
+        self.check_demands(feature)
         
-        for d in self.demanders:
-            if (d.feature == feature) or (d.inst_feature == feature):
-                continue
-
-            if anonymous(d.inst_feature) or (d.inst_feature not in self):
-                demander = self[d.feature]
-            
-                _, _, _, _, _, _, annotations = getfullargspec(demander)
-                
-                dependencies = {}
-                for name, a in annotations.items():
-                    if isinstance(a, Dependency):
-                        dependency = None
-                        if (not anonymous(a.feature)) and (a.feature in self):
-                            dependency = self[a.feature]
-                        elif anonymous(a.feature) and feature_scope(a.feature) == feature_scope(feature):
-                            dependency = provider
-                        
-                        if dependency:
-                            dependencies[name] = dependency
-                            if not a.assertion(dependencies[name]):
-                                break
-                        else:
-                            break
-
-                else:
-                    args, kwargs = update_args(demander, d.args, d.kwargs, dependencies)
-                    demander_inst = demander(*args, **kwargs)
-                    demander_inst._dependents = {}
-                    demander_inst_feature = self.provide(d.inst_feature, demander_inst)
-
-                    for _, dep_provider in dependencies.items():
-                        if not hasattr(dep_provider, '_dependents'):
-                            dep_provider._dependents = {}
-                            
-                        dep_provider._dependents[demander_inst_feature] = demander_inst
-                        
-                    
-                    
         return feature_ext
+    
+    def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}):
+        if provider is not None:
+            self.provide(feature, provider)
+            
+        self.demanders.append(Demander(feature, inst_feature, list(inst_args), dict(inst_kwargs)))
+        self.check_demands(None)
     
     def unprovide(self, feature):
         provider = self[feature]

@@ -3,7 +3,7 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal
 import PyQt4
 from PyQt4.QtGui import QWidget
-from pyde.ddi import RequiredFeature
+from pyde.ddi import RequiredFeature, ddic
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8  # @UndefinedVariable
@@ -65,6 +65,8 @@ class App(QtGui.QApplication):
     
     def exec_(self):
         self.win = self.win_cls()
+        self.init_ui()
+        ddic.provide('app', self)
         return QtGui.QApplication.exec_()
        
     def init_ui(self):
@@ -124,7 +126,7 @@ class App(QtGui.QApplication):
         self.key_bindings[key_pair][context].append(action)
     
     def add_view(self, view, location=[0]):
-        app.centralWidget.add_view(view, location)
+        self.win.centralWidget.add_view(view, location)
         self.view_added.emit(view)
         self.views.append(view)
 

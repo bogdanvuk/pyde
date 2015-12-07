@@ -1,6 +1,5 @@
 
 import sys
-import pyde.configure
 from pyde.ddi import ddic
 # from pyde.application import app
 # from pyde.main_win import MainWindow
@@ -11,7 +10,7 @@ from pyde.ddi import ddic
 
 if __name__ == "__main__":
     app = ddic['cls.app']()
-    ddic.provide('app', app)
+    import pyde.configure
     
 #     wspace_path = '/data/projects/pyde/wspace'    
 #     sys.path.append(wspace_path)
