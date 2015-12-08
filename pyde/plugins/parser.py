@@ -2,19 +2,19 @@ from PyQt4.QtCore import QObject
 from pyde.ddi import Dependency
 import grammars
 import os
+import subprocess
+from PyQt4.Qsci import QsciScintilla
+import json
 
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
 class Parser(QObject):
-     
+    
     def __init__(self, editor : Dependency('editor.'), language):
         super().__init__()
         self.editor = editor
         self.language = language
 #         self.editor.SCN_MODIFIED.connect(self.text_modified)
-        self.incremental_state = 'connector'
-        self.tree = None
-        
      
     def leaf_node_at(self, pos):
         if self.tree is not None:
@@ -38,5 +38,7 @@ class Parser(QObject):
     def parse(self, text):
 #         os.chdir('/home/bvukobratovic/projects/pyde/grammars/python3')
         print(text)
-        p = subprocess.Popen(['java', 'python3.Main', 'python3.Python3', 'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
+        p = subprocess.Popen(['java', self.language + '.Main', 
+                              self.language + '.' + self.language, 
+                              'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
         self.tree = json.loads(p.decode())

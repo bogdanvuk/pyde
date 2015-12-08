@@ -1,4 +1,4 @@
-from pyde.ddi import ddic
+from pyde.ddi import ddic, Dependency
 from pyde.main_win import MainWindow
 from pyde.application import App
 import sys
@@ -12,6 +12,10 @@ ddic.provide_on_demand('cls.win', MainWindow, 'win')
 ddic.provide('cls.python', PythonEdit)
 ddic.provide('cls.ipython', PyInerpretEditor)
 ddic.provide_on_demand('cls.context', ContextProvider, 'context')
+
+def python_mode(editor : Dependency('editor.')):
+    if editor.name in ['*scratch.py*', '*interpret*']:
+        editor.mode.append('python')
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)
