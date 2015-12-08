@@ -4,8 +4,9 @@ from pyde.QsciScintillaCompat import QsciScintillaCompat
 
 class PydeEditor(PydeWidget, QsciScintillaCompat):
     
-    def __init__(self, parent=None):
+    def __init__(self, name, parent=None):
         PydeWidget.__init__(self)
+        self.name = name
         QsciScintillaCompat.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)

@@ -4,12 +4,14 @@ from pyde.application import App
 import sys
 from pyde.editors.python import PythonEdit
 from pyde.editors.interpret import PyInerpretEditor
+from pyde.plugins.context import ContextProvider
+from pyde.plugins.parser import Parser
 
 ddic.create_scope('cls')
-ddic.provide('cls.app', App)
-ddic.provide('cls.win', MainWindow)
+ddic.provide_on_demand('cls.win', MainWindow, 'win')
 ddic.provide('cls.python', PythonEdit)
 ddic.provide('cls.ipython', PyInerpretEditor)
+ddic.provide_on_demand('cls.context', ContextProvider, 'context')
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)

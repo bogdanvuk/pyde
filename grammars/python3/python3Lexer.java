@@ -1,4 +1,4 @@
-// Generated from Python3.g4 by ANTLR 4.5.1
+// Generated from python3.g4 by ANTLR 4.5.1
 package python3;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.*;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
-public class Python3Lexer extends Lexer {
+public class python3Lexer extends Lexer {
 	static { RuntimeMetaData.checkVersion("4.5.1", RuntimeMetaData.VERSION); }
 
 	protected static final DFA[] _decisionToDFA;
@@ -220,13 +220,13 @@ public class Python3Lexer extends Lexer {
 	  }
 
 
-	public Python3Lexer(CharStream input) {
+	public python3Lexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
 	@Override
-	public String getGrammarFileName() { return "Python3.g4"; }
+	public String getGrammarFileName() { return "python3.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

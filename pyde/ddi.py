@@ -19,6 +19,7 @@ def update_args(func, args, kwargs, update):
     return args, kwargs
 
 Demander = namedtuple('Demander', ['feature', 'inst_feature', 'args', 'kwargs'])
+# Demander.__new__.__defaults__ = (None, None, (), {})
 
 class DependencyScope:
     
@@ -114,6 +115,7 @@ class DependencyContainer(DependencyScope):
             _, _, _, _, _, _, annotations = getfullargspec(provider)
             
             dependencies = {}
+            all_satisfied = True
             for name, a in annotations.items():
                 if isinstance(a, Dependency):
                     dependency = None
@@ -125,11 +127,13 @@ class DependencyContainer(DependencyScope):
                     if dependency:
                         dependencies[name] = dependency
                         if not a.assertion(dependencies[name]):
+                            all_satisfied = False
                             break
                     else:
+                        all_satisfied = False
                         break
 
-            else:
+            if all_satisfied:
                 args, kwargs = update_args(provider, demander.args, demander.kwargs, dependencies)
                 demander_inst = provider(*args, **kwargs)
                 if demander.inst_feature != '':
@@ -162,6 +166,8 @@ class DependencyContainer(DependencyScope):
         return feature_ext
     
     def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}):
+        assert inst_feature is not None, "Have to provide feature to be instantiated!"
+        
         if provider is not None:
             self.provide(feature, provider)
             

@@ -181,8 +181,8 @@ class ContextVisitor(NodeVisitor):
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, parent=None):
-        super(PyInerpretEditor, self).__init__(parent)
+    def __init__(self, name, parent=None):
+        super(PyInerpretEditor, self).__init__(name, parent)
 
         # Set the default font
         font = QFont()
@@ -236,12 +236,12 @@ class PyInerpretEditor(PydeEditor):
 #         return self.parser.context_at_pos(lineno - active_range_start_line + 1, col - 1)
         return cv.context
 
-    def active_range(self):
-        return (self.prompt_begin, self.length())
-
-    def active_text(self):
+    def text(self):
         start, stop = self.active_range()
         return self.text()[start:stop]
+    
+    def active_range(self):
+        return (self.prompt_begin, self.length())
 
     def evaluate(self):
         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):

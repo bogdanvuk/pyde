@@ -1,6 +1,7 @@
 
 import sys
 from pyde.ddi import ddic
+from PyQt4 import QtGui
 # from pyde.application import app
 # from pyde.main_win import MainWindow
 # from PyQt4.QtCore import QObject
@@ -9,7 +10,7 @@ from pyde.ddi import ddic
 # from inspect import signature
 
 if __name__ == "__main__":
-    app = ddic['cls.app']()
+    app = QtGui.QApplication(sys.argv)
     import pyde.configure
     
 #     wspace_path = '/data/projects/pyde/wspace'    
@@ -26,4 +27,5 @@ if __name__ == "__main__":
 #     reload_desktop()
 # 
 #     app.win.show()
+    ddic['win'].show()
     sys.exit(app.exec_())

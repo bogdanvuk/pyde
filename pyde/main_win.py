@@ -4,7 +4,9 @@ from pyde.ddi import Dependency
 
 class MainWindow(PydeWidget, QtGui.QMainWindow):
     
-    def __init__(self):
+    view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
+    
+    def __init__(self, layout: Dependency(feature='init_layout')):
         QtGui.QMainWindow.__init__(self)
         
         self.setWindowTitle("Writer")
@@ -23,7 +25,15 @@ class MainWindow(PydeWidget, QtGui.QMainWindow):
         
         QtCore.QMetaObject.connectSlotsByName(self)
         self.centralLayout = gridLayout
-        self.show()
+        self.centralLayout.addWidget(layout, 0, 0, 1, 1)
+        self.centralWidget = layout
+        self.views = []
+       
+    def add_view(self, view, location=[0]):
+        self.centralWidget.add_view(view, location)
+        self.view_added.emit(view)
+        self.views.append(view)
+
 
 #     def keyPressEvent(self, event):
 # #         print("key_press")

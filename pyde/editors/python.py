@@ -17,8 +17,8 @@ from PyQt4 import Qsci
 class PythonEdit(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, name, parent=None):
+        super().__init__(name, parent)
 
         # Set the default font
         font = QFont()
