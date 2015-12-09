@@ -12,6 +12,7 @@ from PyQt4.Qsci import QsciScintilla, QsciLexerPython
 from PyQt4 import Qsci
 from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
+from pyde.plugins.parser import Parser
 
 class NodeVisitor(object):
     """
@@ -190,7 +191,7 @@ class PyInerpretEditor(PydeEditor):
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
-#         self.parser = PyInterpretParser(self)
+        self.parser = Parser(self, 'python3')
 #         self.ca = PyInterpretContentAssist()
         fontmetrics = QFontMetrics(font)
 
@@ -238,7 +239,7 @@ class PyInerpretEditor(PydeEditor):
 
     def text(self):
         start, stop = self.active_range()
-        return self.text()[start:stop]
+        return super().text()[start:stop]
     
     def active_range(self):
         return (self.prompt_begin, self.length())

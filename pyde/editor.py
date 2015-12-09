@@ -2,10 +2,10 @@ from pyde.pyde_widget import PydeWidget
 from PyQt4.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
 
-class PydeEditor(PydeWidget, QsciScintillaCompat):
+class PydeEditor(QsciScintillaCompat):
     
     def __init__(self, name, parent=None):
-        PydeWidget.__init__(self)
+#         PydeWidget.__init__(self)
         self.name = name
         QsciScintillaCompat.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
