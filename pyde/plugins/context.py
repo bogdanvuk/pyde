@@ -3,7 +3,7 @@ from pyde.ddi import Dependency
 from PyQt4.QtGui import QWidget
 
 class Context(object):
-    def __init__(self, name, parent):
+    def __init__(self, name=None, parent=None):
         self.parent = parent
         if parent is not None:
             self.parent.children[name] = self

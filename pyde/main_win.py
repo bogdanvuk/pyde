@@ -2,7 +2,7 @@ from pyde.pyde_widget import PydeWidget
 from PyQt4 import QtGui, QtCore
 from pyde.ddi import Dependency, ddic
 
-class MainWindow(PydeWidget, QtGui.QMainWindow):
+class MainWindow(QtGui.QMainWindow):
     
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
