@@ -18,6 +18,9 @@ ddic.create_scope('view')
 ddic.create_scope('mode')
 ddic.create_scope('mode/inst')
 ddic.provide_on_demand('mode/python', PythonMode, 'mode/inst/')
+ddic.create_scope('parser')
+ddic.create_scope('parser/inst')
+ddic.provide_on_demand('parser/python', Parser, 'parser/inst/')
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)

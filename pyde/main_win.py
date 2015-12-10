@@ -1,6 +1,7 @@
 from pyde.pyde_widget import PydeWidget
 from PyQt4 import QtGui, QtCore
 from pyde.ddi import Dependency, ddic
+from PyQt4.QtGui import QApplication
 
 class MainWindow(QtGui.QMainWindow):
     
@@ -35,6 +36,9 @@ class MainWindow(QtGui.QMainWindow):
         self.view_added.emit(view)
         self.view_scope.provide(view.name, view)
         self.views.append(view)
+
+    def active_view(self):
+        return QApplication.focusWidget()
 
 
 #     def keyPressEvent(self, event):

@@ -14,81 +14,32 @@ from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
 from pyde.plugins.parser import Parser
 
-class NodeVisitor(object):
-    """
-    A node visitor base class that walks the abstract syntax tree and calls a
-    visitor function for every node found.  This function may return a value
-    which is forwarded by the `visit` method.
-
-    This class is meant to be subclassed, with the subclass adding visitor
-    methods.
-
-    Per default the visitor functions for the nodes are ``'visit_'`` +
-    class name of the node.  So a `TryFinally` node visit function would
-    be `visit_TryFinally`.  This behavior can be changed by overriding
-    the `visit` method.  If no visitor function exists for a node
-    (return value `None`) the `generic_visit` visitor is used instead.
-
-    Don't use the `NodeVisitor` if you want to apply changes to nodes during
-    traversing.  For this a special visitor exists (`NodeTransformer`) that
-    allows modifications.
-    """
-
-    def visit(self, node):
-        """Visit a node."""
-        method = 'visit_' + node['ctype']
-        visitor = getattr(self, method, self.generic_visit)
-        return visitor(node)
-    
-    def visit_all_enter(self, node):
-        pass
-    
-    def visit_all_exit(self, node):
-        pass
-
-    def generic_visit(self, node):
-        """Called if no explicit visitor function exists for a node."""
-        children = list(range(len(node['children'])))
-        for field in node['_fields']:
-            if isinstance(field, int):
-                child = node['children'][field]
-                self.visit_all_enter(child)
-                self.visit(child)
-                self.visit_all_exit(child)
-                children.remove(field)
-                
-        for c in children:
-            child = node['children'][c]
-            self.visit_all_enter(child)
-            self.visit(child)
-            self.visit_all_exit(child)
-
-class ContextVisitor(NodeVisitor):
-
-    class FoundLeafException(Exception):
-        pass
-    
-    def context_at(self, node, pos, tokens):
-        self.context = []
-        self.pos = pos
-        self.tokens = tokens
-        try:
-            self.visit(node)
-        except self.FoundLeafException:
-            pass
-    
-    def visit_all_enter(self, node):
-        """Visit a node."""
-        self.context.append(node)
-  
-        if not node['children']:
-            tok_start = self.tokens[node['start']]['start']
-            tok_stop = self.tokens[node['stop']]['stop']
-            if self.pos >= tok_start and self.pos <= tok_stop:
-                raise self.FoundLeafException
-    
-    def visit_all_exit(self, node):
-        self.context.pop()
+# class ContextVisitor(NodeVisitor):
+# 
+#     class FoundLeafException(Exception):
+#         pass
+#     
+#     def context_at(self, node, pos, tokens):
+#         self.context = []
+#         self.pos = pos
+#         self.tokens = tokens
+#         try:
+#             self.visit(node)
+#         except self.FoundLeafException:
+#             pass
+#     
+#     def visit_all_enter(self, node):
+#         """Visit a node."""
+#         self.context.append(node)
+#   
+#         if not node['children']:
+#             tok_start = self.tokens[node['start']]['start']
+#             tok_stop = self.tokens[node['stop']]['stop']
+#             if self.pos >= tok_start and self.pos <= tok_stop:
+#                 raise self.FoundLeafException
+#     
+#     def visit_all_exit(self, node):
+#         self.context.pop()
         
 
 # class PyInterpretParser(QObject):
@@ -191,7 +142,7 @@ class PyInerpretEditor(PydeEditor):
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
-        self.parser = Parser(self, 'python3')
+#        self.parser = Parser(self, 'python3')
 #         self.ca = PyInterpretContentAssist()
         fontmetrics = QFontMetrics(font)
 
