@@ -188,5 +188,3 @@ class Parser(QObject):
 #             a = self.context.context_at_pos(0)
 #             pass
         
-        
-        

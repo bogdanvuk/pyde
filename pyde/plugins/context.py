@@ -105,19 +105,45 @@ class ContextProvider(QObject):
         
 #         del cur_node[root_path[-1]]
         cur_node[root_path[-1]] = tree
+        tree.parent = cur_node
         
     @pyqtSlot(QWidget)
     def add_view(self, view):
         self.root[view.name] = Context(view.name, self.root)
+
+    def get_active_view_context(self):
+        active_view = self.win.active_view()
+        if not active_view:
+            return None
+        
+        active_view_name = active_view.name
+        
+        if active_view_name not in self.root:
+            return None
+        else:
+            return self.root[active_view_name]
+
+    def cur_context(self):
+        c = self.get_active_view_context()
+        if c is None:
+            return [self.root]
+        else:
+            cv = ContextVisitor()
+            active_view = self.win.active_view()
+            if hasattr(active_view, 'pos'):
+                cv.context_at(c, active_view.pos)
+            
+            print(cv.context)
     
     def context_at_pos(self, pos):
-        cv = ContextVisitor()
-        active_view = self.win.active_view()
-        if active_view:
-            active_view_name = active_view.name
-            if active_view_name in self.root:
-                cv.context_at(self.root[active_view_name], pos)
-                print(cv.context)
+        c = self.get_active_view_context()
+        if c is None:
+            return [self.root]
+        else:
+            cv = ContextVisitor()
+            cv.context_at(c, pos)
+            
+            print(cv.context)
 
     def del_view(self, view):
         pass

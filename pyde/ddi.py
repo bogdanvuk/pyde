@@ -21,20 +21,21 @@ def update_args(func, args, kwargs, update):
 
 class Demander:
     
-    def __init__(self, feature, inst_feature, args, kwargs):
+    def __init__(self, feature, inst_feature, args = (), kwargs = {}, deps={}):
         self.feature = feature
         self.inst_feature = inst_feature
         self.args = args
         self.kwargs = kwargs
+        self.deps = deps
         self.dependencies = {}
         self.dependencies_by_feature = {}
         self.satisfied = WeakValueDictionary()
         self.provider = None
         
         if self.extract_dependencies():
-            for d in self.dependencies:
-                if d in ddic:
-                    self.satisfied_on_feature_provided(d, ddic[d])
+            for name, d in self.dependencies.items():
+                if d.feature in ddic:
+                    self.satisfied_on_feature_provided(d.feature, ddic[d.feature])
                         
     def all_satisfied(self):
         return len(self.satisfied) == len(self.dependencies)
@@ -46,13 +47,21 @@ class Demander:
             return False
         else:
             self.provider = ddic[self.feature]
+
+            self.dependencies = {}            
+            for name, d in self.deps.items():
+                self.dependencies[name] = d
+                self.dependencies_by_feature[d.feature] = d
+            
             _, _, _, _, _, _, annotations = getfullargspec(self.provider)
                 
-            self.dependencies = {}
             for name, a in annotations.items():
                 if isinstance(a, Dependency):
-                    self.dependencies[name] = a
-                    self.dependencies_by_feature[a.feature] = a
+                    if name not in self.dependencies:
+                        self.dependencies[name] = a
+                        self.dependencies_by_feature[a.feature] = a
+                        
+            return True
 
     def satisfied_on_feature_provided(self, feature, provider):
         if self.extract_dependencies():
@@ -78,13 +87,27 @@ sep = '/'
 
 class DependencyScope:
     
-    def __init__(self, name, parent):
+    def __init__(self, name, parent=None):
         self.providers = {}
         self.parent = parent
         self.name = name
 
     def provide(self, feature, provider):
-        self.parent.provide(self.name + sep + feature, provider)
+        if self.parent is not None:
+            self.parent.provide(self.name + sep + feature, provider)
+
+    def create_scope(self, feature):
+        parent_scope_name, scope_base_name = split_feature(feature)
+        scope = DependencyScope(name=feature)
+        self[feature] = scope
+        if parent_scope_name:
+#             self[parent_scope_name][scope_base_name] = scope  
+            scope.parent = self[parent_scope_name]
+        else:
+#             self[scope_base_name] = scope  
+            scope.parent = self
+           
+        return scope
     
 #     def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}):
 #         self.parent.provide(self.name + '.' + self.feature, provider, inst_provider)
@@ -93,7 +116,11 @@ class DependencyScope:
         scope, base = split_feature(feature)
         
         if scope:
-            self[scope][base] = provider
+            try:
+                self[scope][base] = provider
+            except KeyError:
+                self.create_scope(scope)
+                self[scope][base] = provider
         else:
             if base.isnumeric():
                 base = int(base)
@@ -165,8 +192,9 @@ class DependencyContainer(DependencyScope):
         self.allowReplace = allowReplace
 
     def create_scope(self, feature):
-        scope = DependencyScope(name=feature, parent=self)
-        self[feature] = scope
+        scope = super().create_scope(feature)
+#         scope = DependencyScope(name=feature, parent=self)
+#         self[feature] = scope
         self.check_demands(feature, scope)
 
     def inst_demander(self, demander):
@@ -212,13 +240,13 @@ class DependencyContainer(DependencyScope):
         
         return feature_ext
     
-    def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}):
+    def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}):
         assert inst_feature is not None, "Have to provide feature to be instantiated!"
         
         if provider is not None:
             self.provide(feature, provider)
         
-        demander = Demander(feature, inst_feature, list(inst_args), dict(inst_kwargs))
+        demander = Demander(feature, inst_feature, list(inst_args), dict(inst_kwargs), deps)
         self.demanders.append(demander)
         if demander.all_satisfied():
             self.inst_demander(demander)
