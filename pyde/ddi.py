@@ -187,9 +187,12 @@ class DependencyContainer(DependencyScope):
                 dep_provider._dependents[demander_inst_feature] = demander_inst
 
     def check_demands(self, feature, provider):
-        for d in self.demanders:
+        inst_on_demand = set()
+        for d in reversed(self.demanders):
             if d.satisfied_on_feature_provided(feature, provider):
-                self.inst_demander(d)
+                if d.inst_feature not in inst_on_demand:
+                    self.inst_demander(d)
+                    inst_on_demand.add(d.inst_feature)
 
     def provide(self, feature, provider):
         if not self.allowReplace:

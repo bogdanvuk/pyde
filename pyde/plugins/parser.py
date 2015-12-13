@@ -11,68 +11,123 @@ from pyde.plugins.context import Context
 
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
-class NodeVisitor(object):
+# class NodeVisitor(object):
+# 
+#     def visit(self, node):
+#         """Visit a node."""
+#         method = 'visit_' + node['ctype']
+#         visitor = getattr(self, method, self.generic_visit)
+#         self.visit_all_enter(node)
+#         ret = visitor(node)
+#         self.visit_all_exit(node)
+#         return ret
+#     
+#     def visit_all_enter(self, node):
+#         pass
+#     
+#     def visit_all_exit(self, node):
+#         pass
+# 
+#     def generic_visit(self, node):
+#         """Called if no explicit visitor function exists for a node."""
+#         children = list(range(len(node['children'])))
+#         for field in node['_fields']:
+#             if isinstance(field, int):
+#                 child = node['children'][field]
+#                 self.visit(child)
+#                 children.remove(field)
+#             elif isinstance(field, list):
+#                 
+#                 
+#         for c in children:
+#             child = node['children'][c]
+#             self.visit(child)
 
-    def visit(self, node):
-        """Visit a node."""
-        method = 'visit_' + node['ctype']
-        visitor = getattr(self, method, self.generic_visit)
-        return visitor(node)
-    
-    def visit_all_enter(self, node):
-        pass
-    
-    def visit_all_exit(self, node):
-        pass
+class ContextBuilder(object):
 
-    def generic_visit(self, node):
-        """Called if no explicit visitor function exists for a node."""
-        children = list(range(len(node['children'])))
-        for field in node['_fields']:
-            if isinstance(field, int):
-                child = node['children'][field]
-                self.visit_all_enter(child)
-                self.visit(child)
-                self.visit_all_exit(child)
-                children.remove(field)
-                
-        for c in children:
-            child = node['children'][c]
-            self.visit_all_enter(child)
-            self.visit(child)
-            self.visit_all_exit(child)
-
-class ContextBuilder(NodeVisitor):
-
-    def __init__(self, tokens):
+    def __init__(self, tokens, text):
         self.cur_parent = None
         self.tree = None
         self.tokens = tokens
+        self.text = text
+        self.cur_tok_index = -1
 
-    def visit_all_enter(self, node):
-        if self.cur_parent is not None:
-            context = Context(name=node['ctype'], parent=self.cur_parent)
-        else:
-            context = Context(name=node['ctype'])
-            
+    def visit(self, node):
+        context = Context(name=node['type'], parent=self.cur_parent)
+          
         if self.tree is None:
             self.tree = context
             
         self.cur_parent = context
-        context.start_token = self.tokens[node['start']]
-        context.stop_token = self.tokens[node['stop']]
-        context.start = context.start_token['start']
-        context.stop = context.stop_token['stop']
         
-    def visit_all_exit(self, node):
-        self.cur_parent = self.cur_parent.parent
+        if 'children' in node:        
+            children = list(range(len(node['children'])))
+        else:
+            children = []
+        
+        
+        if 'index' in node:
+            if node['index'] >= 0:
+                self.cur_tok_index = node['index']
+                context.start = node['start']
+                context.stop = node['stop']
+            else:
+                if self.cur_tok_index >= 0: 
+                    context.start = self.tokens[self.cur_tok_index]['stop'] + 1
+                else:
+                    context.start = 0
+                    
+                context.stop = self.tokens[self.cur_tok_index + 1]['start']
+
+        else:
+            context.start_token = self.tokens[node['start']]
+            context.stop_token = self.tokens[node['stop']]
+            context.start = context.start_token['start']
+            context.stop = context.stop_token['stop']
+
+        context.text = self.text[context.start:context.stop+1]
+
+        if children:
+            for field_name in node['_fields']:
+                if field_name == 'value':
+                    pass
+                field = node[field_name]
+                if isinstance(field, int):
+                    child = node['children'][field]
+                    context[field_name] = self.visit(child)
+                    children.remove(field)
+                elif isinstance(field, list):
+                    field_val = []
+                    for elem in field:
+                        child = node['children'][elem]
+                        field_val.append(self.visit(child))
+                        
+                    context[field_name] = field_val
+    
+            free_children = []                
+            for c in children:
+                child = node['children'][c]
+                free_children.append(self.visit(child))
+        
+        self.cur_parent = context.parent
             
+        if context.parent:
+            if len(children) == 1:
+                if not node['_fields']:
+                    free_children[0].parent = self.cur_parent
+                    return free_children[0]
+            elif len(children) > 1:
+                if not node['_fields']:
+                    for n in free_children:
+                        context[n.name] = n
+
+        return context
 
 class Parser(QObject):
     
     tree_modified = QtCore.pyqtSignal(list, object) #['QWidget'])
     
-    def __init__(self, mode : Dependency('mode/inst/'), context: Dependency('context')):
+    def __init__(self, mode : Dependency('mode/inst/'), context: Dependency('context'), language):
         super().__init__()
         self.thread = QtCore.QThread()
         self.moveToThread(self.thread)
@@ -86,8 +141,9 @@ class Parser(QObject):
         self.mode = mode
         self.context = context
         self.tree_modified.connect(self.context.update_context)
-        self.language = 'python3'
+        self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
+        self.editor.cursorPositionChanged.connect(self.pos_changed)
         self.dirty = False
     
     def leaf_node_at(self, pos):
@@ -108,19 +164,13 @@ class Parser(QObject):
         if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self.dirty = True
-    
-    def hook(self, d):
-        c = Context()
-        for k,v in d.items():
-            c[k] = v
-            if isinstance(v, Context):
-                v.name = k
-                v.parent = c
 
-        return c
+    def pos_changed(self, line, col):
+        a = self.context.context_at_pos(self.editor.pos)
     
     def parse(self):
-        a = self.context.context_at_pos(0)
+#       
+#         text = "2+3\n"
         if self.dirty:
             text = self.editor.text()
             self.dirty = False
@@ -130,11 +180,13 @@ class Parser(QObject):
             parse_out = json.loads(p.decode())
             tokens = parse_out['tokens']
             dict_tree = parse_out['tree']
-            builder = ContextBuilder(tokens)
+#             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
+            builder = ContextBuilder(tokens, text)
             builder.visit(dict_tree)
             self.tree = builder.tree
             self.tree_modified.emit([self.editor.name], self.tree)
-            pass
+#             a = self.context.context_at_pos(0)
+#             pass
         
         
         

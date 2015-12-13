@@ -42,6 +42,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.IntervalSet;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -264,34 +265,7 @@ public class Main {
 				parser.getInterpreter().setPredictionMode(PredictionMode.LL_EXACT_AMBIG_DETECTION);
 			}
 			
-			if ( printJson ) {
-				this.json = new JSONObject();
-				JSONObject jsTree = new JSONObject();
-				JSONArray jsTokens = new JSONArray();
-	
-				try {
-					json.put("tree", jsTree);
-					json.put("tokens", jsTokens);
-					for (Token tok : tokens.getTokens()) {
-						JSONObject jsTok = new JSONObject();
-						jsTok.put("line", tok.getLine());
-						jsTok.put("start", tok.getStartIndex());
-						jsTok.put("stop", tok.getStopIndex());
-						jsTok.put("channel", tok.getChannel());
-						jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
-						jsTok.put("col", tok.getCharPositionInLine());
-						jsTokens.put(jsTok);
-					}
-	
-				} catch (JSONException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-
-				parser.addParseListener(new AntlrParseListener(parser, jsTree));
-			}
-
-			if ( printTree || gui || psFile!=null ) {
+			if ( printTree || gui || printJson || psFile!=null ) {
 				parser.setBuildParseTree(true);
 			}
 
@@ -305,8 +279,39 @@ public class Main {
 			try {
 				Method startRule = parserClass.getMethod(startRuleName);
 				ParserRuleContext tree = (ParserRuleContext)startRule.invoke(parser, (Object[])null);
+				
+				ParseTreeWalker walker = new ParseTreeWalker(); // create standard walker
 
 				if ( printJson ) {
+					this.json = new JSONObject();
+					JSONObject jsTree = new JSONObject();
+					JSONArray jsTokens = new JSONArray();
+		
+					try {
+						json.put("tree", jsTree);
+						json.put("tokens", jsTokens);
+						for (Token tok : tokens.getTokens()) {
+							JSONObject jsTok = new JSONObject();
+							jsTok.put("line", tok.getLine());
+							jsTok.put("start", tok.getStartIndex());
+							jsTok.put("stop", tok.getStopIndex());
+							jsTok.put("channel", tok.getChannel());
+							jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
+							jsTok.put("col", tok.getCharPositionInLine());
+							jsTokens.put(jsTok);
+						}
+		
+					} catch (JSONException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+	
+	//				parser.addParseListener(new AntlrParseListener(parser, jsTree));
+
+
+					AntlrParseListener listener = new AntlrParseListener(parser, jsTree);
+					walker.walk(listener, tree); // initiate walk of tree with listener
+
 					StringWriter out = new StringWriter();
 					try {
 						json.write(out);

@@ -7,6 +7,7 @@ import java.util.Stack;
 
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -32,17 +33,26 @@ public class AntlrParseListener implements ParseTreeListener {
 //    	System.out.print(" ");
 //    	System.out.println(ctx.toInfoString(parser));
 
-    	if (parser.getRuleNames()[ctx.getRuleIndex()].equals("power")) {
-    		assert true;
-    	}
-    	
+//    	if (parser.getRuleNames()[ctx.getRuleIndex()].equals("expr")) {
+//    		int t =0;
+//    	}
+//		for (JSONArray c : childrenStack) {
+//			System.out.print(c.length());
+////    		if (c.length() == 2) {
+////    			int t=0;
+////    		}
+//		}
+//		System.out.println();
+//		System.out.print("+");
+//		System.out.println(ctx.toInfoString(parser));
+		
     	if (!childrenStack.isEmpty()) {
     		this.jsonStack.push(new JSONObject());
     		childrenStack.peek().put(this.jsonStack.peek());
     	}
     	
     	try {
-			jsonStack.peek().put("ctype", parser.getRuleNames()[ctx.getRuleIndex()]);
+			jsonStack.peek().put("type", parser.getRuleNames()[ctx.getRuleIndex()]);
 	    	childrenStack.push(new JSONArray());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -55,24 +65,64 @@ public class AntlrParseListener implements ParseTreeListener {
 //    	System.out.print("\n");
     }
     
-    public int[] getChildIDFromPointer(ParserRuleContext ctx, Object value) {
+//    public int[] getChildIDFromPointer(ParserRuleContext ctx, Object value) {
+//    	if (value != null) {
+//	   		for (int i = 0; i < ctx.getChildCount(); i++) {
+//				if ( ctx.getChild(i) instanceof TerminalNode ) {
+//					Token symbol = ((TerminalNode) ctx.getChild(i)).getSymbol();
+//					if (value.equals(symbol)) {
+//						return new int[] {1, symbol.getTokenIndex()};
+//					}
+//				} else if (value.equals(ctx.getChild(i))) {
+//					return new int[] {2, i};
+//				}
+//			}
+//    	}
+//  		
+//   		return new int[] {0, 0};
+//    }
+    
+    public int getChildIDFromPointer(RuleContext ctx, Object value) {
     	if (value != null) {
 	   		for (int i = 0; i < ctx.getChildCount(); i++) {
 				if ( ctx.getChild(i) instanceof TerminalNode ) {
 					Token symbol = ((TerminalNode) ctx.getChild(i)).getSymbol();
-					if (value.equals(symbol)) {
-						return new int[] {1, symbol.getTokenIndex()};
+					if (value == symbol) {
+						return i;
 					}
-				} else if (value.equals(ctx.getChild(i))) {
-					return new int[] {2, i};
+				} else if (value == ctx.getChild(i)) {
+					return i;
 				}
 			}
     	}
   		
-   		return new int[] {0, 0};
+   		return -1;
     }
+
     
     public void exitEveryRule(ParserRuleContext ctx) {
+//    	System.out.println(parser.getRuleNames()[ctx.getRuleIndex()]);
+//    	if (parser.getRuleNames()[ctx.getRuleIndex()].equals("file_input"))
+//    	{
+//    		int t=0;
+//    	}
+//		for (JSONArray c : childrenStack) {
+//			System.out.print(c.length());
+////    		if (c.length() == 2) {
+////    			int t=0;
+////    		}
+//		}
+//		System.out.println();
+//		System.out.print("-");
+//		System.out.println(ctx.toInfoString(parser));
+
+    	
+//    	if ((parser.getRuleNames()[ctx.getRuleIndex()].equals("expr"))) {
+//    		if (childrenStack.peek().length() == 2) {
+//    			int t=0;
+//    		}
+//    	}
+
     	try {
     		JSONArray fields = new JSONArray();
 //    		jsonStack.peek().put("_fields", ctx.start.getTokenIndex());
@@ -84,11 +134,9 @@ public class AntlrParseListener implements ParseTreeListener {
 	        			List<Object> list = (List<Object>) field.get(ctx);
 	        			JSONArray field_ids = new JSONArray ();
 	        			for (Object value : list) {
-		        			int[] ret = getChildIDFromPointer(ctx, value);
-		        			if (ret[0] == 1) {
-		        				field_ids.put(String.format("%d", ret[1]));
-		        			} else if (ret[0] == 2) {
-		        				field_ids.put(ret[1]);
+		        			int ret = getChildIDFromPointer(ctx, value);
+		        			if (ret >= 0) {
+		        				field_ids.put(ret);
 		        			}
 	        			}
 
@@ -96,13 +144,15 @@ public class AntlrParseListener implements ParseTreeListener {
 		        		fields.put(field.getName());
 
 	        		} else {
+	        			
 	        			Object value = field.get(ctx);
-	        			int[] ret = getChildIDFromPointer(ctx, value);
-	        			if (ret[0] == 1) {
-	        				jsonStack.peek().put(field.getName(), String.format("%d", ret[1]));
-	        				fields.put(field.getName());
-	        			} else if (ret[0] == 2) {
-	        				jsonStack.peek().put(field.getName(), ret[1]);
+//	        			if ((field.getName().equals("attr")) && (value != null)){
+//	        				int t=0;
+//	        			}
+
+	        			int ret = getChildIDFromPointer(ctx, value);
+	        			if (ret >= 0) {
+	        				jsonStack.peek().put(field.getName(), ret);
 	        				fields.put(field.getName());
 	        			}
 	        		}
@@ -133,6 +183,7 @@ public class AntlrParseListener implements ParseTreeListener {
 			jsonStack.peek().put("start", ctx.start.getTokenIndex());
 	    	jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
 	    	jsonStack.peek().put("grammar", parser.getGrammarFileName());
+//	    	childrenStack.peek().length()
 			jsonStack.pop().put("children", childrenStack.pop());
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
@@ -148,11 +199,28 @@ public class AntlrParseListener implements ParseTreeListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitTerminal(TerminalNode node) { }
+	@Override public void visitTerminal(TerminalNode node) {
+		try {
+			Token tok = node.getSymbol();
+			JSONObject jsTok = new JSONObject();
+			jsTok.put("line", tok.getLine());
+			jsTok.put("start", tok.getStartIndex());
+			jsTok.put("stop", tok.getStopIndex());
+			jsTok.put("channel", tok.getChannel());
+			jsTok.put("index", tok.getTokenIndex());
+			jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
+			jsTok.put("col", tok.getCharPositionInLine());
+	
+			childrenStack.peek().put(jsTok);
+		} catch (JSONException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitErrorNode(ErrorNode node) { }
+	@Override public void visitErrorNode(ErrorNode node) { visitTerminal(node); }
 }

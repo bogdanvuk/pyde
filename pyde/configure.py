@@ -20,7 +20,8 @@ ddic.create_scope('mode/inst')
 ddic.provide_on_demand('mode/python', PythonMode, 'mode/inst/')
 ddic.create_scope('parser')
 ddic.create_scope('parser/inst')
-ddic.provide_on_demand('parser/python', Parser, 'parser/inst/')
+ddic.provide('parser/antlr4_generic', Parser)
+ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'})
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)

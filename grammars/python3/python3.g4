@@ -147,7 +147,7 @@ single_input
 
 /// file_input: (NEWLINE | stmt)* ENDMARKER
 file_input
- : ( NEWLINE | stmt )* EOF
+ : ( NEWLINE | stmts+=stmt )* EOF
  ;
 
 /// eval_input: testlist NEWLINE* ENDMARKER
@@ -462,31 +462,62 @@ lambdef_nocond
  : LAMBDA varargslist? ':' test_nocond
  ;
 
-/// or_test: and_test ('or' and_test)*
+/// /// or_test: and_test ('or' and_test)*
+/// or_test
+///  : and_test ( OR and_test )*
+///  ;
+
+/// /// and_test: not_test ('and' not_test)*
+/// and_test
+///  : not_test ( AND not_test )*
+///  ;
+
+/// /// not_test: 'not' not_test | comparison
+/// not_test
+///  : NOT not_test
+///  | comparison
+///  ;
+
+/// /// comparison: star_expr (comp_op star_expr)*
+/// comparison
+///  : star_expr ( comp_op star_expr )*
+///  ;
+
 or_test
- : and_test ( OR and_test )*
- ;
+      : star_expr
+      | left=or_test op=COMP_OP right=or_test
+      | op=NOT right=or_test
+      | left=or_test op=(AND | OR) right=or_test
+      ;
 
-/// and_test: not_test ('and' not_test)*
-and_test
- : not_test ( AND not_test )*
- ;
+star_expr
+      : expr
+      | '*' star_expr
+      ;
 
-/// not_test: 'not' not_test | comparison
-not_test
- : NOT not_test
- | comparison
- ;
+expr
+      : value=atom
+      | calee=expr '(' a=arglist? ')'
+      | calee=expr '[' s=subscriptlist ']'
+      | calee=expr op='.' attr=NAME
+      | left=expr op='**' right=expr
+      | op=('+' | '-' | '~') e=expr
+      | left=expr op=('*' | '/' | '%' | '//' | '@') right=expr
+      | left=expr op=('+' | '-') right=expr
+      | left=expr op=('<<' | '>>') right=expr
+      | left=expr op=('|' | '^' | '&') right=expr
+      ;
 
-/// comparison: star_expr (comp_op star_expr)*
-comparison
- : star_expr ( comp_op star_expr )*
- ;
+/// power: atom trailer* ['**' factor]
+/// power
+///  : atom_group ( '**' factor )?
+///  ;
+
 
 /// # <> isn't actually a valid comparison operator in Python. It's here for the
 /// # sake of a __future__ import described in PEP 401
 /// comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
-comp_op
+COMP_OP
  : '<'
  | '>'
  | '=='
@@ -501,17 +532,17 @@ comp_op
  ;
 
 /// star_expr: ['*'] expr
-star_expr
- : '*'? expr
- ;
+/// star_expr
+///  : '*'? expr
+///  ;
 
 /// expr: xor_expr ('|' xor_expr)*
-expr :
-       expr '|' expr
-     | expr '^' expr
-     | and_expr
-/// : xor_expr ( '|' xor_expr )*
- ;
+/// expr :
+///        expr '|' expr
+///      | expr '^' expr
+///      | and_expr
+/// /// : xor_expr ( '|' xor_expr )*
+///  ;
 
 /// xor_expr: and_expr ('^' and_expr)*
 ///xor_expr
@@ -519,49 +550,49 @@ expr :
 /// ;
 
 /// and_expr: shift_expr ('&' shift_expr)*
-and_expr
- : shift_expr ( '&' shift_expr )*
- ;
+/// and_expr
+///  : shift_expr ( '&' shift_expr )*
+///  ;
 
-/// shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-shift_expr
- : arith_expr ( '<<' arith_expr
-              | '>>' arith_expr
-              )*
- ;
+/// /// shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+/// shift_expr
+///  : arith_expr ( '<<' arith_expr
+///               | '>>' arith_expr
+///               )*
+///  ;
 
-/// arith_expr: term (('+'|'-') term)*
-arith_expr
- : term ( '+' term
-        | '-' term
-        )*
- ;
+/// /// arith_expr: term (('+'|'-') term)*
+/// arith_expr
+///  : term ( '+' term
+///         | '-' term
+///         )*
+///  ;
 
-/// term: factor (('*'|'/'|'%'|'//') factor)*
-term
- : factor ( '*' factor
-          | '/' factor
-          | '%' factor
-          | '//' factor
-          | '@' factor // PEP 465
-          )*
- ;
+/// /// term: factor (('*'|'/'|'%'|'//') factor)*
+/// term
+///  : factor ( '*' factor
+///           | '/' factor
+///           | '%' factor
+///           | '//' factor
+///           | '@' factor // PEP 465
+///           )*
+///  ;
 
-/// factor: ('+'|'-'|'~') factor | power
-factor
- : '+' factor
- | '-' factor
- | '~' factor
- | power
- ;
+/// /// factor: ('+'|'-'|'~') factor | power
+/// factor
+///  : '+' factor
+///  | '-' factor
+///  | '~' factor
+///  | power
+///  ;
 
-/// power: atom trailer* ['**' factor]
-power
- : atom_group ( '**' factor )?
- ;
+/// /// power: atom trailer* ['**' factor]
+/// power
+///  : atom_group ( '**' factor )?
+///  ;
 
-atom_group
- : head=atom tail+=trailer*;
+/// atom_group
+///  : head=atom tail+=trailer*;
 
 /// atom: ('(' [yield_expr|testlist_comp] ')' |
 ///        '[' [testlist_comp] ']' |
@@ -588,11 +619,11 @@ testlist_comp
  ;
 
 /// trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-trailer
- : '(' arglist? ')'
- | '[' subscriptlist ']'
- | '.' attr=NAME
- ;
+/// trailer
+///  : '(' arglist? ')'
+///  | '[' subscriptlist ']'
+///  | '.' attr=NAME
+///  ;
 
 /// subscriptlist: subscript (',' subscript)* [',']
 subscriptlist
