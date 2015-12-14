@@ -1,17 +1,18 @@
-from pyde.application import app
 from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
 from difflib import SequenceMatcher
+from pyde.ddi import Dependency
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)
         
-    def __init__(self):
+    def __init__(self, win : Dependency('win')):
         super().__init__()
         self.active_editor = None
         self.active_dict = None
         self.ca_start = 0
         self.active = False
+        self.win = win
 #         app.view_added.connect(self.new_view)
     
 #     @pyqtSlot(QWidget)
@@ -68,7 +69,7 @@ class ContentAssist(QObject):
 
     def activate(self):
         print('activated')
-        self.active_editor = app.active_widget()
+        self.active_editor = self.win.active_view()
         self.active_editor.SCN_AUTOCSELECTION.connect(self.close_selected)
         self.active_editor.SCN_AUTOCCANCELLED.connect(self.close_canceled)
         self.active_editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
@@ -80,7 +81,9 @@ class ContentAssist(QObject):
         self.active_dict = {}
 
         self.complete.emit(self.active_dict)
-        self.show()
+        
+        if self.active_dict:
+            self.show()
 
     def close_char_deleted(self):
         self.show()
@@ -124,4 +127,4 @@ class ContentAssist(QObject):
             self.active_editor.insert(str(selected_obj))
             self.active_editor.pos += len(str(selected_obj))
     
-app.register_global("content_assist", ContentAssist())
+# app.register_global("content_assist", ContentAssist())

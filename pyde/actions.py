@@ -26,28 +26,28 @@ def backward_char(view=None):
 #     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEUP)
 # 
 #    
-# def content_assist():
-#     editor = app.active_widget()
-# #     selected_text = editor.selectedText()
-#     if app.globals.content_assist.active:
-#         app.globals.content_assist.fill_query()
-#     elif editor.hasSelectedText():
-#         editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
-#         return app.globals.content_assist.activate()
-#     else:
-#         text = editor.text()
-#         if text:
-#             last_char = text[editor.pos-1] 
-#             if last_char not in string.whitespace:
-#                 return app.globals.content_assist.activate()
-#         else:
-#             return app.globals.content_assist.activate()
-# 
-# #    raise KeyPressNotConsumed
-# #     app.active_widget().content_assist()
+def content_assist():
+    editor = ddic['win'].active_view()
+#     selected_text = editor.selectedText()
+    if ddic['content_assist'].active:
+        ddic['content_assist'].fill_query()
+    elif editor.hasSelectedText():
+        editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
+        return ddic['content_assist'].activate()
+    else:
+        text = editor.text()
+        if text:
+            last_char = text[editor.pos-1] 
+            if last_char not in string.whitespace:
+                return ddic['content_assist'].activate()
+        else:
+            return ddic['content_assist'].activate()
+ 
+#    raise KeyPressNotConsumed
+#     app.active_widget().content_assist()
 #     
-# def evaluate():
-#     app.active_widget().evaluate()
+def evaluate():
+    ddic['win'].active_view().evaluate()
 # 
 # class Path(object):
 #     def __init__(self, path=None):

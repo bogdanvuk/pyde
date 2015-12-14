@@ -72,14 +72,22 @@ class ContextVisitor(NodeVisitor):
             self.visit(node)
         except self.FoundLeafException:
             pass
-     
-    def visit_all_enter(self, node):
-        """Visit a node."""
-        self.context.append(node)
-   
-        if not node.children:
-            if self.pos >= node.start and self.pos <= node.stop:
+    
+    def visit(self, node):
+        if self.pos >= node.start and self.pos <= node.stop:
+            self.context.append(node)
+            if not node.children:
                 raise self.FoundLeafException
+            else:
+                super().visit(node)
+    
+#     def visit_all_enter(self, node):
+#         """Visit a node."""
+#         self.context.append(node)
+#    
+#         if not node.children:
+#             if self.pos >= node.start and self.pos <= node.stop:
+#                 raise self.FoundLeafException
      
     def visit_all_exit(self, node):
         self.context.pop()
@@ -107,9 +115,9 @@ class ContextProvider(QObject):
         cur_node[root_path[-1]] = tree
         tree.parent = cur_node
         
-    @pyqtSlot(QWidget)
-    def add_view(self, view):
-        self.root[view.name] = Context(view.name, self.root)
+#     @pyqtSlot(QWidget)
+#     def add_view(self, view):
+#         self.root[view.name] = Context(view.name, self.root)
 
     def get_active_view_context(self):
         active_view = self.win.active_view()
@@ -133,7 +141,8 @@ class ContextProvider(QObject):
             if hasattr(active_view, 'pos'):
                 cv.context_at(c, active_view.pos)
             
-            print(cv.context)
+            return cv.context
+#             print(cv.context)
     
     def context_at_pos(self, pos):
         c = self.get_active_view_context()
@@ -142,8 +151,8 @@ class ContextProvider(QObject):
         else:
             cv = ContextVisitor()
             cv.context_at(c, pos)
-            
-            print(cv.context)
+            return cv.context
+#             print(cv.context)
 
     def del_view(self, view):
         pass

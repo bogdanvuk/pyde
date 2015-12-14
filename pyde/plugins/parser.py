@@ -43,49 +43,78 @@ os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 #             child = node['children'][c]
 #             self.visit(child)
 
+class RuleContext(Context):
+        
+    def get_child_feature(self, child):
+        for c in self.children:
+            if isinstance(c, list):
+                for cl in c:
+                    if cl == child:
+                        return cl
+            else:
+                if self.children[c] == child:
+                    return c
+        return None
+    
+    @property
+    def start(self):
+        first_child_name = next(iter(self.children))
+        value = self.children[first_child_name]
+        if isinstance(value, list):
+            value = value[0]
+        
+        return value.start
+
+    @property
+    def stop(self):
+        last_child_name = next(reversed(self.children))
+        value = self.children[last_child_name]
+        if isinstance(value, list):
+            value = value[-1]
+
+        return value.stop
+
 class ContextBuilder(object):
 
-    def __init__(self, tokens, text):
+    def __init__(self, tokens, text, active_range):
         self.cur_parent = None
         self.tree = None
         self.tokens = tokens
         self.text = text
         self.cur_tok_index = -1
+        self.active_range = active_range
 
     def visit(self, node):
-        context = Context(name=node['type'], parent=self.cur_parent)
-          
-        if self.tree is None:
-            self.tree = context
-            
-        self.cur_parent = context
-        
-        if 'children' in node:        
-            children = list(range(len(node['children'])))
-        else:
-            children = []
-        
-        
-        if 'index' in node:
-            if node['index'] >= 0:
-                self.cur_tok_index = node['index']
-                context.start = node['start']
-                context.stop = node['stop']
+        if node['type'] == 'tokref':
+            index = node['index']
+            if index >= 0:
+                self.cur_tok_index = index
+                self.tokens[index].parent = self.cur_parent
+                return self.tokens[index]
             else:
+                context = Context(name=node['toktype'], parent=self.cur_parent)
                 if self.cur_tok_index >= 0: 
-                    context.start = self.tokens[self.cur_tok_index]['stop'] + 1
+                    context.start = self.tokens[self.cur_tok_index].stop + 1 + self.active_range[0]
                 else:
-                    context.start = 0
+                    context.start = self.active_range[0]
                     
-                context.stop = self.tokens[self.cur_tok_index + 1]['start']
-
+                context.stop = self.tokens[self.cur_tok_index + 1].start + self.active_range[0]
+                return context
         else:
-            context.start_token = self.tokens[node['start']]
-            context.stop_token = self.tokens[node['stop']]
-            context.start = context.start_token['start']
-            context.stop = context.stop_token['stop']
-
-        context.text = self.text[context.start:context.stop+1]
+#         context = Context(name=node['type'], parent=self.cur_parent)
+            context = RuleContext(name=node['type'], parent=self.cur_parent)
+              
+            if self.tree is None:
+                self.tree = context
+                
+            self.cur_parent = context
+            
+            if 'children' in node:        
+                children = list(range(len(node['children'])))
+            else:
+                children = []
+        
+#         context.text = self.text[context.start:context.stop+1]
 
         if children:
             for field_name in node['_fields']:
@@ -123,6 +152,16 @@ class ContextBuilder(object):
 
         return context
 
+def create_token_contexts(token_json, active_range=(0,0)):
+    tokens = []
+    for t in token_json:
+        tc = Context(name=t['type'])
+        tc.start = t['start'] + active_range[0]
+        tc.stop = t['stop'] + active_range[0]
+        tokens.append(tc)
+
+    return tokens
+
 class Parser(QObject):
     
     tree_modified = QtCore.pyqtSignal(list, object) #['QWidget'])
@@ -143,7 +182,7 @@ class Parser(QObject):
         self.tree_modified.connect(self.context.update_context)
         self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
-        self.editor.cursorPositionChanged.connect(self.pos_changed)
+#         self.editor.cursorPositionChanged.connect(self.pos_changed)
         self.dirty = False
     
     def leaf_node_at(self, pos):
@@ -165,23 +204,23 @@ class Parser(QObject):
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self.dirty = True
 
-    def pos_changed(self, line, col):
-        a = self.context.context_at_pos(self.editor.pos)
+#     def pos_changed(self, line, col):
+#         a = self.context.context_at_pos(self.editor.pos)
     
     def parse(self):
 #       
 #         text = "2+3\n"
         if self.dirty:
-            text = self.editor.text()
+            text = self.editor.active_text()
             self.dirty = False
             p = subprocess.Popen(['java', 'pyinterface.Main', 
                                   self.language + '.' + self.language, 
                                   'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
             parse_out = json.loads(p.decode())
-            tokens = parse_out['tokens']
+            tokens = create_token_contexts(parse_out['tokens'], self.editor.active_range())
             dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
-            builder = ContextBuilder(tokens, text)
+            builder = ContextBuilder(tokens, text, self.editor.active_range())
             builder.visit(dict_tree)
             self.tree = builder.tree
             self.tree_modified.emit([self.editor.name], self.tree)

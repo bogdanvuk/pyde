@@ -13,6 +13,7 @@ from PyQt4 import Qsci
 from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
 from pyde.plugins.parser import Parser
+from pyde.ddi import ddic
 
 # class ContextVisitor(NodeVisitor):
 # 
@@ -170,6 +171,8 @@ class PyInerpretEditor(PydeEditor):
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
         
+        self.globals = {}
+        self.globals['ddic'] = ddic
         self.locals = {}
         self.prompt_begin = 0
         
@@ -177,18 +180,8 @@ class PyInerpretEditor(PydeEditor):
         lexer.setDefaultFont(font)
         
         self.setLexer(lexer)
-        self.content_assist_list = Qsci.QsciAPIs(self.lexer())
 
-    def cur_context(self):
-        lineno, col = self.getCursorPosition()
-        active_range_start_line, _ = self.lineIndexFromPosition(self.prompt_begin)
-        self.parser.parse(self.active_text())
-        cv = ContextVisitor()
-        cv.context_at(self.parser.tree['tree'], self.pos - self.prompt_begin - 1, self.parser.tree['tokens'])
-#         return self.parser.context_at_pos(lineno - active_range_start_line + 1, col - 1)
-        return cv.context
-
-    def text(self):
+    def active_text(self):
         start, stop = self.active_range()
         return super().text()[start:stop]
     
@@ -196,36 +189,36 @@ class PyInerpretEditor(PydeEditor):
         return (self.prompt_begin, self.length())
 
     def evaluate(self):
-        if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
-            self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
-        else:
-            cmd = self.active_text()
-            
+#         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
+#             self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
+#         else:
+        cmd = self.text()
+        
 #             buffer = StringIO()
 #             sys.stdout = buffer
-            
-            self.pos = self.length()
-            
-            try:
+        
+        self.pos = self.length()
+        
+        try:
+             
+            ret = eval(cmd, self.globals, self.locals)
+            if ret is not None:
+                ret_str = '\n' + str(ret) + '\n'
+            else:
+                ret_str = '\n'
                  
-                ret = eval(cmd, self.globals, self.locals)
-                if ret is not None:
-                    ret_str = '\n' + str(ret) + '\n'
-                else:
-                    ret_str = '\n'
-                     
 #                 stdout_text = buffer.getvalue()
 #                 if stdout_text:
 #                     ret_str += stdout_text
-                 
-                self.insert(ret_str)
-            except SyntaxError:
-                exec(cmd, self.globals, self.locals)
-                self.insert('\n')
-            except:
-                self.insert('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
-            
+             
+            self.insert(ret_str)
+        except SyntaxError:
+            exec(cmd, self.globals, self.locals)
+            self.insert('\n')
+        except:
+            self.insert('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
+        
 #             sys.stdout = sys.__stdout__
 #             self.setCursorPosition(self.lines(), 0)
-            self.pos = self.length()
-            self.prompt_begin = self.length()
+        self.pos = self.length()
+        self.prompt_begin = self.length()

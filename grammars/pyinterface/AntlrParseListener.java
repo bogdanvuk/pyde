@@ -203,13 +203,15 @@ public class AntlrParseListener implements ParseTreeListener {
 		try {
 			Token tok = node.getSymbol();
 			JSONObject jsTok = new JSONObject();
-			jsTok.put("line", tok.getLine());
-			jsTok.put("start", tok.getStartIndex());
-			jsTok.put("stop", tok.getStopIndex());
-			jsTok.put("channel", tok.getChannel());
+//			jsTok.put("line", tok.getLine());
+//			jsTok.put("start", tok.getStartIndex());
+//			jsTok.put("stop", tok.getStopIndex());
+//			jsTok.put("channel", tok.getChannel());
 			jsTok.put("index", tok.getTokenIndex());
-			jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
-			jsTok.put("col", tok.getCharPositionInLine());
+			jsTok.put("type", "tokref");
+			jsTok.put("toktype", parser.getVocabulary().getSymbolicName(tok.getType()));
+//			jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
+//			jsTok.put("col", tok.getCharPositionInLine());
 	
 			childrenStack.peek().put(jsTok);
 		} catch (JSONException e1) {
