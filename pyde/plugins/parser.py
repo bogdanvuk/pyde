@@ -61,7 +61,10 @@ class RuleContext(Context):
         first_child_name = next(iter(self.children))
         value = self.children[first_child_name]
         if isinstance(value, list):
-            value = value[0]
+            if value:
+                value = value[0]
+            else:
+                return 0
         
         return value.start
 
@@ -70,7 +73,10 @@ class RuleContext(Context):
         last_child_name = next(reversed(self.children))
         value = self.children[last_child_name]
         if isinstance(value, list):
-            value = value[-1]
+            if value:
+                value = value[-1]
+            else:
+                return 0
 
         return value.stop
 
@@ -92,7 +98,8 @@ class ContextBuilder(object):
                 self.tokens[index].parent = self.cur_parent
                 return self.tokens[index]
             else:
-                context = Context(name=node['toktype'], parent=self.cur_parent)
+                context = Context(self.cur_parent)
+                context.name = node['toktype']
                 if self.cur_tok_index >= 0: 
                     context.start = self.tokens[self.cur_tok_index].stop + 1 + self.active_range[0]
                 else:
@@ -102,7 +109,8 @@ class ContextBuilder(object):
                 return context
         else:
 #         context = Context(name=node['type'], parent=self.cur_parent)
-            context = RuleContext(name=node['type'], parent=self.cur_parent)
+            context = RuleContext(parent=self.cur_parent)
+            context.name = node['type'] 
               
             if self.tree is None:
                 self.tree = context
@@ -155,7 +163,8 @@ class ContextBuilder(object):
 def create_token_contexts(token_json, active_range=(0,0)):
     tokens = []
     for t in token_json:
-        tc = Context(name=t['type'])
+        tc = Context()
+        tc.name = t['type']
         tc.start = t['start'] + active_range[0]
         tc.stop = t['stop'] + active_range[0]
         tokens.append(tc)
@@ -223,7 +232,7 @@ class Parser(QObject):
             builder = ContextBuilder(tokens, text, self.editor.active_range())
             builder.visit(dict_tree)
             self.tree = builder.tree
-            self.tree_modified.emit([self.editor.name], self.tree)
+            self.tree_modified.emit([self.editor.name, 'ast'], self.tree)
 #             a = self.context.context_at_pos(0)
 #             pass
         

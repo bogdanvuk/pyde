@@ -2,14 +2,18 @@
 import sys
 from pyde.ddi import ddic
 from PyQt4 import QtGui
+import ast
+from pyde.plugins.context import URI
 # from pyde.application import app
 # from pyde.main_win import MainWindow
 # from PyQt4.QtCore import QObject
-# import json
+# import json    
 # import os
 # from inspect import signature
 
 if __name__ == "__main__":
+#     t = ast.parse('f(a,b,c,d)')
+    
     app = QtGui.QApplication(sys.argv)
     import pyde.configure
     

@@ -12,12 +12,14 @@ from pyde import actions
 from PyQt4.QtCore import Qt
 from pyde.plugins.content_assist import ContentAssist
 from pyde.plugins.ca_interpreter import PyInterpretContentAssist
+from pyde.plugins.keydispatcher import KeyDispatcher
 
 ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
 ddic.provide('cls/python', PythonEdit)
 ddic.provide('cls/ipython', PyInerpretEditor)
 ddic.provide_on_demand('cls/context', ContextProvider, 'context')
+ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
 
 ddic.provide_on_demand('mode/python/cls', PythonMode, 'mode/python/inst/')
 ddic.provide('parser/antlr4_generic', Parser)
@@ -30,24 +32,20 @@ ddic.provide('keyactions/cls', KeyAction)
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/forward_char', 
                        inst_kwargs={'action': actions.forward_char, 
                                     'key': Qt.Key_L, 
-                                    'modifier': Qt.AltModifier}, 
-                       deps={'view':Dependency('view/')})
+                                    'modifier': Qt.AltModifier})
 
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/backward_char', 
                        inst_kwargs={'action': actions.backward_char, 
                                     'key': Qt.Key_J, 
-                                    'modifier': Qt.AltModifier}, 
-                       deps={'view':Dependency('view/')})
+                                    'modifier': Qt.AltModifier})
 
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/content_assist', 
                        inst_kwargs={'action': actions.content_assist, 
-                                    'key': Qt.Key_Tab}, 
-                       deps={'view':Dependency('view/')})
+                                    'key': Qt.Key_Tab})
 
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/evaluate', 
                        inst_kwargs={'action': actions.evaluate, 
-                                    'key': Qt.Key_Return}, 
-                       deps={'view':Dependency('view/')})
+                                    'key': Qt.Key_Return})
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)
