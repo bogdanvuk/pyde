@@ -24,16 +24,18 @@ class KeyDispatcher(QObject):
         self.actions.append(action)
     
     def eventFilter(self, source, event):
-        resp = False
+#         resp = False
         if (event.type() == QtCore.QEvent.KeyPress):
+#             if event.key() == QtCore.Qt.Key_Tab:
+#                 pass
             for a in self.actions:
                 ret = a.event(source, event)
                 if ret:
-                    resp = True
+                    return True
         
-        if resp:
-            return True
-        else:
-            return QtGui.QWidget.eventFilter(self, source, event)
+#         if resp:
+#             return True
+#         else:
+        return QtGui.QWidget.eventFilter(self, source, event)
 
     

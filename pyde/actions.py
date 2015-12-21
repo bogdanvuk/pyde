@@ -33,15 +33,22 @@ def content_assist():
         ddic['content_assist'].fill_query()
     elif editor.hasSelectedText():
         editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
-        return ddic['content_assist'].activate()
+        ddic['content_assist'].activate()
     else:
         text = editor.text()
         if text:
             last_char = text[editor.pos-1] 
             if last_char not in string.whitespace:
-                return ddic['content_assist'].activate()
+                ddic['content_assist'].activate()
         else:
-            return ddic['content_assist'].activate()
+            ddic['content_assist'].activate()
+
+    return True
+
+# def select_content_assist():
+#     if ddic['content_assist'].active:
+#         ddic['content_assist'].fill_query()
+    
  
 #    raise KeyPressNotConsumed
 #     app.active_widget().content_assist()

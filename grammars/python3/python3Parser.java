@@ -254,7 +254,7 @@ public class python3Parser extends Parser {
 
 	public static class File_inputContext extends ParserRuleContext {
 		public StmtContext stmt;
-		public List<StmtContext> stmts = new ArrayList<StmtContext>();
+		public List<StmtContext> stmts_ = new ArrayList<StmtContext>();
 		public TerminalNode EOF() { return getToken(python3Parser.EOF, 0); }
 		public List<TerminalNode> NEWLINE() { return getTokens(python3Parser.NEWLINE); }
 		public TerminalNode NEWLINE(int i) {
@@ -345,7 +345,7 @@ public class python3Parser extends Parser {
 					{
 					setState(152);
 					((File_inputContext)_localctx).stmt = stmt();
-					((File_inputContext)_localctx).stmts.add(((File_inputContext)_localctx).stmt);
+					((File_inputContext)_localctx).stmts_.add(((File_inputContext)_localctx).stmt);
 					}
 					break;
 				default:
@@ -1411,13 +1411,15 @@ public class python3Parser extends Parser {
 	}
 
 	public static class Simple_stmtContext extends ParserRuleContext {
+		public Small_stmtContext small_stmt;
+		public List<Small_stmtContext> stmt_ = new ArrayList<Small_stmtContext>();
+		public TerminalNode NEWLINE() { return getToken(python3Parser.NEWLINE, 0); }
 		public List<Small_stmtContext> small_stmt() {
 			return getRuleContexts(Small_stmtContext.class);
 		}
 		public Small_stmtContext small_stmt(int i) {
 			return getRuleContext(Small_stmtContext.class,i);
 		}
-		public TerminalNode NEWLINE() { return getToken(python3Parser.NEWLINE, 0); }
 		public Simple_stmtContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1441,7 +1443,8 @@ public class python3Parser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(351);
-			small_stmt();
+			((Simple_stmtContext)_localctx).small_stmt = small_stmt();
+			((Simple_stmtContext)_localctx).stmt_.add(((Simple_stmtContext)_localctx).small_stmt);
 			setState(356);
 			_errHandler.sync(this);
 			_alt = getInterpreter().adaptivePredict(_input,40,_ctx);
@@ -1452,7 +1455,8 @@ public class python3Parser extends Parser {
 					setState(352);
 					match(SEMI_COLON);
 					setState(353);
-					small_stmt();
+					((Simple_stmtContext)_localctx).small_stmt = small_stmt();
+					((Simple_stmtContext)_localctx).stmt_.add(((Simple_stmtContext)_localctx).small_stmt);
 					}
 					} 
 				}
@@ -4066,9 +4070,9 @@ public class python3Parser extends Parser {
 	}
 
 	public static class Or_testContext extends ParserRuleContext {
-		public Or_testContext left;
-		public Token op;
-		public Or_testContext right;
+		public Or_testContext left_;
+		public Token op_;
+		public Or_testContext right_;
 		public TerminalNode NOT() { return getToken(python3Parser.NOT, 0); }
 		public List<Or_testContext> or_test() {
 			return getRuleContexts(Or_testContext.class);
@@ -4117,9 +4121,9 @@ public class python3Parser extends Parser {
 			case NOT:
 				{
 				setState(669);
-				((Or_testContext)_localctx).op = match(NOT);
+				((Or_testContext)_localctx).op_ = match(NOT);
 				setState(670);
-				((Or_testContext)_localctx).right = or_test(2);
+				((Or_testContext)_localctx).right_ = or_test(2);
 				}
 				break;
 			case NONE:
@@ -4164,35 +4168,35 @@ public class python3Parser extends Parser {
 					case 1:
 						{
 						_localctx = new Or_testContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_or_test);
 						setState(674);
 						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
 						setState(675);
-						((Or_testContext)_localctx).op = match(COMP_OP);
+						((Or_testContext)_localctx).op_ = match(COMP_OP);
 						setState(676);
-						((Or_testContext)_localctx).right = or_test(4);
+						((Or_testContext)_localctx).right_ = or_test(4);
 						}
 						break;
 					case 2:
 						{
 						_localctx = new Or_testContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_or_test);
 						setState(677);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
 						setState(678);
-						((Or_testContext)_localctx).op = _input.LT(1);
+						((Or_testContext)_localctx).op_ = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==OR || _la==AND) ) {
-							((Or_testContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+							((Or_testContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 						} else {
 							consume();
 						}
 						setState(679);
-						((Or_testContext)_localctx).right = or_test(2);
+						((Or_testContext)_localctx).right_ = or_test(2);
 						}
 						break;
 					}
@@ -4292,15 +4296,15 @@ public class python3Parser extends Parser {
 	}
 
 	public static class ExprContext extends ParserRuleContext {
-		public ExprContext calee;
-		public ExprContext left;
-		public Token op;
-		public ExprContext e;
-		public AtomContext value;
-		public ExprContext right;
-		public ArglistContext a;
-		public SubscriptlistContext s;
-		public Token attr;
+		public ExprContext calee_;
+		public ExprContext left_;
+		public Token op_;
+		public ExprContext e_;
+		public AtomContext value_;
+		public ExprContext right_;
+		public ArglistContext a_;
+		public SubscriptlistContext s_;
+		public Token attr_;
 		public List<ExprContext> expr() {
 			return getRuleContexts(ExprContext.class);
 		}
@@ -4354,15 +4358,15 @@ public class python3Parser extends Parser {
 			case NOT_OP:
 				{
 				setState(691);
-				((ExprContext)_localctx).op = _input.LT(1);
+				((ExprContext)_localctx).op_ = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(((((_la - 62)) & ~0x3f) == 0 && ((1L << (_la - 62)) & ((1L << (ADD - 62)) | (1L << (MINUS - 62)) | (1L << (NOT_OP - 62)))) != 0)) ) {
-					((ExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+					((ExprContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 				} else {
 					consume();
 				}
 				setState(692);
-				((ExprContext)_localctx).e = expr(5);
+				((ExprContext)_localctx).e_ = expr(5);
 				}
 				break;
 			case NONE:
@@ -4383,7 +4387,7 @@ public class python3Parser extends Parser {
 			case OPEN_BRACE:
 				{
 				setState(693);
-				((ExprContext)_localctx).value = atom();
+				((ExprContext)_localctx).value_ = atom();
 				}
 				break;
 			default:
@@ -4403,102 +4407,102 @@ public class python3Parser extends Parser {
 					case 1:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(696);
 						if (!(precpred(_ctx, 6))) throw new FailedPredicateException(this, "precpred(_ctx, 6)");
 						setState(697);
-						((ExprContext)_localctx).op = match(POWER);
+						((ExprContext)_localctx).op_ = match(POWER);
 						setState(698);
-						((ExprContext)_localctx).right = expr(7);
+						((ExprContext)_localctx).right_ = expr(7);
 						}
 						break;
 					case 2:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(699);
 						if (!(precpred(_ctx, 4))) throw new FailedPredicateException(this, "precpred(_ctx, 4)");
 						setState(700);
-						((ExprContext)_localctx).op = _input.LT(1);
+						((ExprContext)_localctx).op_ = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(((((_la - 47)) & ~0x3f) == 0 && ((1L << (_la - 47)) & ((1L << (STAR - 47)) | (1L << (DIV - 47)) | (1L << (MOD - 47)) | (1L << (IDIV - 47)) | (1L << (AT - 47)))) != 0)) ) {
-							((ExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+							((ExprContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 						} else {
 							consume();
 						}
 						setState(701);
-						((ExprContext)_localctx).right = expr(5);
+						((ExprContext)_localctx).right_ = expr(5);
 						}
 						break;
 					case 3:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(702);
 						if (!(precpred(_ctx, 3))) throw new FailedPredicateException(this, "precpred(_ctx, 3)");
 						setState(703);
-						((ExprContext)_localctx).op = _input.LT(1);
+						((ExprContext)_localctx).op_ = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==ADD || _la==MINUS) ) {
-							((ExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+							((ExprContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 						} else {
 							consume();
 						}
 						setState(704);
-						((ExprContext)_localctx).right = expr(4);
+						((ExprContext)_localctx).right_ = expr(4);
 						}
 						break;
 					case 4:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(705);
 						if (!(precpred(_ctx, 2))) throw new FailedPredicateException(this, "precpred(_ctx, 2)");
 						setState(706);
-						((ExprContext)_localctx).op = _input.LT(1);
+						((ExprContext)_localctx).op_ = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !(_la==LEFT_SHIFT || _la==RIGHT_SHIFT) ) {
-							((ExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+							((ExprContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 						} else {
 							consume();
 						}
 						setState(707);
-						((ExprContext)_localctx).right = expr(3);
+						((ExprContext)_localctx).right_ = expr(3);
 						}
 						break;
 					case 5:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.left = _prevctx;
-						_localctx.left = _prevctx;
+						_localctx.left_ = _prevctx;
+						_localctx.left_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(708);
 						if (!(precpred(_ctx, 1))) throw new FailedPredicateException(this, "precpred(_ctx, 1)");
 						setState(709);
-						((ExprContext)_localctx).op = _input.LT(1);
+						((ExprContext)_localctx).op_ = _input.LT(1);
 						_la = _input.LA(1);
 						if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << OR_OP) | (1L << XOR) | (1L << AND_OP))) != 0)) ) {
-							((ExprContext)_localctx).op = (Token)_errHandler.recoverInline(this);
+							((ExprContext)_localctx).op_ = (Token)_errHandler.recoverInline(this);
 						} else {
 							consume();
 						}
 						setState(710);
-						((ExprContext)_localctx).right = expr(2);
+						((ExprContext)_localctx).right_ = expr(2);
 						}
 						break;
 					case 6:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.calee = _prevctx;
-						_localctx.calee = _prevctx;
+						_localctx.calee_ = _prevctx;
+						_localctx.calee_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(711);
 						if (!(precpred(_ctx, 9))) throw new FailedPredicateException(this, "precpred(_ctx, 9)");
@@ -4509,7 +4513,7 @@ public class python3Parser extends Parser {
 						if (((((_la - 21)) & ~0x3f) == 0 && ((1L << (_la - 21)) & ((1L << (LAMBDA - 21)) | (1L << (NOT - 21)) | (1L << (NONE - 21)) | (1L << (TRUE - 21)) | (1L << (FALSE - 21)) | (1L << (NAME - 21)) | (1L << (STRING_LITERAL - 21)) | (1L << (BYTES_LITERAL - 21)) | (1L << (DECIMAL_INTEGER - 21)) | (1L << (OCT_INTEGER - 21)) | (1L << (HEX_INTEGER - 21)) | (1L << (BIN_INTEGER - 21)) | (1L << (FLOAT_NUMBER - 21)) | (1L << (IMAG_NUMBER - 21)) | (1L << (ELLIPSIS - 21)) | (1L << (STAR - 21)) | (1L << (OPEN_PAREN - 21)) | (1L << (POWER - 21)) | (1L << (OPEN_BRACK - 21)) | (1L << (ADD - 21)) | (1L << (MINUS - 21)) | (1L << (NOT_OP - 21)) | (1L << (OPEN_BRACE - 21)))) != 0)) {
 							{
 							setState(713);
-							((ExprContext)_localctx).a = arglist();
+							((ExprContext)_localctx).a_ = arglist();
 							}
 						}
 
@@ -4520,15 +4524,15 @@ public class python3Parser extends Parser {
 					case 7:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.calee = _prevctx;
-						_localctx.calee = _prevctx;
+						_localctx.calee_ = _prevctx;
+						_localctx.calee_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(717);
 						if (!(precpred(_ctx, 8))) throw new FailedPredicateException(this, "precpred(_ctx, 8)");
 						setState(718);
 						match(OPEN_BRACK);
 						setState(719);
-						((ExprContext)_localctx).s = subscriptlist();
+						((ExprContext)_localctx).s_ = subscriptlist();
 						setState(720);
 						match(CLOSE_BRACK);
 						}
@@ -4536,15 +4540,15 @@ public class python3Parser extends Parser {
 					case 8:
 						{
 						_localctx = new ExprContext(_parentctx, _parentState);
-						_localctx.calee = _prevctx;
-						_localctx.calee = _prevctx;
+						_localctx.calee_ = _prevctx;
+						_localctx.calee_ = _prevctx;
 						pushNewRecursionContext(_localctx, _startState, RULE_expr);
 						setState(722);
 						if (!(precpred(_ctx, 7))) throw new FailedPredicateException(this, "precpred(_ctx, 7)");
 						setState(723);
-						((ExprContext)_localctx).op = match(DOT);
+						((ExprContext)_localctx).op_ = match(DOT);
 						setState(724);
-						((ExprContext)_localctx).attr = match(NAME);
+						((ExprContext)_localctx).attr_ = match(NAME);
 						}
 						break;
 					}

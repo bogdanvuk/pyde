@@ -10,7 +10,10 @@ class PydeEditor(QsciScintillaCompat):
         QsciScintillaCompat.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
-        
+    
+    def __getitem__(self, item):
+        return self.text().__getitem__(item)
+    
     @property
     def pos(self):
         return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
@@ -41,6 +44,9 @@ class PydeEditor(QsciScintillaCompat):
         
     def content_assist(self):
         self.autoCompleteFromAll()
+        
+    def active_range(self):
+        return (0, len(self.text()) - 1)
         
 #     def pos_changed(self, line, pos):
         

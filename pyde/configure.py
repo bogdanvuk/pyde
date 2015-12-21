@@ -7,7 +7,7 @@ from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.context import ContextProvider
 from pyde.plugins.parser import Parser
 from pyde.plugins.editor_mode import PythonMode
-from pyde.keyaction import KeyAction
+from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
 from PyQt4.QtCore import Qt
 from pyde.plugins.content_assist import ContentAssist
@@ -43,9 +43,15 @@ ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/content_assist
                        inst_kwargs={'action': actions.content_assist, 
                                     'key': Qt.Key_Tab})
 
+def KeyActionEvaluateCondition(key_action, source, event):
+    ret = KeyActionDfltCondition(key_action, source, event)
+    if (ret and not ddic['content_assist'].active):
+        return True
+
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/evaluate', 
                        inst_kwargs={'action': actions.evaluate, 
-                                    'key': Qt.Key_Return})
+                                    'key': Qt.Key_Return,
+                                    'condition': KeyActionEvaluateCondition})
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)

@@ -2,6 +2,22 @@ from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
 from difflib import SequenceMatcher
 from pyde.ddi import Dependency
+from pyde.plugins.context import Context
+
+class ViewContext(Context):
+    
+    def __init__(self, view, parent=None):
+        self.view = view
+        super().__init__(parent)
+        
+    @property
+    def start(self):
+        return self.parent.start
+
+    @property
+    def stop(self):
+        return self.parent.stop
+
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)
@@ -62,6 +78,7 @@ class ContentAssist(QObject):
     
     def show(self):
         print('show: ' + self.active_editor.text()[self.ca_start:self.active_editor.pos+1])
+        print('show list: ', ' '.join(sorted(self.sieve())))
         self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
                                  self.active_editor.pos - self.ca_start, 
                                  ' '.join(sorted(self.sieve())).encode())
@@ -86,6 +103,7 @@ class ContentAssist(QObject):
             self.show()
 
     def close_char_deleted(self):
+        print('close_char_deleted')
         self.show()
         
     def close_canceled(self):
@@ -93,8 +111,13 @@ class ContentAssist(QObject):
 #         self.active_editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.active = False
 
+    def select(self):
+        print('selected')
+        selected = self.active_editor.SendScintilla(QsciScintilla.SCI_AUTOCGETCURRENT)
+        self.close_selected(selected, None)
+
     def close_selected(self, selected, param):
-        print('closed')
+        print('close_selected')
         self.active = False
 #         self.active_editor.SCN_AUTOCSELECTION.disconnect(self.close)
         self.active_editor.SCN_MODIFIED.disconnect(self.text_modified)

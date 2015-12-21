@@ -7,7 +7,7 @@ from PyQt4.Qsci import QsciScintilla
 import json
 import time
 from PyQt4 import QtCore, QtGui
-from pyde.plugins.context import Context
+from pyde.plugins.context import Context, BoundedSlice
 
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
@@ -43,131 +43,163 @@ os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 #             child = node['children'][c]
 #             self.visit(child)
 
-class RuleContext(Context):
+class ParserRuleContext(list):
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
         
-    def get_child_feature(self, child):
-        for c in self.children:
-            if isinstance(c, list):
-                for cl in c:
-                    if cl == child:
-                        return cl
-            else:
-                if self.children[c] == child:
-                    return c
-        return None
+    @property
+    def slice(self):
+        return BoundedSlice(self.editor, self[0].slice.start, self[-1].slice.stop)
     
-    @property
-    def start(self):
-        first_child_name = next(iter(self.children))
-        value = self.children[first_child_name]
-        if isinstance(value, list):
-            if value:
-                value = value[0]
-            else:
-                return 0
         
-        return value.start
+class RuleContext(Context):
+    type = 'parser_rule'
 
     @property
-    def stop(self):
-        last_child_name = next(reversed(self.children))
-        value = self.children[last_child_name]
-        if isinstance(value, list):
-            if value:
-                value = value[-1]
-            else:
-                return 0
+    def slice(self):
+        return self.rule.slice
 
-        return value.stop
-
-class ContextBuilder(object):
-
-    def __init__(self, tokens, text, active_range):
+class ParseTreeBuilder:
+    def __init__(self, tokens, editor):
         self.cur_parent = None
         self.tree = None
         self.tokens = tokens
-        self.text = text
         self.cur_tok_index = -1
-        self.active_range = active_range
+        self.active_range = editor.active_range()
+        self.editor = editor
 
     def visit(self, node):
         if node['type'] == 'tokref':
-            index = node['index']
-            if index >= 0:
-                self.cur_tok_index = index
-                self.tokens[index].parent = self.cur_parent
-                return self.tokens[index]
-            else:
-                context = Context(self.cur_parent)
-                context.name = node['toktype']
-                if self.cur_tok_index >= 0: 
-                    context.start = self.tokens[self.cur_tok_index].stop + 1 + self.active_range[0]
-                else:
-                    context.start = self.active_range[0]
-                    
-                context.stop = self.tokens[self.cur_tok_index + 1].start + self.active_range[0]
-                return context
+            return self.visit_token(node)
         else:
-#         context = Context(name=node['type'], parent=self.cur_parent)
-            context = RuleContext(parent=self.cur_parent)
-            context.name = node['type'] 
-              
-            if self.tree is None:
-                self.tree = context
-                
-            self.cur_parent = context
-            
-            if 'children' in node:        
-                children = list(range(len(node['children'])))
-            else:
-                children = []
-        
-#         context.text = self.text[context.start:context.stop+1]
+            return self.visit_rule(node)
 
-        if children:
-            for field_name in node['_fields']:
-                if field_name == 'value':
-                    pass
-                field = node[field_name]
+    def visit_token(self, node):
+        index = node['index']
+        if index >= 0:
+            self.cur_tok_index = index
+            self.tokens[index].parent = self.cur_parent
+            return self.tokens[index]
+        else:
+            t = node['toktype']
+            if self.cur_tok_index >= 0: 
+                start = self.tokens[self.cur_tok_index].slice.stop + self.active_range[0]
+            else:
+                start = self.active_range[0]
+                
+            stop = self.tokens[self.cur_tok_index + 1].slice.start + self.active_range[0] + 1
+            s = BoundedSlice(self.editor, start, stop)
+            return Token(t,s)
+
+    def visit_rule(self, node):
+        #         context = Context(name=node['type'], parent=self.cur_parent)
+        rule = ParserRuleContext(self.cur_parent)
+        rule.type = node['type']
+        rule.editor = self.editor
+          
+        if self.tree is None:
+            self.tree = rule
+            
+        self.cur_parent = rule
+        
+        if 'children' in node:        
+            children = list(range(len(node['children'])))
+        else:
+            children = []
+        
+        for c in children:
+            child = node['children'][c]
+            rule.append(self.visit(child))
+        
+        rule.fields = {}
+        for field_name in node['_fields']:
+            rule.fields[field_name] = node[field_name] 
+
+        self.cur_parent = rule.parent
+            
+        return rule
+
+class ContextBuilder(object):
+
+    def __init__(self, parse_tree):
+        self.tree = None
+        self.cur_parent = None
+        self.parse_tree = parse_tree
+
+    def visit(self, node):
+        if isinstance(node, Token):
+            return self.visit_token(node)
+        else:
+            return self.visit_rule(node)
+
+    def visit_token(self, token):
+        context = RuleContext(self.cur_parent)
+        context.type = token.type
+        context.rule = token
+        return context
+
+    def visit_rule(self, node):
+        #         context = Context(name=node['type'], parent=self.cur_parent)
+        context = RuleContext(self.cur_parent)
+        context.type = node.type
+          
+        if self.tree is None:
+            self.tree = context
+
+        self.cur_parent = context
+        
+        if node.fields:
+            for field_name in node.fields:
+                field = node.fields[field_name]
                 if isinstance(field, int):
-                    child = node['children'][field]
+                    child = node[field]
                     context[field_name] = self.visit(child)
-                    children.remove(field)
                 elif isinstance(field, list):
                     field_val = []
                     for elem in field:
-                        child = node['children'][elem]
+                        child = node[elem]
                         field_val.append(self.visit(child))
                         
                     context[field_name] = field_val
     
-            free_children = []                
-            for c in children:
-                child = node['children'][c]
-                free_children.append(self.visit(child))
-        
         self.cur_parent = context.parent
-            
+        context.rule = node
+        
         if context.parent:
-            if len(children) == 1:
-                if not node['_fields']:
-                    free_children[0].parent = self.cur_parent
-                    return free_children[0]
-            elif len(children) > 1:
-                if not node['_fields']:
-                    for n in free_children:
-                        context[n.name] = n
-
+            if len(node) == 1:
+                if not node.fields:
+                    child = node[0]
+                    return self.visit(child)
+#                     free_children[0].parent = self.cur_parent
+#                     return free_children[0]
+#             elif len(children) > 1:
+#                 if not node['_fields']:
+#                     for n in free_children:
+#                         context[n.name] = n
+        
+        context.rule.context = context
         return context
 
-def create_token_contexts(token_json, active_range=(0,0)):
+class Token:
+    
+    def __init__(self, t, s):
+        self.type = t
+        self.slice = s
+    
+    def __repr__(self):
+        return "{}: {}".format(self.type, self.slice.eval())
+      
+    def __str__(self):
+        return self.slice.eval()
+
+def create_tokens(token_json, editor):
+    active_range = editor.active_range()
     tokens = []
-    for t in token_json:
-        tc = Context()
-        tc.name = t['type']
-        tc.start = t['start'] + active_range[0]
-        tc.stop = t['stop'] + active_range[0]
-        tokens.append(tc)
+    for tj in token_json:
+        t = tj['type']
+        s = BoundedSlice(editor, tj['start'] + active_range[0], tj['stop'] + active_range[0] + 1)
+        tokens.append(Token(t,s))
 
     return tokens
 
@@ -226,13 +258,16 @@ class Parser(QObject):
                                   self.language + '.' + self.language, 
                                   'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
             parse_out = json.loads(p.decode())
-            tokens = create_token_contexts(parse_out['tokens'], self.editor.active_range())
+            tokens = create_tokens(parse_out['tokens'], self.editor)
             dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
-            builder = ContextBuilder(tokens, text, self.editor.active_range())
-            builder.visit(dict_tree)
+            parse_builder = ParseTreeBuilder(tokens, self.editor)
+            parse_builder.visit(dict_tree)
+            self.parse_tree = parse_builder.tree
+            builder = ContextBuilder(tokens)
+            builder.visit(self.parse_tree)
             self.tree = builder.tree
             self.tree_modified.emit([self.editor.name, 'ast'], self.tree)
 #             a = self.context.context_at_pos(0)
-#             pass
+            pass
         

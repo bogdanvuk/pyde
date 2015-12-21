@@ -16,20 +16,27 @@ class PyInterpretContentAssist(QObject):
      
     def complete(self, acceptor):
         editor = self.win.active_view()
-        context = self.context.context_at_pos(editor.pos)
-        cur_ctx = context[-1]
-        cur_parent = cur_ctx.parent
-        cur_feature = cur_parent.get_child_feature(cur_ctx)
+        cur_ctx = self.context.active_context()
         
-        if cur_feature == 'attr':
-            calee_ctx = cur_parent.children['calee']
-            calee_text = editor.text()[calee_ctx.start:calee_ctx.stop+1]
-            obj = eval(calee_text, editor.globals, editor.locals)
-            for d in dir(obj):
-                acceptor[d] = d
+        if cur_ctx.type == 'view':
+            for g in editor.globals:
+                acceptor[g] = g
+                
+            for l in editor.locals:
+                acceptor[l] = l
+        else:
+            cur_parent = cur_ctx.parent
+            cur_feature = cur_ctx.get_feature_in_parent()
+              
+            if cur_feature[0] == 'attr':
+                calee_ctx = cur_parent['calee']
+                calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
+                obj = eval(calee_text, editor.globals, editor.locals)
+                for d in dir(obj):
+                    acceptor[d] = d
         
         
-        print(context)
+        print(cur_ctx)
          
 #         for i,c in enumerate(reversed(context)):
 #             if not isinstance(c, (ast.Attribute, ast.Name, ast.Call, ast.Subscript)):

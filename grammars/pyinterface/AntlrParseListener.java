@@ -22,12 +22,12 @@ public class AntlrParseListener implements ParseTreeListener {
 	JSONObject jsonTop;
 	Stack<JSONArray> childrenStack = new Stack<JSONArray>();
 	Stack<JSONObject> jsonStack = new Stack<JSONObject>();
-	
+
 	public AntlrParseListener(Parser parser, JSONObject json) {
         this.parser = parser;
         this.jsonStack.push(json);
     }
-	
+
     public void enterEveryRule(ParserRuleContext ctx) {
 //    	System.out.print(ctx.toString(this.parser));
 //    	System.out.print(" ");
@@ -45,12 +45,12 @@ public class AntlrParseListener implements ParseTreeListener {
 //		System.out.println();
 //		System.out.print("+");
 //		System.out.println(ctx.toInfoString(parser));
-		
+
     	if (!childrenStack.isEmpty()) {
     		this.jsonStack.push(new JSONObject());
     		childrenStack.peek().put(this.jsonStack.peek());
     	}
-    	
+
     	try {
 			jsonStack.peek().put("type", parser.getRuleNames()[ctx.getRuleIndex()]);
 	    	childrenStack.push(new JSONArray());
@@ -58,13 +58,13 @@ public class AntlrParseListener implements ParseTreeListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-   	
+
 //    	System.out.print(ctx.getRuleContext().getRuleIndex());
 //    	System.out.print(" : ");
 //    	System.out.print(ctx.getText());
 //    	System.out.print("\n");
     }
-    
+
 //    public int[] getChildIDFromPointer(ParserRuleContext ctx, Object value) {
 //    	if (value != null) {
 //	   		for (int i = 0; i < ctx.getChildCount(); i++) {
@@ -78,10 +78,10 @@ public class AntlrParseListener implements ParseTreeListener {
 //				}
 //			}
 //    	}
-//  		
+//
 //   		return new int[] {0, 0};
 //    }
-    
+
     public int getChildIDFromPointer(RuleContext ctx, Object value) {
     	if (value != null) {
 	   		for (int i = 0; i < ctx.getChildCount(); i++) {
@@ -95,11 +95,11 @@ public class AntlrParseListener implements ParseTreeListener {
 				}
 			}
     	}
-  		
+
    		return -1;
     }
 
-    
+
     public void exitEveryRule(ParserRuleContext ctx) {
 //    	System.out.println(parser.getRuleNames()[ctx.getRuleIndex()]);
 //    	if (parser.getRuleNames()[ctx.getRuleIndex()].equals("file_input"))
@@ -116,7 +116,7 @@ public class AntlrParseListener implements ParseTreeListener {
 //		System.out.print("-");
 //		System.out.println(ctx.toInfoString(parser));
 
-    	
+
 //    	if ((parser.getRuleNames()[ctx.getRuleIndex()].equals("expr"))) {
 //    		if (childrenStack.peek().length() == 2) {
 //    			int t=0;
@@ -128,40 +128,43 @@ public class AntlrParseListener implements ParseTreeListener {
 //    		jsonStack.peek().put("_fields", ctx.start.getTokenIndex());
         	for(Field field : ctx.getClass().getDeclaredFields())
         	{
-        		try {
-	        		
-	        		if (field.getType().isAssignableFrom(List.class)) {
-	        			List<Object> list = (List<Object>) field.get(ctx);
-	        			JSONArray field_ids = new JSONArray ();
-	        			for (Object value : list) {
-		        			int ret = getChildIDFromPointer(ctx, value);
-		        			if (ret >= 0) {
-		        				field_ids.put(ret);
-		        			}
-	        			}
+                if (field.getName().endsWith("_")) {
+                	String fieldName = field.getName().substring(0, field.getName().length()-1);
+                    try {
 
-	        			jsonStack.peek().put(field.getName(), field_ids);
-		        		fields.put(field.getName());
+                        if (field.getType().isAssignableFrom(List.class)) {
+                            List<Object> list = (List<Object>) field.get(ctx);
+                            JSONArray field_ids = new JSONArray ();
+                            for (Object value : list) {
+                                int ret = getChildIDFromPointer(ctx, value);
+                                if (ret >= 0) {
+                                    field_ids.put(ret);
+                                }
+                            }
 
-	        		} else {
-	        			
-	        			Object value = field.get(ctx);
+                            jsonStack.peek().put(fieldName, field_ids);
+                            fields.put(fieldName);
+
+                        } else {
+
+                            Object value = field.get(ctx);
 //	        			if ((field.getName().equals("attr")) && (value != null)){
 //	        				int t=0;
 //	        			}
 
-	        			int ret = getChildIDFromPointer(ctx, value);
-	        			if (ret >= 0) {
-	        				jsonStack.peek().put(field.getName(), ret);
-	        				fields.put(field.getName());
-	        			}
-	        		}
-	        	} catch (IllegalArgumentException | IllegalAccessException e) {
-        		}
-//	        			
-//	        		
-//	        		
-//	        		
+                            int ret = getChildIDFromPointer(ctx, value);
+                            if (ret >= 0) {
+                                jsonStack.peek().put(fieldName, ret);
+                                fields.put(fieldName);
+                            }
+                        }
+                    } catch (IllegalArgumentException | IllegalAccessException e) {
+                    }
+                }
+//
+//
+//
+//
 //	        		if (value != null) {
 //		        		for (int i = 0; i < ctx.getChildCount(); i++) {
 //	        				if ( ctx.getChild(i) instanceof TerminalNode ) {
@@ -212,7 +215,7 @@ public class AntlrParseListener implements ParseTreeListener {
 			jsTok.put("toktype", parser.getVocabulary().getSymbolicName(tok.getType()));
 //			jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
 //			jsTok.put("col", tok.getCharPositionInLine());
-	
+
 			childrenStack.peek().put(jsTok);
 		} catch (JSONException e1) {
 			// TODO Auto-generated catch block

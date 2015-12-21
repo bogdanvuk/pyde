@@ -147,7 +147,7 @@ single_input
 
 /// file_input: (NEWLINE | stmt)* ENDMARKER
 file_input
- : ( NEWLINE | stmts+=stmt )* EOF
+ : ( NEWLINE | stmts_+=stmt )* EOF
  ;
 
 /// eval_input: testlist NEWLINE* ENDMARKER
@@ -222,7 +222,7 @@ stmt
 
 /// simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 simple_stmt
- : small_stmt ( ';' small_stmt )* ';'? NEWLINE
+ : stmt_+=small_stmt ( ';' stmt_+=small_stmt )* ';'? NEWLINE
  ;
 
 /// small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt |
@@ -485,9 +485,9 @@ lambdef_nocond
 
 or_test
       : star_expr
-      | left=or_test op=COMP_OP right=or_test
-      | op=NOT right=or_test
-      | left=or_test op=(AND | OR) right=or_test
+      | left_=or_test op_=COMP_OP right_=or_test
+      | op_=NOT right_=or_test
+      | left_=or_test op_=(AND | OR) right_=or_test
       ;
 
 star_expr
@@ -496,16 +496,16 @@ star_expr
       ;
 
 expr
-      : value=atom
-      | calee=expr '(' a=arglist? ')'
-      | calee=expr '[' s=subscriptlist ']'
-      | calee=expr op='.' attr=NAME
-      | left=expr op='**' right=expr
-      | op=('+' | '-' | '~') e=expr
-      | left=expr op=('*' | '/' | '%' | '//' | '@') right=expr
-      | left=expr op=('+' | '-') right=expr
-      | left=expr op=('<<' | '>>') right=expr
-      | left=expr op=('|' | '^' | '&') right=expr
+      : value_=atom
+      | calee_=expr '(' a_=arglist? ')'
+      | calee_=expr '[' s_=subscriptlist ']'
+      | calee_=expr op_='.' attr_=NAME
+      | left_=expr op_='**' right_=expr
+      | op_=('+' | '-' | '~') e_=expr
+      | left_=expr op_=('*' | '/' | '%' | '//' | '@') right_=expr
+      | left_=expr op_=('+' | '-') right_=expr
+      | left_=expr op_=('<<' | '>>') right_=expr
+      | left_=expr op_=('|' | '^' | '&') right_=expr
       ;
 
 /// power: atom trailer* ['**' factor]
