@@ -7,11 +7,12 @@ class MainWindow(QtGui.QMainWindow):
     
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, layout: Dependency(feature='init_layout'), view_scope: Dependency('view')):
+    def __init__(self, layout: Dependency(feature='init_layout'), view_scope: Dependency('view'), context : Dependency('context')):
         QtGui.QMainWindow.__init__(self)
         
         self.setWindowTitle("Writer")
         self.resize(800, 600)
+        self.context = context
 
         centralwidget = QtGui.QWidget(self)
         centralwidget.setObjectName("centralwidget")
@@ -30,12 +31,16 @@ class MainWindow(QtGui.QMainWindow):
         self.centralLayout.addWidget(layout, 0, 0, 1, 1)
         self.centralWidget = layout
         self.views = []
-       
-    def add_view(self, view, location=[0]):
+    
+    def place_view(self, view, location=[0]):
         self.centralWidget.add_view(view, location)
-        self.view_added.emit(view)
-        self.view_scope.provide(view.name, view)
-        self.views.append(view)
+       
+#     def add_view(self, view, location=[0]):
+#         self.context.update_context(self, ['/', view.name], view)
+#         self.centralWidget.add_view(view, location)
+#         self.view_added.emit(view)
+#         self.view_scope.provide(view.name, view)
+#         self.views.append(view)
 
     def active_view(self):
         return QApplication.focusWidget()

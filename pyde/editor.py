@@ -1,15 +1,25 @@
 from pyde.pyde_widget import PydeWidget
 from PyQt4.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
+from pyde.ddi import Dependency, diinit
+from pyde.plugins.context import ViewContext, BoundedSlice
 
 class PydeEditor(QsciScintillaCompat):
     
-    def __init__(self, name, parent=None):
+    @diinit
+    def __init__(self, name, context : Dependency('context'), parent=None):
 #         PydeWidget.__init__(self)
         self.name = name
+        self.context = context
+        self.context.update_context([name], ViewContext(self))
         QsciScintillaCompat.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
+    
+    def focusInEvent(self, event):
+        self.context.set_active_context([BoundedSlice(None, self.name), 
+                                         BoundedSlice(self,self.pos)])
+        super().focusInEvent(event)
     
     def __getitem__(self, item):
         return self.text().__getitem__(item)
@@ -46,7 +56,7 @@ class PydeEditor(QsciScintillaCompat):
         self.autoCompleteFromAll()
         
     def active_range(self):
-        return (0, len(self.text()) - 1)
+        return (0, len(self.text()))
         
 #     def pos_changed(self, line, pos):
         

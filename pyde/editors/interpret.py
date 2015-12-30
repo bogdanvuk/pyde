@@ -13,7 +13,7 @@ from PyQt4 import Qsci
 from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
 from pyde.plugins.parser import Parser
-from pyde.ddi import ddic
+from pyde.ddi import ddic, Dependency, diinit
 
 # class ContextVisitor(NodeVisitor):
 # 

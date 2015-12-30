@@ -205,16 +205,17 @@ class ContextVisitor(NodeVisitor):
 
 class ContextProvider(QObject):
     
-    def __init__(self, win : Dependency('win')):
+    def __init__(self):
         super().__init__()
         self.root = RootContext()
+        self.active = self.root
         
-        for v in win.views:
-            self.add_view(v)
-             
-        win.view_added.connect(self.add_view)
-        
-        self.win = win
+#         for v in win.views:
+#             self.add_view(v)
+#              
+#         win.view_added.connect(self.add_view)
+#         
+#         self.win = win
 
     @pyqtSlot(list, object)
     def update_context(self, uri, c):
@@ -227,9 +228,9 @@ class ContextProvider(QObject):
             
         c.parent = parent
         
-    @pyqtSlot(QWidget)
-    def add_view(self, view):
-        self.root[view.name] = ViewContext(view, self.root)
+#     @pyqtSlot(QWidget)
+#     def add_view(self, view):
+#         self.root[view.name] = ViewContext(view, self.root)
 
     def get_active_view_context(self):
         active_view = self.win.active_view()
@@ -249,6 +250,11 @@ class ContextProvider(QObject):
             cur_node = cur_node[p]
         
         return cur_node    
+
+    def set_active_context(self, path):
+        cv = ContextVisitor(self.root)
+        self.active = cv.context_at(path)
+        return self.active
 
     def active_context(self):
         active_view = self.win.active_view()

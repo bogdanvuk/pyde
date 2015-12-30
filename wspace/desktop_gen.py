@@ -7,8 +7,14 @@ def get_layout():
     return PydeFrame(QtCore.Qt.Vertical, [5, 1])
     
 def reload_buffers(win : Dependency(feature='win')):
-    win.add_view(ddic['cls/python']('*scratch.py*'), [0])
-    win.add_view(ddic['cls/ipython']('*interpret*'), [1])
+#     ddic.provide_on_demand('cls/python', inst_feature='view/*scratch.py*', inst_kwargs={'parent': win})
+#     ddic.provide_on_demand('cls/ipython', inst_feature='view/*interpret*', inst_kwargs={'parent': win})
+
+
+    ddic['view/*scratch.py*'] = ddic['cls/python']('*scratch.py*', parent=win)
+    ddic['view/*interpret*'] = ddic['cls/python']('*interpret*', parent=win)
+    win.place_view(ddic['view/*scratch.py*'], [0])
+    win.place_view(ddic['view/*interpret*'], [1])
 #     app.centralWidget.widget(0).insertWidget(0, )
 #     app.centralWidget.widget(1).insertWidget(0, PyInerpretEditor())
     win.centralWidget.widget(1).currentWidget().setFocus()

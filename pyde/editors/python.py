@@ -12,6 +12,7 @@ from PyQt4.QtGui import *
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
 from PyQt4 import Qsci
+from pyde.ddi import Dependency
 
 
 class PythonEdit(PydeEditor):

@@ -304,6 +304,24 @@ class CreationFeature(object):
 Dependency = namedtuple('Dependency', ['feature', 'assertion'])
 Dependency.__new__.__defaults__ = (None, NoAssertion)
 
+def diinit(func):
+    def wrapper(*args, **kwargs):
+        _, _, _, _, _, _, annotations = getfullargspec(func)
+        
+        dependencies = {}
+        
+        for name, a in annotations.items():
+            if isinstance(a, Dependency):
+                if name not in dependencies:
+                    provider = ddic[a.feature]
+                    if a.assertion(provider):
+                        dependencies[name] = provider
+        
+        args, kwargs = update_args(func, args, kwargs, dependencies)
+        return func(*args, **kwargs)
+    
+    return wrapper
+
 #      
 # class Test:
 #     def __init__(self, a, b: Dependency(feature='scope.'), c: Dependency(feature='mark')):
