@@ -11,8 +11,8 @@ def reload_buffers(win : Dependency(feature='win')):
 #     ddic.provide_on_demand('cls/ipython', inst_feature='view/*interpret*', inst_kwargs={'parent': win})
 
 
-    ddic['view/*scratch.py*'] = ddic['cls/python']('*scratch.py*', parent=win)
-    ddic['view/*interpret*'] = ddic['cls/python']('*interpret*', parent=win)
+    ddic.provide('view/*scratch.py*', ddic['cls/python']('*scratch.py*', parent=win))
+    ddic.provide('view/*interpret*', ddic['cls/ipython']('*interpret*', parent=win))
     win.place_view(ddic['view/*scratch.py*'], [0])
     win.place_view(ddic['view/*interpret*'], [1])
 #     app.centralWidget.widget(0).insertWidget(0, )

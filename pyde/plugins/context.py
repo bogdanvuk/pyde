@@ -146,15 +146,19 @@ class ContextVisitor(NodeVisitor):
  
     def context_at(self, posseq):
         self.context = None
-        self.posseq = posseq
-        self.cur_pos = 0
-        self.pos_contained = [0]*len(posseq)
-        try:
-            self.visit(self.root)
-        except self.FoundLeafException:
-            return self.context
-        
-        return None
+
+        if posseq:
+            self.posseq = posseq
+            self.cur_pos = 0
+            self.pos_contained = [0]*len(posseq)
+            try:
+                self.visit(self.root)
+            except self.FoundLeafException:
+                return self.context
+            
+            return None
+        else:
+            return self.root
     
     def visit(self, node):
         contains = False
@@ -209,6 +213,7 @@ class ContextProvider(QObject):
         super().__init__()
         self.root = RootContext()
         self.active = self.root
+        self.path = []
         
 #         for v in win.views:
 #             self.add_view(v)
@@ -227,6 +232,7 @@ class ContextProvider(QObject):
             parent[uri[-1]] = c
             
         c.parent = parent
+        self.find_active_context()
         
 #     @pyqtSlot(QWidget)
 #     def add_view(self, view):
@@ -251,22 +257,27 @@ class ContextProvider(QObject):
         
         return cur_node    
 
-    def set_active_context(self, path):
+    def find_active_context(self):
         cv = ContextVisitor(self.root)
-        self.active = cv.context_at(path)
+        self.active = cv.context_at(self.path)
         return self.active
 
-    def active_context(self):
-        active_view = self.win.active_view()
+    def set_active_path(self, path):
+        self.path = path
+        return self.find_active_context()
 
-        if not active_view:
-            return self.root
-        else:
-            view_name = active_view.name
-#             try:
-            cv = ContextVisitor(self.root)
-            return cv.context_at([BoundedSlice(None, view_name), 
-                                  BoundedSlice(active_view,active_view.pos)])
+    def active_context(self):
+        return self.active
+#         active_view = self.win.active_view()
+# 
+#         if not active_view:
+#             return self.root
+#         else:
+#             view_name = active_view.name
+# #             try:
+#             cv = ContextVisitor(self.root)
+#             return cv.context_at([BoundedSlice(None, view_name), 
+#                                   BoundedSlice(active_view,active_view.pos)])
 #             except:
 #                 return self.root[view_name]
     

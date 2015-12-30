@@ -17,7 +17,7 @@ class PydeEditor(QsciScintillaCompat):
         self.SCN_MODIFIED.connect(self.__modified)
     
     def focusInEvent(self, event):
-        self.context.set_active_context([BoundedSlice(None, self.name), 
+        self.context.set_active_path([BoundedSlice(None, self.name), 
                                          BoundedSlice(self,self.pos)])
         super().focusInEvent(event)
     
