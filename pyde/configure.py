@@ -34,6 +34,11 @@ ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/forward_char',
                                     'key': Qt.Key_L, 
                                     'modifier': Qt.AltModifier})
 
+ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/next_line', 
+                       inst_kwargs={'action': actions.next_line,
+                                    'key': Qt.Key_K, 
+                                    'modifier': Qt.AltModifier})
+
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/backward_char', 
                        inst_kwargs={'action': actions.backward_char, 
                                     'key': Qt.Key_J, 
@@ -43,7 +48,7 @@ ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/content_assist
                        inst_kwargs={'action': actions.content_assist, 
                                     'key': Qt.Key_Tab})
 
-def KeyActionEvaluateCondition(key_action, source, event):
+def EvaluateKeyActionCondition(key_action, source, event):
     ret = KeyActionDfltCondition(key_action, source, event)
     if (ret and not ddic['content_assist'].active):
         return True
@@ -51,7 +56,7 @@ def KeyActionEvaluateCondition(key_action, source, event):
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/evaluate', 
                        inst_kwargs={'action': actions.evaluate, 
                                     'key': Qt.Key_Return,
-                                    'condition': KeyActionEvaluateCondition})
+                                    'condition': EvaluateKeyActionCondition})
 
 wspace_path = '/data/projects/pyde/'    
 sys.path.append(wspace_path)

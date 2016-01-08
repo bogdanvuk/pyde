@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QObject, pyqtSlot
-from pyde.ddi import Dependency
+from pyde.ddi import Dependency, ddic
 from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore, QtGui
 
@@ -9,15 +9,15 @@ class KeyDispatcher(QObject):
         super().__init__()
         self.win = win
         self.context = context
-        for v in win.views:
-            self.add_view(v)
-            
-        win.view_added.connect(self.add_view)
+#         for v in win.views:
+#             self.add_view(v)
+#             
+#         win.view_added.connect(self.add_view)
         
+        ddic.provide_on_demand('cls/key_dispatcher_view_add', self.add_view)
         self.actions = []
         
-    @pyqtSlot(QWidget)
-    def add_view(self, view):
+    def add_view(self, view : Dependency('view/')):
         view.installEventFilter(self)
     
     def register_keyaction(self, action):

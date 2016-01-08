@@ -1,13 +1,27 @@
 from PyQt4.Qsci import QsciScintilla
 import string
 import os
-from pyde.ddi import ddic
+from pyde.ddi import ddic, diinit, Dependency
 
 def forward_char(view=None):
     if view is None:
         view = ddic['win'].active_view()
         
     view.forward_char()
+
+@diinit
+def next_line(context : Dependency('context')):
+#def next_line(context = None):
+    
+    c = context.active_context()
+    
+    while c.parent is not None:
+        if hasattr(c, 'view'):
+            if hasattr(c.view, 'next_line'):
+                c.view.next_line()
+                return
+        
+        c = c.parent
 
 def backward_char(view=None):
     if view is None:

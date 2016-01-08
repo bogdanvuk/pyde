@@ -27,6 +27,10 @@ class PydeEditor(QsciScintillaCompat):
     @property
     def pos(self):
         return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+
+    @property
+    def line(self):
+        return self.lineAt(self.pos)
     
     @pos.setter
     def pos(self, val):
@@ -45,6 +49,9 @@ class PydeEditor(QsciScintillaCompat):
         pass
 #         print(pos, hex(mtype), text, length, linesAdded, line, foldNow,
 #                    foldPrev, token, annotationLinesAdded)
+    
+    def next_line(self):
+        self.SendScintilla(QsciScintilla.SCI_GOTOLINE, self.line + 1)
     
     def forward_char(self):
         self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.pos + 1)
