@@ -9,16 +9,17 @@ class KeyDispatcher(QObject):
         super().__init__()
         self.win = win
         self.context = context
-#         for v in win.views:
-#             self.add_view(v)
-#             
-#         win.view_added.connect(self.add_view)
+
+        for k,v in win.view.children.items():
+            self.view_added(v)
+             
+        win.view.child_added.connect(self.view_added)
         
-        ddic.provide_on_demand('cls/key_dispatcher_view_add', self.add_view)
+#         ddic.provide_on_demand('cls/key_dispatcher_view_add', self.add_view)
         self.actions = []
         
-    def add_view(self, view : Dependency('view/')):
-        view.installEventFilter(self)
+    def view_added(self, view):
+        view.widget.installEventFilter(self)
     
     def register_keyaction(self, action):
         self.actions.append(action)

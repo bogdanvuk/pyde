@@ -134,8 +134,8 @@ from pyde.ddi import ddic, Dependency, diinit
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, name, parent=None):
-        super(PyInerpretEditor, self).__init__(name, parent)
+    def __init__(self, name, parent_view, parent=None):
+        super().__init__(name, parent_view, parent)
 
         # Set the default font
         font = QFont()

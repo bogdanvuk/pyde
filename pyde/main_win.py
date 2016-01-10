@@ -2,14 +2,17 @@ from pyde.pyde_widget import PydeWidget
 from PyQt4 import QtGui, QtCore
 from pyde.ddi import Dependency, ddic
 from PyQt4.QtGui import QApplication
+from collections import OrderedDict
+from pyde.view import View
 
 class MainWindow(QtGui.QMainWindow):
-    
+
+    uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
     def __init__(self, layout: Dependency(feature='init_layout'), view_scope: Dependency('view'), context : Dependency('context')):
         QtGui.QMainWindow.__init__(self)
-        
+        self.view = View(self)
         self.setWindowTitle("Writer")
         self.resize(800, 600)
         self.context = context
@@ -30,7 +33,7 @@ class MainWindow(QtGui.QMainWindow):
         self.centralLayout = gridLayout
         self.centralLayout.addWidget(layout, 0, 0, 1, 1)
         self.centralWidget = layout
-        self.views = []
+        self.views = {}
     
     def place_view(self, view, location=[0]):
         self.centralWidget.add_view(view, location)
@@ -42,8 +45,11 @@ class MainWindow(QtGui.QMainWindow):
 #         self.view_scope.provide(view.name, view)
 #         self.views.append(view)
 
+#     def add_view(self, view):
+#         self.views[view.name] = view
+
     def active_view(self):
-        return QApplication.focusWidget()
+        return QApplication.focusWidget().view.active_view()
 
 
 #     def keyPressEvent(self, event):

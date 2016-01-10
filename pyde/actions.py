@@ -11,17 +11,16 @@ def forward_char(view=None):
 
 def dflt_view_action_factory(func_name):
     @diinit
-    def dflt_view_action(context : Dependency('context')):
+    def dflt_view_action(win : Dependency('win')):
         
-        c = context.active_context()
+        v = win.active_view()
         
-        while c.parent is not None:
-            if hasattr(c, 'view'):
-                if hasattr(c.view, func_name):
-                    getattr(c.view, func_name)()
-                    return
+        while v.parent is not None:
+            if hasattr(v.widget, func_name):
+                getattr(v.widget, func_name)()
+                return
             
-            c = c.parent
+            v = v.parent
             
     return dflt_view_action
 
@@ -56,12 +55,15 @@ def backward_char(view=None):
 #     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEUP)
 # 
 #    
-def content_assist():
-    editor = ddic['win'].active_view()
+@diinit
+def content_assist(win : Dependency('win')):
+    view = win.active_view()
 #     selected_text = editor.selectedText()
-    if ddic['content_assist'].active:
-        ddic['content_assist'].fill_query()
-    elif editor.hasSelectedText():
+    if view.name == 'content_assist':
+        view.widget.fill_query()
+    else:
+        editor = v
+        if view.widget.hasSelectedText():
         editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
         ddic['content_assist'].activate()
     else:

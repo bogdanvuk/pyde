@@ -53,14 +53,16 @@ ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/content_assist
                        inst_kwargs={'action': actions.content_assist, 
                                     'key': Qt.Key_Tab})
 
-def EvaluateKeyActionCondition(key_action, source, event):
-    ret = KeyActionDfltCondition(key_action, source, event)
-    if (ret and not ddic['content_assist'].active):
-        return True
+def EvaluateKeyActionCondition(key_action, view, event):
+    if view.name != 'content_assist':
+        return KeyActionDfltCondition(key_action, view, event)
+    else:
+        return False
 
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/evaluate', 
-                       inst_kwargs={'action': actions.evaluate, 
+                       inst_kwargs={'action': actions.dflt_view_action_factory('evaluate'),
                                     'key': Qt.Key_Return,
+                                    'modifier': Qt.ControlModifier,
                                     'condition': EvaluateKeyActionCondition})
 
 wspace_path = '/data/projects/pyde/'    

@@ -11,10 +11,12 @@ def reload_buffers(win : Dependency(feature='win')):
 #     ddic.provide_on_demand('cls/ipython', inst_feature='view/*interpret*', inst_kwargs={'parent': win})
 
 
-    ddic.provide('view/*scratch.py*', ddic['cls/python']('*scratch.py*', parent=win))
-    ddic.provide('view/*interpret*', ddic['cls/ipython']('*interpret*', parent=win))
-    win.place_view(ddic['view/*scratch.py*'], [0])
-    win.place_view(ddic['view/*interpret*'], [1])
+#     ddic.provide('view/*scratch.py*', ddic['cls/python']('*scratch.py*', parent_view=win))
+#     ddic.provide('view/*interpret*', ddic['cls/ipython']('*interpret*', parent_view=win))
+    s = ddic['cls/python']('*scratch.py*', parent_view=win)
+    i = ddic['cls/ipython']('*interpret*', parent_view=win)
+    win.place_view(s, [0])
+    win.place_view(i, [1])
 #     app.centralWidget.widget(0).insertWidget(0, )
 #     app.centralWidget.widget(1).insertWidget(0, PyInerpretEditor())
     win.centralWidget.widget(1).currentWidget().setFocus()

@@ -4,31 +4,34 @@ from pyde.QsciScintillaCompat import QsciScintillaCompat
 from pyde.ddi import Dependency, diinit
 from pyde.plugins.context import ViewContext, BoundedSlice
 from collections import OrderedDict
+from pyde.view import View
 
 class PydeEditor(QsciScintillaCompat):
     
     @diinit
-    def __init__(self, name, context : Dependency('context'), parent=None):
+    def __init__(self, name, parent_view, parent=None):
 #         PydeWidget.__init__(self)
+#         self.name = name
+#         self.context = context
+#         self.context.update_context([name], ViewContext(self))
+        super(PydeEditor, self).__init__(parent)
         self.name = name
-        self.context = context
-        self.context.update_context([name], ViewContext(self))
-        QsciScintillaCompat.__init__(self, parent)
+        self.view = View(self, parent_view.view)
+#         View.__init__(self, name, parent_view)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
-        self.views = OrderedDict()
     
-    def focusInEvent(self, event):
-        self.context.set_active_path([BoundedSlice(None, self.name), 
-                                         BoundedSlice(self,self.pos)])
-        super().focusInEvent(event)
+#     def focusInEvent(self, event):
+#         self.parent_view.active_view()
+#         self.context.set_active_path([BoundedSlice(None, self.name), 
+#                                          BoundedSlice(self,self.pos)])
+#         super().focusInEvent(event)
     
     def __getitem__(self, item):
         return self.text().__getitem__(item)
     
     def active_view(self):
-        if self.views:
-            return next(reversed(self.views))
+        return self.view.active_view()
     
     @property
     def pos(self):
