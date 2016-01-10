@@ -30,17 +30,22 @@ ddic.provide_on_demand('cls/ca_interpreter', PyInterpretContentAssist, 'ca_inter
 
 ddic.provide('keyactions/cls', KeyAction)
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/forward_char', 
-                       inst_kwargs={'action': actions.forward_char, 
+                       inst_kwargs={'action': actions.dflt_view_action_factory('forward_char'),
                                     'key': Qt.Key_L, 
                                     'modifier': Qt.AltModifier})
 
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/next_line', 
-                       inst_kwargs={'action': actions.next_line,
+                       inst_kwargs={'action': actions.dflt_view_action_factory('next_line'),
                                     'key': Qt.Key_K, 
                                     'modifier': Qt.AltModifier})
 
+ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/previous_line', 
+                       inst_kwargs={'action': actions.dflt_view_action_factory('previous_line'),
+                                    'key': Qt.Key_I, 
+                                    'modifier': Qt.AltModifier})
+
 ddic.provide_on_demand('keyactions/cls', inst_feature='keyactions/backward_char', 
-                       inst_kwargs={'action': actions.backward_char, 
+                       inst_kwargs={'action': actions.dflt_view_action_factory('backward_char'),
                                     'key': Qt.Key_J, 
                                     'modifier': Qt.AltModifier})
 

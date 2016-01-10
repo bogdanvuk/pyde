@@ -9,6 +9,22 @@ def forward_char(view=None):
         
     view.forward_char()
 
+def dflt_view_action_factory(func_name):
+    @diinit
+    def dflt_view_action(context : Dependency('context')):
+        
+        c = context.active_context()
+        
+        while c.parent is not None:
+            if hasattr(c, 'view'):
+                if hasattr(c.view, func_name):
+                    getattr(c.view, func_name)()
+                    return
+            
+            c = c.parent
+            
+    return dflt_view_action
+
 @diinit
 def next_line(context : Dependency('context')):
 #def next_line(context = None):

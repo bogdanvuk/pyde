@@ -2,33 +2,25 @@ from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
 from difflib import SequenceMatcher
 from pyde.ddi import Dependency
-from pyde.plugins.context import Context
+from pyde.plugins.context import Context, ViewContext
 
-class ViewContext(Context):
-    
-    def __init__(self, view, parent=None):
-        self.view = view
-        super().__init__(parent)
-        
+class ContentAssistContext(ViewContext):
     @property
-    def start(self):
-        return self.parent.start
-
-    @property
-    def stop(self):
-        return self.parent.stop
+    def slice(self):
+        return self.parent.slice
 
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)
         
-    def __init__(self, win : Dependency('win')):
+    def __init__(self, win : Dependency('win'), context : Dependency('context')):
         super().__init__()
         self.active_editor = None
         self.active_dict = None
         self.ca_start = 0
         self.active = False
         self.win = win
+        self.context = context
 #         app.view_added.connect(self.new_view)
     
 #     @pyqtSlot(QWidget)
@@ -99,8 +91,17 @@ class ContentAssist(QObject):
 
         self.complete.emit(self.active_dict)
         
+        cur_ctx = self.context.active_context()
+        self.context.update_context(cur_ctx.uri + ['content_assist'], ContentAssistContext(self))
+        
         if self.active_dict:
             self.show()
+
+    def previous_line(self):
+        self.active_editor.SendScintilla(QsciScintilla.SCI_LINEUP)
+
+    def next_line(self):
+        self.active_editor.SendScintilla(QsciScintilla.SCI_LINEDOWN)
 
     def close_char_deleted(self):
         print('close_char_deleted')

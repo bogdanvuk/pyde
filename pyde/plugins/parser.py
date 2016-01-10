@@ -50,8 +50,27 @@ class ParserRuleContext(list):
         
     @property
     def slice(self):
-        return BoundedSlice(self.editor, self[0].slice.start, self[-1].slice.stop)
-    
+        i_start = None
+        for i,c in enumerate(self):
+            start_slice = c.slice
+            if start_slice is not None:
+                i_start = i
+                break
+        else:
+            return None
+
+        for i, c in reversed(list(enumerate(self))):
+            if i == i_start:
+                end_slice = start_slice
+                break
+            else:
+                end_slice = c.slice
+                if end_slice is not None:
+                    break
+        else:
+            return None
+        
+        return BoundedSlice(self.editor, start_slice.start, end_slice.stop)
         
 class RuleContext(Context):
     type = 'parser_rule'
@@ -97,7 +116,7 @@ class ParseTreeBuilder:
         rule = ParserRuleContext(self.cur_parent)
         rule.type = node['type']
         rule.editor = self.editor
-          
+        
         if self.tree is None:
             self.tree = rule
             

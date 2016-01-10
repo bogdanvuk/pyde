@@ -185,8 +185,8 @@ class PyInerpretEditor(PydeEditor):
         start, stop = self.active_range()
         return super().text()[start:stop]
     
-    def active_range(self):
-        return (self.prompt_begin, self.length())
+#     def active_range(self):
+#         return (self.prompt_begin, self.length())
 
     def evaluate(self):
 #         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):

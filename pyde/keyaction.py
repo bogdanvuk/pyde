@@ -32,6 +32,7 @@ class KeyAction:
 
     def event(self, source, event):
         if self.condition(self, source, event):
-            return self.action(*self.action_args, **self.action_kwargs)
+            self.action(*self.action_args, **self.action_kwargs)
+            return True
             
         return False

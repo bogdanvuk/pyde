@@ -17,25 +17,31 @@ class PyInterpretContentAssist(QObject):
     def complete(self, acceptor):
         editor = self.win.active_view()
         cur_ctx = self.context.active_context()
-        
+        print('ca_interpret.complete')
         if cur_ctx.type == 'view':
+            print('cur_ctx = view')
             for g in editor.globals:
                 acceptor[g] = g
                 
             for l in editor.locals:
                 acceptor[l] = l
         else:
+            print('else')
             cur_parent = cur_ctx.parent
             cur_feature = cur_ctx.get_feature_in_parent()
               
             if cur_feature[0] == 'attr':
+                print('attr')
                 calee_ctx = cur_parent['calee']
                 calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
                 obj = eval(calee_text, editor.globals, editor.locals)
                 for d in dir(obj):
                     acceptor[d] = d
+            else:
+                print('else')
+                pass
         
-        
+        print('WHAT?')
         print(cur_ctx)
          
 #         for i,c in enumerate(reversed(context)):

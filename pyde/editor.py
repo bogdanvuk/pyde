@@ -3,6 +3,7 @@ from PyQt4.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
 from pyde.ddi import Dependency, diinit
 from pyde.plugins.context import ViewContext, BoundedSlice
+from collections import OrderedDict
 
 class PydeEditor(QsciScintillaCompat):
     
@@ -15,6 +16,7 @@ class PydeEditor(QsciScintillaCompat):
         QsciScintillaCompat.__init__(self, parent)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
+        self.views = OrderedDict()
     
     def focusInEvent(self, event):
         self.context.set_active_path([BoundedSlice(None, self.name), 
@@ -23,6 +25,10 @@ class PydeEditor(QsciScintillaCompat):
     
     def __getitem__(self, item):
         return self.text().__getitem__(item)
+    
+    def active_view(self):
+        if self.views:
+            return next(reversed(self.views))
     
     @property
     def pos(self):
@@ -49,6 +55,9 @@ class PydeEditor(QsciScintillaCompat):
         pass
 #         print(pos, hex(mtype), text, length, linesAdded, line, foldNow,
 #                    foldPrev, token, annotationLinesAdded)
+
+    def previous_line(self):
+        self.SendScintilla(QsciScintilla.SCI_GOTOLINE, self.line - 1)
     
     def next_line(self):
         self.SendScintilla(QsciScintilla.SCI_GOTOLINE, self.line + 1)
