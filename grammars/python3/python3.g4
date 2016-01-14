@@ -671,9 +671,9 @@ classdef
 ///                          |'*' test (',' argument)* [',' '**' test]
 ///                          |'**' test)
 arglist
- : ( argument ',' )* ( argument ','?
-                     | '*' test ( ',' argument )* ( ',' '**' test )?
-                     | '**' test
+ : ( arg_ += argument ',' )* ( arg_ += argument ','?
+                     | '*' args_ = test ( ',' arg_ += argument )* ( ',' '**' kwargs_ = test )?
+                     | '**' kwargs_ = test
                      )
  ;
 

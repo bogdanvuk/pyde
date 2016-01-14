@@ -7,7 +7,7 @@ from PyQt4.Qsci import QsciScintilla
 import json
 import time
 from PyQt4 import QtCore, QtGui
-from pyde.plugins.context import Context, BoundedSlice
+from pyde.plugins.context import Context, ContextSlice
 
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
@@ -43,6 +43,71 @@ os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 #             child = node['children'][c]
 #             self.visit(child)
 
+class SequenceMatchError(Exception):
+    pass
+
+class NodeVisitor(object):
+
+    def visit(self, node):
+        """Visit a node."""
+        if node.name:
+            method = 'visit_' + node.name
+            visitor = getattr(self, method, self.generic_visit)
+        else:
+            visitor = self.generic_visit
+
+        self.visit_all_enter(node)
+        ret = visitor(node)
+        self.visit_all_exit(node)
+        return ret
+    
+    def visit_all_enter(self, node):
+        pass
+    
+    def visit_all_exit(self, node):
+        pass
+
+    def generic_visit(self, node):
+        """Called if no explicit visitor function exists for a node."""
+        for c in node.features:
+            child = node.features[c]
+            if isinstance(child, list):
+                for elem in child:
+                    self.visit(elem)
+            else:
+                self.visit(child)
+
+class ContextVisitor(NodeVisitor):
+
+    class FoundLeafException(Exception):
+        pass
+
+    def __init__(self, root):
+        self.root = root
+ 
+    def context_at(self, pos):
+        self.context = None
+        self.pos = pos
+        try:
+            self.visit(self.root)
+        except self.FoundLeafException:
+            return self.context
+    
+    def visit(self, node):
+
+        if node.slice.contains(self.pos):
+            if not node.features:
+                self.context = node
+                raise self.FoundLeafException
+            else:
+                for c in node.features:
+                    child = node.features[c]
+                    if isinstance(child, list):
+                        for i,elem in enumerate(child):
+                            self.visit(elem)
+                    else:
+                        self.visit(child)
+
 class ParserRuleContext(list):
     def __init__(self, parent):
         self.parent = parent
@@ -70,7 +135,7 @@ class ParserRuleContext(list):
         else:
             return None
         
-        return BoundedSlice(self.editor, start_slice.start, end_slice.stop)
+        return ContextSlice(start_slice.start, end_slice.stop)
         
 class RuleContext(Context):
     type = 'parser_rule'
@@ -108,7 +173,7 @@ class ParseTreeBuilder:
                 start = self.active_range[0]
                 
             stop = self.tokens[self.cur_tok_index + 1].slice.start + self.active_range[0] + 1
-            s = BoundedSlice(self.editor, start, stop)
+            s = ContextSlice(start, stop)
             return Token(t,s)
 
     def visit_rule(self, node):
@@ -212,12 +277,12 @@ class Token:
     def __str__(self):
         return self.slice.eval()
 
-def create_tokens(token_json, editor):
-    active_range = editor.active_range()
+def create_tokens(token_json, active_range):
+#     active_range = editor.active_range()
     tokens = []
     for tj in token_json:
         t = tj['type']
-        s = BoundedSlice(editor, tj['start'] + active_range[0], tj['stop'] + active_range[0] + 1)
+        s = ContextSlice(tj['start'] + active_range[0], tj['stop'] + active_range[0] + 1)
         tokens.append(Token(t,s))
 
     return tokens
@@ -236,7 +301,7 @@ class Parser(QObject):
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
         self.thread.start()
-        self.editor = mode.editor
+        self.editor = mode.editor.widget
         self.mode = mode
         self.context = context
         self.tree_modified.connect(self.context.update_context)
@@ -271,13 +336,13 @@ class Parser(QObject):
 #       
 #         text = "2+3\n"
         if self.dirty:
-            text = self.editor.active_text()
+            text = self.editor.cmd_text()
             self.dirty = False
             p = subprocess.Popen(['java', 'pyinterface.Main', 
                                   self.language + '.' + self.language, 
                                   'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
             parse_out = json.loads(p.decode())
-            tokens = create_tokens(parse_out['tokens'], self.editor)
+            tokens = create_tokens(parse_out['tokens'], self.editor.cmd_range())
             dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
             parse_builder = ParseTreeBuilder(tokens, self.editor)
@@ -286,7 +351,14 @@ class Parser(QObject):
             builder = ContextBuilder(tokens)
             builder.visit(self.parse_tree)
             self.tree = builder.tree
-            self.tree_modified.emit([self.editor.name, 'ast'], self.tree)
+            self.editor.ast = self.tree
+#             self.tree_modified.emit([self.editor.name, 'ast'], self.tree)
 #             a = self.context.context_at_pos(0)
             pass
         
+def Antlr4ParserFactory(lang_name):
+    class Antlr4Parser(Parser):
+        def __init__(self, mode : Dependency('mode/inst/'), context: Dependency('context')):
+            super().__init__(mode, context, language=lang_name)
+        
+    return Antlr4Parser

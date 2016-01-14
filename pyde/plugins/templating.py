@@ -1,4 +1,4 @@
-from pyde.application import app
+from pyde.application import ddic
 from PyQt4.QtGui import QWidget, QColor
 from PyQt4.QtCore import pyqtSlot, QObject, Qt
 import re
@@ -6,6 +6,7 @@ import string
 from PyQt4.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
+from pyde.ddi import diinit, Dependency
 
 class Template(object):
    
@@ -20,10 +21,12 @@ class Template(object):
         return key
 #         self.params[key]
 
-class TemplFunc(Template):
-    def __init__(self, func):
+class TemplFunc:
+    @diinit
+    def __init__(self, func, actuator : Dependency('templ_actuator')):
         self.func = func
         self.sig = signature(func)
+        self.actuator = actuator
         params = []
         for _,p in self.sig.parameters.items():
             params.append('{' + p.name + '}')
@@ -31,17 +34,17 @@ class TemplFunc(Template):
         self.text = self.func.__name__ + '(' + ','.join(params) + ')'        
         
     def apply(self, editor):
-        app.globals.templ.insert(self, editor)
+        self.actuator.insert(self, editor)
         
     def param_val(self, key):
-        a = self.sig.parameters['path'].annotation
-        if a:
-            if a == str:
-                return "''"
-            else:
-                return str(a())
-        else:
-            return str(self.sig.parameters[key])
+#         a = self.sig.parameters['path'].annotation
+#         if a:
+#             if a == str:
+#                 return "''"
+#             else:
+#                 return str(a())
+#         else:
+        return str(self.sig.parameters[key])
 
 class TemplParam(object):
     vtype = str
@@ -98,12 +101,12 @@ class TemplContext(object):
                 params_left = False
 #                 text = string.Template(text).safe_substitute(**{position.name:param_val})
 
-class TemplActuator(object):
-
+class TemplActuator:
     
-    def __init__(self):
+    def __init__(self, win : Dependency('win')):
         self.templates = {}
         self.indicators = {}
+        self.win = win
 
     def insert(self, tmpl, editor):
         
@@ -180,7 +183,7 @@ class TemplActuator(object):
         
     
     def prev(self):
-        editor = app.active_widget()
+        editor = self.win.active_view().widget
         indicator = self.indicators[editor]
         
         position = editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
@@ -219,7 +222,7 @@ class TemplActuator(object):
         return False;
         
     def next(self):
-        editor = app.active_widget()
+        editor = self.win.active_view().widget
         indicator = self.indicators[editor]
         
         position = editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
@@ -277,5 +280,5 @@ class TemplActuator(object):
 #     def complete(self, acceptor):
 #         acceptor['proba_templ'] = ExampleTemplate()
     
-app.register_global("templ", TemplActuator())
+# app.register_global("templ", TemplActuator())
 # app.register_global("templ_contentassist", TemplContentAssist())

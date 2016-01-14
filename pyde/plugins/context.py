@@ -8,6 +8,20 @@ uri_separator = '/'
 class SequenceMatchError(Exception):
     pass
 
+class ContextSlice:
+    def __init__(self, start, stop=None):
+        if stop is None:
+            stop = start
+        
+        self.stop = stop
+        self.start = start
+  
+    def contains(self, subslice):
+        if isinstance(subslice, int):
+            subslice = ContextSlice(subslice)
+            
+        return (self.start <= subslice.start) and (self.stop > subslice.stop)
+
 class BoundedSlice:
     def __init__(self, seq, start, stop=None):
         self.seq = seq

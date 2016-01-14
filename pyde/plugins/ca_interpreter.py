@@ -1,9 +1,28 @@
 from PyQt4.QtCore import QObject
 from pyde.ddi import Dependency, ddic
+from pyde.plugins.parser import ContextVisitor
+from pyde.plugins.templating import TemplFunc
+from inspect import getfullargspec
+
+def get_ctx_text(ctx, editor):
+    return editor.text()[ctx.slice.start:ctx.slice.stop]
+    
+def get_obj_for_ctx(ctx, editor):
+    text = get_ctx_text(ctx, editor)
+    return eval(text, editor.globals, editor.locals)
+
+def get_ctx_parent_of_type(ctx, parent_type):
+    while ctx.parent is not None:
+        if ctx.parent.type == parent_type:
+            return ctx.parent
+    
+        ctx = ctx.parent
+        
+    return None
 
 class PyInterpretContentAssist(QObject):
     def __init__(self, 
-                 editor : Dependency('view/', lambda e: isinstance(e, ddic['cls/ipython'])),
+                 editor : Dependency('view/', lambda e: isinstance(e.widget, ddic['cls/ipython'])),
                  ca : Dependency('content_assist'),
                  win : Dependency('win'),
                  context : Dependency('context')):
@@ -15,13 +34,21 @@ class PyInterpretContentAssist(QObject):
         self.ca.complete.connect(self.complete)
      
     def complete(self, acceptor):
-        editor = self.win.active_view()
-        cur_ctx = self.context.active_context()
-        print('ca_interpret.complete')
-        if cur_ctx.type == 'view':
+        view = self.win.active_view()
+        editor = view.widget
+        if hasattr(editor, 'ast'):
+            cv = ContextVisitor(editor.ast)
+            cur_ctx = cv.context_at(editor.anchor)
+        else:
+            cur_ctx = None
+
+        if cur_ctx is None:
             print('cur_ctx = view')
             for g in editor.globals:
-                acceptor[g] = g
+                if callable(editor.globals[g]):
+                    acceptor[g] = TemplFunc(editor.globals[g])
+                else:
+                    acceptor[g] = g
                 
             for l in editor.locals:
                 acceptor[l] = l
@@ -30,7 +57,11 @@ class PyInterpretContentAssist(QObject):
             cur_parent = cur_ctx.parent
             cur_feature = cur_ctx.get_feature_in_parent()
               
-            if cur_feature[0] == 'attr':
+            if cur_ctx.type == 'argument':
+                expr = get_ctx_parent_of_type(cur_ctx, 'expr')
+                obj = get_obj_for_ctx(expr['calee'], editor)
+                pass
+            elif cur_feature[0] == 'attr':
                 print('attr')
                 calee_ctx = cur_parent['calee']
                 calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]

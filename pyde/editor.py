@@ -33,13 +33,22 @@ class PydeEditor(QsciScintillaCompat):
     def active_view(self):
         return self.view.active_view()
     
-    @property
-    def pos(self):
-        return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
 
     @property
     def line(self):
         return self.lineAt(self.pos)
+
+    @property
+    def anchor(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETANCHOR)
+    
+    @anchor.setter
+    def anchor(self, val):
+        return self.SendScintilla(QsciScintilla.SCI_SETANCHOR, val)
+
+    @property
+    def pos(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
     
     @pos.setter
     def pos(self, val):
@@ -70,6 +79,12 @@ class PydeEditor(QsciScintillaCompat):
         
     def backward_char(self):
         self.SendScintilla(QsciScintilla.SCI_GOTOPOS, self.pos - 1)
+        
+    def beginning_of_view(self):
+        self.SendScintilla(QsciScintilla.SCI_DOCUMENTSTART)
+
+    def end_of_view(self):
+        self.SendScintilla(QsciScintilla.SCI_DOCUMENTEND)
         
     def content_assist(self):
         self.autoCompleteFromAll()

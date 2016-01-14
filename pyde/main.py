@@ -12,7 +12,6 @@ import ast
 
 if __name__ == "__main__":
 #     t = ast.parse('f(a,b,c,d)')
-    
     app = QtGui.QApplication(sys.argv)
     import pyde.configure
     

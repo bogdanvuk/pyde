@@ -10,12 +10,13 @@ class MainWindow(QtGui.QMainWindow):
     uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, layout: Dependency(feature='init_layout'), view_scope: Dependency('view'), context : Dependency('context')):
+    def __init__(self, layout: Dependency(feature='init_layout')):
         QtGui.QMainWindow.__init__(self)
-        self.view = View(self)
+#         self.view = View(self)
+        self.name = 'view'
+        self.view = View(self, ddic)
         self.setWindowTitle("Writer")
         self.resize(800, 600)
-        self.context = context
 
         centralwidget = QtGui.QWidget(self)
         centralwidget.setObjectName("centralwidget")
@@ -27,7 +28,7 @@ class MainWindow(QtGui.QMainWindow):
         statusbar = QtGui.QStatusBar(self)
         statusbar.setObjectName("statusbar")
         self.setStatusBar(statusbar)
-        self.view_scope = view_scope
+#         self.view = view_scope
         
         QtCore.QMetaObject.connectSlotsByName(self)
         self.centralLayout = gridLayout

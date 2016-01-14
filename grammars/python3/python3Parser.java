@@ -5452,6 +5452,10 @@ public class python3Parser extends Parser {
 	}
 
 	public static class ArglistContext extends ParserRuleContext {
+		public ArgumentContext argument;
+		public List<ArgumentContext> arg_ = new ArrayList<ArgumentContext>();
+		public TestContext args_;
+		public TestContext kwargs_;
 		public List<ArgumentContext> argument() {
 			return getRuleContexts(ArgumentContext.class);
 		}
@@ -5494,7 +5498,8 @@ public class python3Parser extends Parser {
 					{
 					{
 					setState(870);
-					argument();
+					((ArglistContext)_localctx).argument = argument();
+					((ArglistContext)_localctx).arg_.add(((ArglistContext)_localctx).argument);
 					setState(871);
 					match(COMMA);
 					}
@@ -5509,7 +5514,8 @@ public class python3Parser extends Parser {
 			case 1:
 				{
 				setState(878);
-				argument();
+				((ArglistContext)_localctx).argument = argument();
+				((ArglistContext)_localctx).arg_.add(((ArglistContext)_localctx).argument);
 				setState(880);
 				_la = _input.LA(1);
 				if (_la==COMMA) {
@@ -5526,7 +5532,7 @@ public class python3Parser extends Parser {
 				setState(882);
 				match(STAR);
 				setState(883);
-				test();
+				((ArglistContext)_localctx).args_ = test();
 				setState(888);
 				_errHandler.sync(this);
 				_alt = getInterpreter().adaptivePredict(_input,125,_ctx);
@@ -5537,7 +5543,8 @@ public class python3Parser extends Parser {
 						setState(884);
 						match(COMMA);
 						setState(885);
-						argument();
+						((ArglistContext)_localctx).argument = argument();
+						((ArglistContext)_localctx).arg_.add(((ArglistContext)_localctx).argument);
 						}
 						} 
 					}
@@ -5554,7 +5561,7 @@ public class python3Parser extends Parser {
 					setState(892);
 					match(POWER);
 					setState(893);
-					test();
+					((ArglistContext)_localctx).kwargs_ = test();
 					}
 				}
 
@@ -5565,7 +5572,7 @@ public class python3Parser extends Parser {
 				setState(896);
 				match(POWER);
 				setState(897);
-				test();
+				((ArglistContext)_localctx).kwargs_ = test();
 				}
 				break;
 			}

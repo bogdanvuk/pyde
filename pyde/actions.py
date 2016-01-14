@@ -2,6 +2,7 @@ from PyQt4.Qsci import QsciScintilla
 import string
 import os
 from pyde.ddi import ddic, diinit, Dependency
+from pyde.keyaction import KeyActionDfltCondition
 
 def forward_char(view=None):
     if view is None:
@@ -9,19 +10,26 @@ def forward_char(view=None):
         
     view.forward_char()
 
+def dflt_view_condition_factory(func_name):
+    def dflt_view_condition(key_action, active_view, event):
+#     return (fnmatch.fnmatch(uri2str(active_view.uri), key_action.view_uri) and
+        if KeyActionDfltCondition(key_action, active_view, event) and \
+            hasattr(active_view.widget, func_name):
+            return True
+    
+    return dflt_view_condition
+
 def dflt_view_action_factory(func_name):
     @diinit
-    def dflt_view_action(win : Dependency('win')):
-        
-        v = win.active_view()
-        
-        while v.parent is not None:
-            if hasattr(v.widget, func_name):
-                getattr(v.widget, func_name)()
-                return
-            
-            v = v.parent
-            
+    def dflt_view_action(win : Dependency('win'), active_view = None):
+        if active_view is None:
+            active_view = win.active_view()
+
+        if hasattr(active_view.widget, func_name):
+            getattr(active_view.widget, func_name)()
+            return
+           
+    dflt_view_action.__name__ = func_name
     return dflt_view_action
 
 @diinit
@@ -54,28 +62,27 @@ def backward_char(view=None):
 # def backward_line():
 #     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEUP)
 # 
-#    
+#
+# @diinit
+def content_assist_fill_query(active_view):
+    active_view.widget.fill_query()
+    
 @diinit
-def content_assist(win : Dependency('win')):
-    view = win.active_view()
-#     selected_text = editor.selectedText()
-    if view.name == 'content_assist':
-        view.widget.fill_query()
+def content_assist(win : Dependency('win'), ca : Dependency('content_assist'), active_view = None):
+    if active_view is None:
+        active_view = win.active_view()
+        
+    text = active_view.widget.text()
+    if text:
+        last_char = text[active_view.widget.pos-1] 
+        if (last_char not in string.whitespace) or (last_char == '\n'):
+            ca.activate(active_view)
+            return True
     else:
-        editor = v
-        if view.widget.hasSelectedText():
-        editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
-        ddic['content_assist'].activate()
-    else:
-        text = editor.text()
-        if text:
-            last_char = text[editor.pos-1] 
-            if last_char not in string.whitespace:
-                ddic['content_assist'].activate()
-        else:
-            ddic['content_assist'].activate()
+        ca.activate(active_view)
+        return True
 
-    return True
+    return False
 
 # def select_content_assist():
 #     if ddic['content_assist'].active:

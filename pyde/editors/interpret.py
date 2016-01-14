@@ -173,26 +173,53 @@ class PyInerpretEditor(PydeEditor):
         
         self.globals = {}
         self.globals['ddic'] = ddic
+        for a in ddic['keyactions']:
+            self.globals[a] = ddic['keyactions'][a].action
+            
         self.locals = {}
+        self.markerDefine(QsciScintilla.RightArrow,
+            self.ARROW_MARKER_NUM)
+#         self.setMarkerBackgroundColor(QColor("#ee1111"),
+#             self.ARROW_MARKER_NUM)
+
         self.prompt_begin = 0
+
         
         lexer = QsciLexerPython(self)
         lexer.setDefaultFont(font)
         
         self.setLexer(lexer)
+    
+    @property
+    def prompt_begin(self):
+        return self._prompt_begin
+    
+    @prompt_begin.setter
+    def prompt_begin(self, value):
+        if hasattr(self, '_prompt_begin'):
+            self.markerDelete(self.lineIndexFromPosition(self._prompt_begin)[0], self.ARROW_MARKER_NUM)
+            
+        self._prompt_begin = value
+        self.markerAdd(self.lineIndexFromPosition(self._prompt_begin)[0], self.ARROW_MARKER_NUM)
 
-    def active_text(self):
-        start, stop = self.active_range()
-        return super().text()[start:stop]
+#     def active_text(self):
+# #         start, stop = self.active_range()
+#         return super().text()[self.prompt_begin:self.length()]
     
 #     def active_range(self):
 #         return (self.prompt_begin, self.length())
+
+    def cmd_range(self):
+        return (self.prompt_begin, self.length())
+    
+    def cmd_text(self):
+        return self.text()[self.prompt_begin:self.length()]
 
     def evaluate(self):
 #         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
 #             self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
 #         else:
-        cmd = self.text()
+        cmd = self.cmd_text()
         
 #             buffer = StringIO()
 #             sys.stdout = buffer
