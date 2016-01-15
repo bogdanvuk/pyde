@@ -50,8 +50,8 @@ class NodeVisitor(object):
 
     def visit(self, node):
         """Visit a node."""
-        if node.name:
-            method = 'visit_' + node.name
+        if node.type:
+            method = 'visit_' + node.type
             visitor = getattr(self, method, self.generic_visit)
         else:
             visitor = self.generic_visit
@@ -145,13 +145,12 @@ class RuleContext(Context):
         return self.rule.slice
 
 class ParseTreeBuilder:
-    def __init__(self, tokens, editor):
+    def __init__(self, tokens, active_range):
         self.cur_parent = None
         self.tree = None
         self.tokens = tokens
         self.cur_tok_index = -1
-        self.active_range = editor.active_range()
-        self.editor = editor
+        self.active_range = active_range
 
     def visit(self, node):
         if node['type'] == 'tokref':
@@ -180,7 +179,7 @@ class ParseTreeBuilder:
         #         context = Context(name=node['type'], parent=self.cur_parent)
         rule = ParserRuleContext(self.cur_parent)
         rule.type = node['type']
-        rule.editor = self.editor
+#         rule.editor = self.editor
         
         if self.tree is None:
             self.tree = rule
@@ -287,40 +286,48 @@ def create_tokens(token_json, active_range):
 
     return tokens
 
-class Parser(QObject):
+class Antlr4GenericParser:
     
-    tree_modified = QtCore.pyqtSignal(list, object) #['QWidget'])
+    def __init__(self, language, start_rule):
+        self.language = language
+        self.start_rule = start_rule
     
-    def __init__(self, mode : Dependency('mode/inst/'), context: Dependency('context'), language):
+    def parse(self, text, text_range):
+        text = text[text_range[0]: text_range[1]]
+        self.dirty = False
+        p = subprocess.Popen(['java', 'pyinterface.Main', 
+                              self.language + '.' + self.language, 
+                              self.start_rule, '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
+        parse_out = json.loads(p.decode())
+        tokens = create_tokens(parse_out['tokens'], text_range)
+        dict_tree = parse_out['tree']
+#             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
+        parse_builder = ParseTreeBuilder(tokens, text_range)
+        parse_builder.visit(dict_tree)
+        self.parse_tree = parse_builder.tree
+        builder = ContextBuilder(tokens)
+        builder.visit(self.parse_tree)
+        self.tree = builder.tree
+        return self.tree
+
+class EditorAstManager(QObject):
+    
+    tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
+    
+    def __init__(self, language, start_rule, mode : Dependency('mode/inst/')):
         super().__init__()
         self.thread = QtCore.QThread()
         self.moveToThread(self.thread)
-#        self.context
-#        self.thread.started.connect(self.worker.loop)
+        self.parser = Antlr4GenericParser(language, start_rule)
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
         self.thread.start()
         self.editor = mode.editor.widget
         self.mode = mode
-        self.context = context
-        self.tree_modified.connect(self.context.update_context)
         self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
-#         self.editor.cursorPositionChanged.connect(self.pos_changed)
         self.dirty = False
-    
-    def leaf_node_at(self, pos):
-        if self.tree is not None:
-            return self.context_at_pos(self, pos)[-1]
-        else:
-            return None 
-     
-#     def context_at_pos(self, lineno, col):
-#         if self.tree is not None:
-#             return context_at_pos(self.tree, lineno, col)
-#         else:
-#             return None 
  
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
@@ -329,36 +336,15 @@ class Parser(QObject):
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self.dirty = True
 
-#     def pos_changed(self, line, col):
-#         a = self.context.context_at_pos(self.editor.pos)
-    
     def parse(self):
-#       
-#         text = "2+3\n"
         if self.dirty:
-            text = self.editor.cmd_text()
             self.dirty = False
-            p = subprocess.Popen(['java', 'pyinterface.Main', 
-                                  self.language + '.' + self.language, 
-                                  'file_input', '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
-            parse_out = json.loads(p.decode())
-            tokens = create_tokens(parse_out['tokens'], self.editor.cmd_range())
-            dict_tree = parse_out['tree']
-#             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
-            parse_builder = ParseTreeBuilder(tokens, self.editor)
-            parse_builder.visit(dict_tree)
-            self.parse_tree = parse_builder.tree
-            builder = ContextBuilder(tokens)
-            builder.visit(self.parse_tree)
-            self.tree = builder.tree
-            self.editor.ast = self.tree
-#             self.tree_modified.emit([self.editor.name, 'ast'], self.tree)
-#             a = self.context.context_at_pos(0)
-            pass
+            self.editor.ast = self.parser.parse(self.editor.text(), self.editor.cmd_range())
+            self.tree_modified.emit(self.editor.ast)
         
-def Antlr4ParserFactory(lang_name):
-    class Antlr4Parser(Parser):
-        def __init__(self, mode : Dependency('mode/inst/'), context: Dependency('context')):
-            super().__init__(mode, context, language=lang_name)
+def Antlr4ParserFactory(lang_name, start_rule):
+    class Antlr4Parser(Antlr4GenericParser):
+        def __init__(self):
+            super().__init__(language=lang_name, start_rule=start_rule)
         
     return Antlr4Parser

@@ -150,20 +150,19 @@ class ContentAssistWidget(QtCore.QObject):
         self.view.delete()
 
     def fill_query(self):
-        if self.active:
-            text = self.editor.text()[self.ca_start:self.editor.pos]
-            common_text = ""
+        text = self.editor.text()[self.ca_start:self.editor.pos]
+        common_text = ""
 
-            for k in sorted(self.sieve()):
-                if common_text:
-                    s = SequenceMatcher(None, common_text, k)
-                    match = s.find_longest_match(0, len(common_text), 0, len(k))
-                    if text or (match.b == 0):
-                        common_text = k[match.b:match.b + match.size]
-                        if not common_text:
-                            break
-                else:
-                    common_text = k
+        for k in sorted(self.sieve()):
+            if common_text:
+                s = SequenceMatcher(None, common_text, k)
+                match = s.find_longest_match(0, len(common_text), 0, len(k))
+                if text or (match.b == 0):
+                    common_text = k[match.b:match.b + match.size]
+                    if not common_text:
+                        break
+            else:
+                common_text = k
 
         if common_text:
             self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.ca_start, self.editor.pos - self.ca_start)

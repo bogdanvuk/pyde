@@ -9,11 +9,9 @@
 import sys
 
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
-from PyQt4 import Qsci
 from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
-from pyde.plugins.parser import Parser
-from pyde.ddi import ddic, Dependency, diinit
+from pyde.ddi import ddic
 
 # class ContextVisitor(NodeVisitor):
 # 

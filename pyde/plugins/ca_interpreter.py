@@ -3,6 +3,7 @@ from pyde.ddi import Dependency, ddic
 from pyde.plugins.parser import ContextVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
+import os
 
 def get_ctx_text(ctx, editor):
     return editor.text()[ctx.slice.start:ctx.slice.stop]
@@ -24,13 +25,11 @@ class PyInterpretContentAssist(QObject):
     def __init__(self, 
                  editor : Dependency('view/', lambda e: isinstance(e.widget, ddic['cls/ipython'])),
                  ca : Dependency('content_assist'),
-                 win : Dependency('win'),
-                 context : Dependency('context')):
+                 win : Dependency('win')):
         super().__init__()
         self.ca = ca
         self.win = win
         self.editor = editor
-        self.context = context
         self.ca.complete.connect(self.complete)
      
     def complete(self, acceptor):
@@ -56,21 +55,32 @@ class PyInterpretContentAssist(QObject):
             print('else')
             cur_parent = cur_ctx.parent
             cur_feature = cur_ctx.get_feature_in_parent()
-              
-            if cur_ctx.type == 'argument':
-                expr = get_ctx_parent_of_type(cur_ctx, 'expr')
-                obj = get_obj_for_ctx(expr['calee'], editor)
-                pass
-            elif cur_feature[0] == 'attr':
-                print('attr')
-                calee_ctx = cur_parent['calee']
-                calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
-                obj = eval(calee_text, editor.globals, editor.locals)
-                for d in dir(obj):
-                    acceptor[d] = d
+            
+            main_path_ctx = get_ctx_parent_of_type(cur_ctx, 'main')
+            if main_path_ctx is not None:
+                path = []
+                for i in range(cur_feature[1]):
+                    path.append(get_ctx_text(cur_parent['step'][i], editor))
+                
+                path = '/' + '/'.join(path)
+                for f in os.listdir(path):
+                    acceptor[f] = f
             else:
-                print('else')
-                pass
+                  
+                if cur_ctx.type == 'argument':
+                    expr = get_ctx_parent_of_type(cur_ctx, 'expr')
+                    obj = get_obj_for_ctx(expr['calee'], editor)
+                    pass
+                elif cur_feature[0] == 'attr':
+                    print('attr')
+                    calee_ctx = cur_parent['calee']
+                    calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
+                    obj = eval(calee_text, editor.globals, editor.locals)
+                    for d in dir(obj):
+                        acceptor[d] = d
+                else:
+                    print('else')
+                    pass
         
         print('WHAT?')
         print(cur_ctx)

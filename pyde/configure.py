@@ -5,7 +5,8 @@ import sys
 from pyde.editors.python import PythonEdit
 from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.context import ContextProvider
-from pyde.plugins.parser import Parser, Antlr4ParserFactory
+from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser,\
+    EditorAstManager
 from pyde.plugins.editor_mode import PythonMode
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
@@ -23,18 +24,25 @@ ddic.provide('cls/ipython', PyInerpretEditor)
 ddic.provide_on_demand('cls/templ_actuator', TemplActuator, 'templ_actuator')
 ddic.provide_on_demand('cls/context', ContextProvider, 'context')
 ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
-ddic.provide_on_demand('cls/interpret_path_parser', InterpretPathParser, 'interpret_path_parser')
+ddic.provide_on_demand('cls/interpret_path_parser', InterpretPathParser, 'interpret_path_parser/inst')
 
 ddic.provide_on_demand('mode/python/cls', PythonMode, 'mode/python/inst/')
-ddic.provide('parser/antlr4_generic', Parser)
-ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath'))
-ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
-ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
+ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
+ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))
+ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/python/inst/', inst_kwargs = {'language': 'python3', 'start_rule': 'file_input'}, deps={'mode': Dependency('mode/python/inst/')})
+#ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
+# ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 
 ddic.provide_on_demand('cls/content_assist', ContentAssist, 'content_assist')
 ddic.provide_on_demand('cls/ca_interpreter', PyInterpretContentAssist, 'ca_interpreter')
 
 ddic.provide('cls/keyaction', KeyAction)
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_open', 
+                       inst_kwargs={'action': actions.file_open,
+                                    'key': Qt.Key_O,
+                                    'modifier': Qt.ControlModifier})
+
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/forward_char', 
                        inst_kwargs={'action': actions.dflt_view_action_factory('forward_char'),
                                     'key': Qt.Key_L,

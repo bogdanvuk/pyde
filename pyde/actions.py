@@ -3,6 +3,7 @@ import string
 import os
 from pyde.ddi import ddic, diinit, Dependency
 from pyde.keyaction import KeyActionDfltCondition
+from PyQt4.QtCore import QObject
 
 def forward_char(view=None):
     if view is None:
@@ -18,6 +19,37 @@ def dflt_view_condition_factory(func_name):
             return True
     
     return dflt_view_condition
+
+class FuncArgContentAssist(QObject):
+    language = None
+    
+    def complete(self, acceptor):
+        pass
+
+class LinpathContentAssist(FuncArgContentAssist):
+    language = 'linpath'
+    
+#     def __init__(self, 
+#                  ca : Dependency('content_assist'),
+#                  win : Dependency('win')):
+#         super().__init__()
+#         self.ca = ca
+#         self.win = win
+#         self.ca.complete.connect(self.complete)
+    @property
+    def init_value(self):
+        return "'" + os.getcwd() + "'" 
+    
+    def complete(self, acceptor):
+        pass
+
+@diinit
+def file_open(win : Dependency('win'), path : LinpathContentAssist):
+    active_view = win.active_view()
+    pass
+
+    
+    
 
 def dflt_view_action_factory(func_name):
     @diinit

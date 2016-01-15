@@ -7,6 +7,7 @@ from PyQt4.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
 from pyde.ddi import diinit, Dependency
+from pyde.actions import FuncArgContentAssist
 
 class Template(object):
    
@@ -37,6 +38,11 @@ class TemplFunc:
         self.actuator.insert(self, editor)
         
     def param_val(self, key):
+        p = self.sig.parameters[key]
+        if issubclass(p.annotation, FuncArgContentAssist):
+            return p.annotation().init_value
+        else:
+            return key
 #         a = self.sig.parameters['path'].annotation
 #         if a:
 #             if a == str:
@@ -44,7 +50,8 @@ class TemplFunc:
 #             else:
 #                 return str(a())
 #         else:
-        return str(self.sig.parameters[key])
+#         return key
+    #             return str(self.sig.parameters[key])
 
 class TemplParam(object):
     vtype = str
