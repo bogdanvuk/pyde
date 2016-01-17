@@ -167,11 +167,11 @@ class ParseTreeBuilder:
         else:
             t = node['toktype']
             if self.cur_tok_index >= 0: 
-                start = self.tokens[self.cur_tok_index].slice.stop + self.active_range[0]
+                start = self.tokens[self.cur_tok_index].slice.stop # + self.active_range[0]
             else:
                 start = self.active_range[0]
                 
-            stop = self.tokens[self.cur_tok_index + 1].slice.start + self.active_range[0] + 1
+            stop = self.tokens[self.cur_tok_index + 1].slice.start + 1 # + self.active_range[0]
             s = ContextSlice(start, stop)
             return Token(t,s)
 
@@ -297,7 +297,7 @@ class Antlr4GenericParser:
         self.dirty = False
         p = subprocess.Popen(['java', 'pyinterface.Main', 
                               self.language + '.' + self.language, 
-                              self.start_rule, '-json', text + '\\n'], stdout=subprocess.PIPE).communicate()[0]
+                              self.start_rule, '-json', text + '\n'], stdout=subprocess.PIPE).communicate()[0]
         parse_out = json.loads(p.decode())
         tokens = create_tokens(parse_out['tokens'], text_range)
         dict_tree = parse_out['tree']
@@ -316,18 +316,23 @@ class EditorAstManager(QObject):
     
     def __init__(self, language, start_rule, mode : Dependency('mode/inst/')):
         super().__init__()
-        self.thread = QtCore.QThread()
-        self.moveToThread(self.thread)
+        self.qthread = QtCore.QThread()
+        self.moveToThread(self.qthread)
         self.parser = Antlr4GenericParser(language, start_rule)
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
-        self.thread.start()
+        self.qthread.start()
         self.editor = mode.editor.widget
+        self.editor.ast = self
         self.mode = mode
         self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
-        self.dirty = False
+        self.dirty = True
+        self.ast = None
+ 
+    def __del__(self):
+        self.qthread.quit()
  
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
@@ -336,11 +341,27 @@ class EditorAstManager(QObject):
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self.dirty = True
 
+    def read_only(self, cmd):
+        print('begin ast.read_only')
+        self.parse()
+        cmd(self.editor, self.ast)
+        print('end ast.read_only')
+
     def parse(self):
         if self.dirty:
             self.dirty = False
-            self.editor.ast = self.parser.parse(self.editor.text(), self.editor.cmd_range())
-            self.tree_modified.emit(self.editor.ast)
+            self.ast = self.parser.parse(self.editor.text(), self.editor.active_range())
+            self.tree_modified.emit(self.ast)
+
+class IPythonEditorAstManager(EditorAstManager):
+    def __init__(self, mode):
+        super().__init__(language='python3', start_rule='file_input', mode=mode)
+        
+    def parse(self):
+        if self.dirty:
+            self.dirty = False
+            self.ast = self.parser.parse(self.editor.text(), self.editor.cmd_range())
+            self.tree_modified.emit(self.ast)
         
 def Antlr4ParserFactory(lang_name, start_rule):
     class Antlr4Parser(Antlr4GenericParser):

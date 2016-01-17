@@ -4,34 +4,28 @@ main  :  WS? path_ = path WS?
   ;
 
 path
-  :  relative_path
+  :  rel_path
   |  absolute_path
   ;
 
 absolute_path
-  :  root_=('/' | '~/') rel_path_=relative_path
+  :  '/' rel_path_=rel_path
   ;
 
-relative_path
-  :  step_ += step ('/' step_ += step)*
+rel_path
+  :  (part_ += part)*
   ;
 
-step  :  variableReference
-  |  abbreviatedStep
-  |  TOKEN
+part  :  name_=(NAME | HOME | VARIABLE_REFERENCE) (folder_='/')?
   ;
 
-abbreviatedStep
-  :  '.'
-  |  '..'
-  ;
-
-variableReference
-  :  '$' TOKEN
+VARIABLE_REFERENCE
+  :  '$' NAME
   ;
 
 PATHSEP
        :'/';
+HOME   :'~';
 
-TOKEN : [0-9a-zA-Z_*.\-?]+ ;
+NAME : [0-9a-zA-Z_*.\-?]+ ;
 WS : [ \t\r\n]+;

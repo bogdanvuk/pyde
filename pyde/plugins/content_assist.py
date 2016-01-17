@@ -7,6 +7,7 @@ from pyde.view import View
 from PyQt4 import QtCore
 import sys
 import gc
+from pyde.plugins.parser import ContextVisitor
 
 class ContentAssistContext(ViewContext):
     @property
@@ -44,16 +45,21 @@ class ContentAssist(QObject):
         
         if ca_items:
             self.ca_widget = ContentAssistWidget(editor, ca_items)
-        
-        print(sys.getrefcount(self.ca_widget))
-        pass
             
     def select(self):
         print('selected')
         selected = self.editor.SendScintilla(QsciScintilla.SCI_AUTOCGETCURRENT)
         self.close_selected(selected, None)
     
+class GetCurContextCmd:
+    def __call__(self, editor, ast):
+        cv = ContextVisitor(ast)
+        self.cur_ctx = cv.context_at(editor.anchor-1)
+    
 class ContentAssistWidget(QtCore.QObject):
+    
+    read_ast = QtCore.pyqtSignal(object)
+    
     @diinit
     def __init__(self, editor, items, ca : Dependency('content_assist')):
         super().__init__()
@@ -65,13 +71,25 @@ class ContentAssistWidget(QtCore.QObject):
 #         if view.widget.hasSelectedText():
 #         editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
 #         ddic['content_assist'].activate()
-        self.ca_start = editor.widget.pos
+#         self.ca_start = editor.widget.pos
         self.editor.SCN_AUTOCSELECTION.connect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.connect(self.close_canceled)
         self.editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
+        self.cur_ctx_cmd = GetCurContextCmd()
+
+        self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
+        self.read_ast.emit(self.cur_ctx_cmd)
+        self.read_ast.disconnect()
         
+        if self.cur_ctx_cmd.cur_ctx is None:
+            self.ca_start = self.editor.anchor
+        elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
+            self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
+        else:
+            self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
+            
         self.show()
 
     def previous_line(self):
@@ -81,7 +99,7 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SendScintilla(QsciScintilla.SCI_LINEDOWN)
 
     def show(self):
-        print('show: ' + self.editor.text()[self.ca_start:self.editor.pos+1])
+        print('show: ' + self.editor.text()[self.ca_start:self.editor.pos])
         print('show list: ', ' '.join(sorted(self.sieve())))
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
                                  self.editor.pos - self.ca_start, 
@@ -171,7 +189,7 @@ class ContentAssistWidget(QtCore.QObject):
         self.show()
     
     def sieve(self):
-        text = self.editor.text()[self.ca_start:self.editor.pos+1]
+        text = self.editor.text()[self.ca_start:self.editor.pos]
 #         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
         for k in self.items:
 

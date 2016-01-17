@@ -486,6 +486,7 @@ lambdef_nocond
 or_test
       : star_expr
       | left_=or_test op_=COMP_OP right_=or_test
+      | left_=or_test (not_=NOT)? op_=IN right_=or_test
       | op_=NOT right_=or_test
       | left_=or_test op_=(AND | OR) right_=or_test
       ;
@@ -525,7 +526,6 @@ COMP_OP
  | '<='
  | '<>'
  | '!='
- | IN
  | NOT IN
  | IS
  | IS NOT

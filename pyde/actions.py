@@ -38,18 +38,20 @@ class LinpathContentAssist(FuncArgContentAssist):
 #         self.ca.complete.connect(self.complete)
     @property
     def init_value(self):
-        return "'" + os.getcwd() + "'" 
+        return "'" + os.getcwd() + "/'" 
     
     def complete(self, acceptor):
         pass
 
 @diinit
-def file_open(win : Dependency('win'), path : LinpathContentAssist):
-    active_view = win.active_view()
-    pass
+def execute_action(win : Dependency('win'), active_view = None):
+    interpret = win.view['interpret'].widget
+    interpret.execute_view_action(win.active_view())
 
-    
-    
+@diinit
+def file_open(path : LinpathContentAssist, win : Dependency('win')):
+    active_view = win.active_view()
+    active_view.widget.setText(open(path).read())
 
 def dflt_view_action_factory(func_name):
     @diinit

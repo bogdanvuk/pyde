@@ -54,14 +54,6 @@ class PydeEditor(QsciScintillaCompat):
     def pos(self, val):
         return self.SendScintilla(QsciScintilla.SCI_GOTOPOS, val)
 
-    @property
-    def anchor(self):
-        return self.SendScintilla(QsciScintilla.SCI_GETANCHOR)
-    
-    @anchor.setter
-    def anchor(self, val):
-        return self.SendScintilla(QsciScintilla.SCI_SETANCHOR, val)
-
     def __modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
         pass

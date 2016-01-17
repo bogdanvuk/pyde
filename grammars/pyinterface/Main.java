@@ -114,8 +114,8 @@ public class Main {
 		while ( i<args.length ) {
 			String arg = args[i];
 			i++;
-			if ( arg.charAt(0)!='-' ) { // input file name
-				inputText = arg.replaceAll("\\\\n", "\n");
+			if ( arg.charAt(0)!='-' ) {
+				inputText = arg; //.replaceAll("\\\\n", "\n");
 				continue;
 			}
 			if ( arg.equals("-tree") ) {

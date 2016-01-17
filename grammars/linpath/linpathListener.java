@@ -38,43 +38,23 @@ public interface linpathListener extends ParseTreeListener {
 	 */
 	void exitAbsolute_path(linpathParser.Absolute_pathContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link linpathParser#relative_path}.
+	 * Enter a parse tree produced by {@link linpathParser#rel_path}.
 	 * @param ctx the parse tree
 	 */
-	void enterRelative_path(linpathParser.Relative_pathContext ctx);
+	void enterRel_path(linpathParser.Rel_pathContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link linpathParser#relative_path}.
+	 * Exit a parse tree produced by {@link linpathParser#rel_path}.
 	 * @param ctx the parse tree
 	 */
-	void exitRelative_path(linpathParser.Relative_pathContext ctx);
+	void exitRel_path(linpathParser.Rel_pathContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link linpathParser#step}.
+	 * Enter a parse tree produced by {@link linpathParser#part}.
 	 * @param ctx the parse tree
 	 */
-	void enterStep(linpathParser.StepContext ctx);
+	void enterPart(linpathParser.PartContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link linpathParser#step}.
+	 * Exit a parse tree produced by {@link linpathParser#part}.
 	 * @param ctx the parse tree
 	 */
-	void exitStep(linpathParser.StepContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link linpathParser#abbreviatedStep}.
-	 * @param ctx the parse tree
-	 */
-	void enterAbbreviatedStep(linpathParser.AbbreviatedStepContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link linpathParser#abbreviatedStep}.
-	 * @param ctx the parse tree
-	 */
-	void exitAbbreviatedStep(linpathParser.AbbreviatedStepContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link linpathParser#variableReference}.
-	 * @param ctx the parse tree
-	 */
-	void enterVariableReference(linpathParser.VariableReferenceContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link linpathParser#variableReference}.
-	 * @param ctx the parse tree
-	 */
-	void exitVariableReference(linpathParser.VariableReferenceContext ctx);
+	void exitPart(linpathParser.PartContext ctx);
 }

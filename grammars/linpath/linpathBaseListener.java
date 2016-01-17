@@ -52,49 +52,25 @@ public class linpathBaseListener implements linpathListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRelative_path(linpathParser.Relative_pathContext ctx) { }
+	@Override public void enterRel_path(linpathParser.Rel_pathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitRelative_path(linpathParser.Relative_pathContext ctx) { }
+	@Override public void exitRel_path(linpathParser.Rel_pathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStep(linpathParser.StepContext ctx) { }
+	@Override public void enterPart(linpathParser.PartContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitStep(linpathParser.StepContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterAbbreviatedStep(linpathParser.AbbreviatedStepContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitAbbreviatedStep(linpathParser.AbbreviatedStepContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVariableReference(linpathParser.VariableReferenceContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVariableReference(linpathParser.VariableReferenceContext ctx) { }
+	@Override public void exitPart(linpathParser.PartContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
