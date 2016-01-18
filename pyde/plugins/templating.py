@@ -7,7 +7,12 @@ from PyQt4.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
 from pyde.ddi import diinit, Dependency
-from pyde.actions import FuncArgContentAssist
+
+class FuncArgContentAssist(QObject):
+    language = None
+    
+    def complete(self, acceptor):
+        pass
 
 class Template(object):
    

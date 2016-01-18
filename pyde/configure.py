@@ -41,9 +41,11 @@ ddic.provide_on_demand('cls/ca_interpreter', PyInterpretContentAssist, 'ca_inter
 ddic.provide('cls/keyaction', KeyAction)
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_open', 
-                       inst_kwargs={'action': actions.file_open,
+                       inst_kwargs={'action': actions.file_open_kbd,
                                     'key': Qt.Key_O,
                                     'modifier': Qt.ControlModifier})
+
+ddic.provide('actions/file_open', actions.file_open)
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/execute_action', 
                        inst_kwargs={'action': actions.execute_action,

@@ -171,8 +171,8 @@ class PyInerpretEditor(PydeEditor):
         
         self.globals = {}
         self.globals['ddic'] = ddic
-        for a in ddic['keyactions']:
-            self.globals[a] = ddic['keyactions'][a].action
+        for a in ddic['actions']:
+            self.globals[a] = ddic['actions'][a]
             
         self.locals = {}
         self.markerDefine(QsciScintilla.RightArrow,

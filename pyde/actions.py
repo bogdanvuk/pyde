@@ -4,12 +4,53 @@ import os
 from pyde.ddi import ddic, diinit, Dependency
 from pyde.keyaction import KeyActionDfltCondition
 from PyQt4.QtCore import QObject
+from functools import wraps, partial
+from inspect import getfullargspec, getargspec, signature
+from pyde.plugins.templating import TemplFunc, FuncArgContentAssist
 
-def forward_char(view=None):
-    if view is None:
-        view = ddic['win'].active_view()
+def all2kwargs(func, *args, **kwargs):
+    arg_names, _, defaults, _, _, _, _ = getfullargspec(func)
+
+    params = kwargs
+    
+    if defaults:
+        # Add all the arguments that have a default value to the kwargs
+        for name, val in zip(reversed(arg_names), reversed(defaults)):
+            if name not in params:
+                params[name] = val
+
+    for name, val in zip(arg_names, args):
+        params[name] = val
+
+    unset = [a for a in arg_names if a not in params]
+    
+    return params, unset
+
+def template2interpet(func):
+    def wrapper(*args, **kwargs):
         
-    view.forward_char()
+        kwargs, unset = all2kwargs(func, *args, **kwargs)
+        return func(**kwargs)
+    
+    arg_names, _, defaults, _, _, _, _ = getfullargspec(func)
+
+    no_default = {}
+    if defaults:
+        for a in arg_names[:len(arg_names) - len(defaults)]:
+            no_default[a] = None
+        
+#     sig = signature(func)
+#     params = []
+#     for p in sig.parameters.values():
+#         if p.default is sig.empty:
+#             p = p.replace(name = p.name, kind = p.kind, default = None, annotation=p.annotation)
+#             
+#         params.append(p)
+#               
+#     sig = sig.replace(parameters=tuple(params))
+    w = wraps(wrapper)(partial(func,**no_default))
+    
+    return w
 
 def dflt_view_condition_factory(func_name):
     def dflt_view_condition(key_action, active_view, event):
@@ -19,12 +60,6 @@ def dflt_view_condition_factory(func_name):
             return True
     
     return dflt_view_condition
-
-class FuncArgContentAssist(QObject):
-    language = None
-    
-    def complete(self, acceptor):
-        pass
 
 class LinpathContentAssist(FuncArgContentAssist):
     language = 'linpath'
@@ -48,10 +83,19 @@ def execute_action(win : Dependency('win'), active_view = None):
     interpret = win.view['interpret'].widget
     interpret.execute_view_action(win.active_view())
 
+
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
     active_view.widget.setText(open(path).read())
+
+@diinit
+def file_open_kbd(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
+    interpret = win.view['interpret'].widget
+    execute_action.action(win, active_view)
+    TemplFunc(file_open).apply(interpret)
+
+# file_open()
 
 def dflt_view_action_factory(func_name):
     @diinit
