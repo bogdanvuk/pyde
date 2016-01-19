@@ -11,11 +11,11 @@ class EditorMode:
 class PythonMode(EditorMode):
     name = 'python'
     
-    def __init__(self, editor : Dependency('view/', lambda e: e.name in ['scratch.py'])):
+    def __init__(self, editor : Dependency('view/', lambda e: e.name.endswith('.py'))):
         super().__init__(editor)
         
 class IPythonMode(EditorMode):
-    name = 'python'
+    name = 'ipython'
     
     def __init__(self, editor : Dependency('view/', lambda e: e.name in ['interpret'])):
         super().__init__(editor)

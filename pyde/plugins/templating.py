@@ -40,7 +40,10 @@ class TemplFunc:
         self.text = self.func.__name__ + '(' + ','.join(params) + ')'        
         
     def apply(self, editor):
-        self.actuator.insert(self, editor)
+        if hasattr(editor, 'templating'):
+            editor.templating.insert(self)
+        else:
+            self.editor.insert(self.text)
         
     def param_val(self, key):
         p = self.sig.parameters[key]
@@ -48,6 +51,15 @@ class TemplFunc:
             return p.annotation().init_value
         else:
             return key
+        
+    def param_pos(self, key, text):
+#         p = self.sig.parameters[key]
+        p = list(self.sig.parameters.values())[key]
+        if issubclass(p.annotation, FuncArgContentAssist):
+            return p.annotation().pos(text)
+        else:
+            return None
+        
 #         a = self.sig.parameters['path'].annotation
 #         if a:
 #             if a == str:
@@ -111,74 +123,60 @@ class TemplContext(object):
                     self.text = self.text[:m.span()[0]] + param_val +  self.text[m.span()[1]:]
             else:
                 params_left = False
-#                 text = string.Template(text).safe_substitute(**{position.name:param_val})
-
+                
 class TemplActuator:
+    indic_val_offset = 10
     
-    def __init__(self, win : Dependency('win')):
-        self.templates = {}
+    def __init__(self, view : Dependency('view/')):
         self.indicators = {}
-        self.win = win
-
-    def insert(self, tmpl, editor):
+        self.view = view
+        self.editor = view.widget
+        self.editor.templating = self
+        self.tmpl = None
+        self.tmpl_ctx = None
         
-        tmpl_ctx = TemplContext(tmpl, editor.pos)
-        if editor in self.indicators:
-            editor.clearAllIndicators(self.indicators[editor])
+    def insert(self, tmpl):
+        self.tmpl = tmpl
+        self.tmpl_ctx = TemplContext(tmpl, self.editor.pos)
+        if self.editor in self.indicators:
+            self.editor.clearAllIndicators(self.indicators[self.editor])
 
-        if tmpl_ctx.positions:
-            if editor in self.templates:
-                self.quit(editor)
+        if self.tmpl_ctx.positions:
+           
+            self.editor.insert(self.tmpl_ctx.text)
             
-            self.templates[editor] = tmpl_ctx
+            if self.editor not in self.indicators:
+                self.indicators[self.editor] = self.editor.indicatorDefine(QsciScintilla.INDIC_BOX, QColor(Qt.black))
             
-            editor.insert(tmpl_ctx.text)
-            
-            if editor not in self.indicators:
-                self.indicators[editor] = editor.indicatorDefine(QsciScintilla.INDIC_BOX, QColor(Qt.black))
-            
-            i = 10
-            for _, p in tmpl_ctx.positions.items():
+            i = self.indic_val_offset
+            for _, p in self.tmpl_ctx.positions.items():
+                self.editor.setIndicatorRange(self.indicators[self.editor], p.pos, len(p), i)
                 i+=1
-                editor.setIndicatorRange(self.indicators[editor], p.pos, len(p), i)
             
-            editor.setIndicatorRange(self.indicators[editor], p.pos, len(p), i)
+#             self.editor.setIndicatorRange(self.indicators[self.editor], p.pos, len(p), i)
             
             self.next()
         else:
-            editor.insert(tmpl.text)
+            self.editor.insert(tmpl.text)
+            self.resolve()
     
-    def move(self, editor, pos_name):
-        tmpl_ctx = self.templates[editor]
-        indicator = self.indicators[editor]
+    def resolve(self):
+        self.tmpl = None
+        self.tmpl_ctx = None
+    
+    def move(self, pos_name):
+        indicator = self.indicators[self.editor]
         
         transition_points = []
-        pos = tmpl_ctx.insert_pos
-        length = editor.length()
+        pos = self.tmpl_ctx.insert_pos
+        length = self.editor.length()
         end_pos = length
         while pos <= end_pos:
-            indic_start = editor.indicatorStart(indicator, pos)
-            indic_end = editor.indicatorEnd(indicator, indic_start+1)
+            indic_start = self.editor.indicatorStart(indicator, pos)
+            indic_end = self.editor.indicatorEnd(indicator, indic_start+1)
             if indic_start == indic_end == 0: # No indicators found.
                 break
-#             if not transition_points:
-#                 transition_points.append(indic_start)
-            # Sanity check: scintilla collapses a run of
-            # single-char indicators to one indicator, and we would lose
-            # boundary info for all but the first indicator in this run.
-#             current_run_pos = indic_start
-#             family_next = editor.styleAt(current_run_pos)
-#             while current_run_pos < indic_end - 1:
-#                 family_start = family_next
-#                 family_next = editor.styleAt(current_run_pos + 1)
-#                 if family_start != family_next:
-#                     transition_points.append(current_run_pos + 1)
-#                     current_run_pos += 1
-#                 else:
-#                     break
             
-#             if editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, indic_end):
-            print(editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, indic_end))
             transition_points.append(indic_end)
             if indic_end >= end_pos:  # Past the end of the region specified.
                 break
@@ -187,88 +185,94 @@ class TemplActuator:
                 # In case the last indicator ends on the last char, not at the
                 # posn after the last character
                 pos += 1
-        
-        print(transition_points)
-#         tmpl_ctx.positions[pos_name]
-#         editor.anchor = indicator.pos
-#         editor.SendScintilla(QsciScintilla.SCI_SETSELECTIONEND, indicator.pos + len(indicator))
-        
     
     def prev(self):
-        editor = self.win.active_view().widget
-        indicator = self.indicators[editor]
+        indicator = self.indicators[self.editor]
         
-        position = editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
-        docLen = editor.length()
+        position = self.editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+        docLen = self.editor.length()
 
-        isInIndicator = editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  position)
-        posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator,  position)
-        posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator,  position)
+        isInIndicator = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  position)
+        posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator,  position)
+        posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator,  position)
 
         # pre-condition
         if ((posStart == 0) and (posEnd == docLen - 1)):
             return False
 
         if (posStart <= 0):
-            isInIndicator = editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  docLen - 1)
-            posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, docLen - 1)
+            isInIndicator = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  docLen - 1)
+            posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, docLen - 1)
             
         if (isInIndicator): # try to get out of indicator
-            posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, posStart - 1)
+            posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, posStart - 1)
             if (posStart <= 0):
-                posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, docLen - 1)
+                posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, docLen - 1)
 
         newPos = posStart - 1
-        posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, newPos)
-        posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, newPos)
+        posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, newPos)
+        posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, newPos)
 
         # found
-        if (editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)):
-            currentline = editor.SendScintilla(QsciScintilla.SCI_LINEFROMPOSITION, posEnd);
-            editor.SendScintilla(QsciScintilla.SCI_ENSUREVISIBLE, currentline);	 #make sure target line is unfolded
+        if (self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)):
+            currentline = self.editor.SendScintilla(QsciScintilla.SCI_LINEFROMPOSITION, posEnd);
+            self.editor.SendScintilla(QsciScintilla.SCI_ENSUREVISIBLE, currentline);	 #make sure target line is unfolded
             
-            editor.SendScintilla(QsciScintilla.SCI_SETSEL, posEnd, posStart);
-            editor.SendScintilla(QsciScintilla.SCI_SCROLLCARET);
+            indic_val = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)
+            pos = self.tmpl.param_pos(indic_val - self.indic_val_offset, self.editor.text()[posStart: posEnd])
+            if pos is None:
+                self.editor.SendScintilla(QsciScintilla.SCI_SETSEL, posEnd, posStart);
+            else:
+                self.editor.pos = posStart + pos
+                
+            self.editor.SendScintilla(QsciScintilla.SCI_SCROLLCARET);
+                
             return True;
 
         return False;
         
     def next(self):
-        editor = self.win.active_view().widget
-        indicator = self.indicators[editor]
+        indicator = self.indicators[self.editor]
         
-        position = editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
-        docLen = editor.length()
+        position = self.editor.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+        docLen = self.editor.length()
 
-        isInIndicator = editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  position)
-        posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator,  position)
-        posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator,  position)
+        isInIndicator = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  position)
+        posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator,  position)
+        posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator,  position)
 
         # pre-condition
         if ((posStart == 0) and (posEnd == docLen - 1)):
             return False
 
         if (posEnd >= docLen):
-            isInIndicator = editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  0)
-            posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, 0)
+            isInIndicator = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator,  0)
+            posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, 0)
             
         if (isInIndicator): # try to get out of indicator
-            posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, posEnd)
+            posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, posEnd)
 
         if (posEnd >= docLen):
-            posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, 0)
+            posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, 0)
 
         newPos = posEnd
-        posStart = editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, newPos)
-        posEnd = editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, newPos)
+        posStart = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORSTART, indicator, newPos)
+        posEnd = self.editor.SendScintilla(QsciScintilla.SCI_INDICATOREND, indicator, newPos)
 
         # found
-        if (editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)):
-            currentline = editor.SendScintilla(QsciScintilla.SCI_LINEFROMPOSITION, posEnd);
-            editor.SendScintilla(QsciScintilla.SCI_ENSUREVISIBLE, currentline);	 #make sure target line is unfolded
+        if (self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)):
+            currentline = self.editor.SendScintilla(QsciScintilla.SCI_LINEFROMPOSITION, posEnd);
+            self.editor.SendScintilla(QsciScintilla.SCI_ENSUREVISIBLE, currentline);	 #make sure target line is unfolded
             
-            editor.SendScintilla(QsciScintilla.SCI_SETSEL, posStart, posEnd);
-            editor.SendScintilla(QsciScintilla.SCI_SCROLLCARET);
+            indic_val = self.editor.SendScintilla(QsciScintilla.SCI_INDICATORVALUEAT, indicator, posStart)
+            pos = self.tmpl.param_pos(indic_val - self.indic_val_offset, self.editor.text()[posStart: posEnd])
+            if pos is None:
+                self.editor.SendScintilla(QsciScintilla.SCI_SETSEL, posEnd, posStart);
+            else:
+                self.editor.pos = posStart + pos
+                
+            self.editor.SendScintilla(QsciScintilla.SCI_SCROLLCARET);
+            
             return True;
 
         return False;

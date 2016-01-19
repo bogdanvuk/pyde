@@ -37,6 +37,7 @@ class MainWindow(QtGui.QMainWindow):
         self.views = {}
     
     def place_view(self, view, location=[0]):
+        view.last_location = location
         self.centralWidget.add_view(view, location)
        
 #     def add_view(self, view, location=[0]):

@@ -16,22 +16,27 @@ from pyde.plugins.ca_interpreter import PyInterpretContentAssist
 from pyde.plugins.keydispatcher import KeyDispatcher
 from pyde.plugins.templating import TemplActuator
 from pyde.plugins.interpret_path_parser import InterpretPathParser
+from pyde.plugins.lexer import Lexer
+from pyde.editor import PydeEditor
 
 # ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
-ddic.provide('cls/python', PythonEdit)
+ddic.provide('cls/editor_generic', PydeEditor)
 ddic.provide('cls/ipython', PyInerpretEditor)
-ddic.provide_on_demand('cls/templ_actuator', TemplActuator, 'templ_actuator')
+
+
+ddic.provide_on_demand('cls/lexer', Lexer, 'lexer/inst/')
+ddic.provide_on_demand('cls/templ_actuator', TemplActuator, 'templ_actuator/inst/')
 ddic.provide_on_demand('cls/context', ContextProvider, 'context')
 ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
 ddic.provide_on_demand('cls/interpret_path_parser', InterpretPathParser, 'interpret_path_parser/inst')
 
-ddic.provide_on_demand('mode/cls/python', PythonMode, 'mode/python/inst/')
-ddic.provide_on_demand('mode/cls/ipython', IPythonMode, 'mode/ipython/inst/')
+ddic.provide_on_demand('mode/cls/python', PythonMode, 'mode/inst/')
+ddic.provide_on_demand('mode/cls/ipython', IPythonMode, 'mode/inst/')
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
 ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))
-ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/python/inst/', inst_kwargs = {'language': 'python3', 'start_rule': 'file_input'}, deps={'mode': Dependency('mode/python/inst/')})
-ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/ipython/inst/', deps={'mode': Dependency('mode/ipython/inst/')})
+ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name != "ipython")})
+ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name == "ipython")})
 #ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 # ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 

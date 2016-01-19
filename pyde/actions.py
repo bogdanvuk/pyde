@@ -75,6 +75,9 @@ class LinpathContentAssist(FuncArgContentAssist):
     def init_value(self):
         return "'" + os.getcwd() + "/'" 
     
+    def pos(self, text):
+        return len(text) - 1
+    
     def complete(self, acceptor):
         pass
 
@@ -83,10 +86,15 @@ def execute_action(win : Dependency('win'), active_view = None):
     interpret = win.view['interpret'].widget
     interpret.execute_view_action(win.active_view())
 
-
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
+    
+    new_view = ddic['cls/editor_generic'](os.path.basename(path), parent_view=win)
+    win.place_view(new_view, 
+                   active_view.widget.last_location)
+
+#     new_view.
     active_view.widget.setText(open(path).read())
 
 @diinit

@@ -314,10 +314,17 @@ class EditorAstManager(QObject):
     
     tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
     
-    def __init__(self, language, start_rule, mode : Dependency('mode/inst/')):
+    def __init__(self, mode : Dependency('mode/inst/')):
         super().__init__()
         self.qthread = QtCore.QThread()
         self.moveToThread(self.qthread)
+        if mode.name in ['python', 'ipython']:
+            language = 'python3'
+            start_rule = 'file_input'
+        else:
+            language = mode.name
+            start_rule = 'main'
+            
         self.parser = Antlr4GenericParser(language, start_rule)
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.parse)
@@ -354,9 +361,7 @@ class EditorAstManager(QObject):
             self.tree_modified.emit(self.ast)
 
 class IPythonEditorAstManager(EditorAstManager):
-    def __init__(self, mode):
-        super().__init__(language='python3', start_rule='file_input', mode=mode)
-        
+
     def parse(self):
         if self.dirty:
             self.dirty = False

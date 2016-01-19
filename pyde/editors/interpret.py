@@ -182,11 +182,6 @@ class PyInerpretEditor(PydeEditor):
 
         self.prompt_begin = 0
 
-        
-        lexer = QsciLexerPython(self)
-        lexer.setDefaultFont(font)
-        
-        self.setLexer(lexer)
         self.focus_view = None
         
     @property

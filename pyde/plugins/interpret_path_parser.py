@@ -13,7 +13,10 @@ class ArglistVisitor(NodeVisitor):
         
     def visit_arglist(self, node):
         func = get_obj_for_ctx(node.parent['calee'], self.editor)
-        args, _, _, _, kwonlyargs, _, annotations = getfullargspec(func)
+        try:
+            args, _, _, _, kwonlyargs, _, annotations = getfullargspec(func)
+        except TypeError:
+            return
         
         for annot_arg, annot in annotations.items():
             if issubclass(annot, FuncArgContentAssist):
@@ -24,7 +27,7 @@ class ArglistVisitor(NodeVisitor):
         pass
 
 class InterpretPathParser(QObject):
-    def __init__(self, linpath_parser_cls : Dependency('parser/cls/linpath'), python_ast_manager : Dependency('editor_ast_manager/ipython/inst/')):
+    def __init__(self, linpath_parser_cls : Dependency('parser/cls/linpath'), python_ast_manager : Dependency('editor_ast_manager/inst/', lambda e: e.mode.name == "ipython")):
         super().__init__()
         self.parser = linpath_parser_cls()
         self.editor = python_ast_manager.editor

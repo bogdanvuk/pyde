@@ -281,12 +281,12 @@ class DependencyContainer(DependencyScope):
                     return
 
             if d.all_simple_satisfied() and (not d.all_satisfied()):
-                if len(d.dir_dependencies) == 1:
-                    dir_dep = d.dir_dependencies[0]
-                    dir_feature = feature_scope(dir_dep) 
-                    if dir_feature in self:
-                        for f in self[dir_feature]:
-                            self.inst_demander(d, dir_dep + f)
+#                 if len(d.dir_dependencies) == 1:
+#                     dir_dep = d.dir_dependencies[0]
+#                     dir_feature = feature_scope(dir_dep) 
+#                     if dir_feature in self:
+#                         for f in self[dir_feature]:
+#                             self.inst_demander(d, dir_dep + f)
                             
                 if d.satisfied_on_recurrent_feature_provided(feature):
                     self.inst_demander(d, feature)
@@ -306,7 +306,7 @@ class DependencyContainer(DependencyScope):
     def check_demands(self, feature, provider = None):
 #         inst_on_demand = set()
         for d in reversed(self.demanders):
-            if d.feature == 'cls/win':
+            if d.feature == 'mode/cls/python' and feature == 'view/QsciScintillaCompat.py':
                 pass
             self.check_and_inst_demander(d, feature)
 #             if not d.all_satisfied():
