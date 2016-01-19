@@ -53,6 +53,7 @@ class InterpretPathParser(QObject):
             
             if val.type == 'STRING_LITERAL':
                 val['path'] = self.parser.parse(self.editor.text(), (val.slice.start+1, val.slice.stop-1))
+                val['path'].parent = val['path'] 
                 pass
                 
         pass

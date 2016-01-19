@@ -97,6 +97,8 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
 #     new_view.
     active_view.widget.setText(open(path).read())
 
+# def switch_view(view: ):
+
 @diinit
 def file_open_kbd(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
     interpret = win.view['interpret'].widget

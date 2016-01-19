@@ -497,16 +497,16 @@ star_expr
       ;
 
 expr
-      : value_=atom
-      | calee_=expr '(' a_=arglist? ')'
-      | calee_=expr '[' s_=subscriptlist ']'
-      | calee_=expr op_='.' attr_=NAME
-      | left_=expr op_='**' right_=expr
-      | op_=('+' | '-' | '~') e_=expr
-      | left_=expr op_=('*' | '/' | '%' | '//' | '@') right_=expr
-      | left_=expr op_=('+' | '-') right_=expr
-      | left_=expr op_=('<<' | '>>') right_=expr
-      | left_=expr op_=('|' | '^' | '&') right_=expr
+      : value_=atom #atomic
+      | calee_=expr '(' arglist_=arglist? ')' #funccall
+      | calee_=expr '[' subscript_=subscriptlist ']' #indexing
+      | calee_=expr op_='.' attr_=NAME #member
+      | left_=expr op_='**' right_=expr #power
+      | op_=('+' | '-' | '~') e_=expr #unary
+      | left_=expr op_=('*' | '/' | '%' | '//' | '@') right_=expr #multi
+      | left_=expr op_=('+' | '-') right_=expr #addition
+      | left_=expr op_=('<<' | '>>') right_=expr #shifting
+      | left_=expr op_=('|' | '^' | '&') right_=expr #logical
       ;
 
 /// power: atom trailer* ['**' factor]

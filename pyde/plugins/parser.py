@@ -11,38 +11,6 @@ from pyde.plugins.context import Context, ContextSlice
 
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
-# class NodeVisitor(object):
-# 
-#     def visit(self, node):
-#         """Visit a node."""
-#         method = 'visit_' + node['ctype']
-#         visitor = getattr(self, method, self.generic_visit)
-#         self.visit_all_enter(node)
-#         ret = visitor(node)
-#         self.visit_all_exit(node)
-#         return ret
-#     
-#     def visit_all_enter(self, node):
-#         pass
-#     
-#     def visit_all_exit(self, node):
-#         pass
-# 
-#     def generic_visit(self, node):
-#         """Called if no explicit visitor function exists for a node."""
-#         children = list(range(len(node['children'])))
-#         for field in node['_fields']:
-#             if isinstance(field, int):
-#                 child = node['children'][field]
-#                 self.visit(child)
-#                 children.remove(field)
-#             elif isinstance(field, list):
-#                 
-#                 
-#         for c in children:
-#             child = node['children'][c]
-#             self.visit(child)
-
 class SequenceMatchError(Exception):
     pass
 
@@ -58,6 +26,11 @@ class NodeVisitor(object):
 
         self.visit_all_enter(node)
         ret = visitor(node)
+        if node.parent is not None:
+            method = 'visit_' + node.parent.type + '_' + self.cur_feature
+            if hasattr(self, method):
+                getattr(self, method)(node)
+                
         self.visit_all_exit(node)
         return ret
     
@@ -71,6 +44,7 @@ class NodeVisitor(object):
         """Called if no explicit visitor function exists for a node."""
         for c in node.features:
             child = node.features[c]
+            self.cur_feature = c
             if isinstance(child, list):
                 for elem in child:
                     self.visit(elem)
@@ -205,10 +179,11 @@ class ParseTreeBuilder:
 
 class ContextBuilder(object):
 
-    def __init__(self, parse_tree):
+    def __init__(self, parse_tree, keywords):
         self.tree = None
         self.cur_parent = None
         self.parse_tree = parse_tree
+        self.keywords = keywords
 
     def visit(self, node):
         if isinstance(node, Token):
@@ -220,12 +195,14 @@ class ContextBuilder(object):
         context = RuleContext(self.cur_parent)
         context.type = token.type
         context.rule = token
+        context.keywords = self.keywords
         return context
 
     def visit_rule(self, node):
         #         context = Context(name=node['type'], parent=self.cur_parent)
         context = RuleContext(self.cur_parent)
         context.type = node.type
+        context.keywords = self.keywords
           
         if self.tree is None:
             self.tree = context
@@ -291,6 +268,9 @@ class Antlr4GenericParser:
     def __init__(self, language, start_rule):
         self.language = language
         self.start_rule = start_rule
+        grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
+        with open(os.path.join(grammars_path, language, language) + '.keywords') as data_file:    
+            self.keywords = json.load(data_file)
     
     def parse(self, text, text_range):
         text = text[text_range[0]: text_range[1]]
@@ -305,7 +285,7 @@ class Antlr4GenericParser:
         parse_builder = ParseTreeBuilder(tokens, text_range)
         parse_builder.visit(dict_tree)
         self.parse_tree = parse_builder.tree
-        builder = ContextBuilder(tokens)
+        builder = ContextBuilder(tokens, self.keywords)
         builder.visit(self.parse_tree)
         self.tree = builder.tree
         return self.tree

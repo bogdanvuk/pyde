@@ -528,15 +528,125 @@ public interface python3Listener extends ParseTreeListener {
 	 */
 	void exitStar_expr(python3Parser.Star_exprContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link python3Parser#expr}.
+	 * Enter a parse tree produced by the {@code indexing}
+	 * labeled alternative in {@link python3Parser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void enterExpr(python3Parser.ExprContext ctx);
+	void enterIndexing(python3Parser.IndexingContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link python3Parser#expr}.
+	 * Exit a parse tree produced by the {@code indexing}
+	 * labeled alternative in {@link python3Parser#expr}.
 	 * @param ctx the parse tree
 	 */
-	void exitExpr(python3Parser.ExprContext ctx);
+	void exitIndexing(python3Parser.IndexingContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code funccall}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunccall(python3Parser.FunccallContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code funccall}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunccall(python3Parser.FunccallContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code atomic}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterAtomic(python3Parser.AtomicContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code atomic}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitAtomic(python3Parser.AtomicContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code member}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterMember(python3Parser.MemberContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code member}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitMember(python3Parser.MemberContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code unary}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterUnary(python3Parser.UnaryContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code unary}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitUnary(python3Parser.UnaryContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code power}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterPower(python3Parser.PowerContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code power}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitPower(python3Parser.PowerContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code logical}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterLogical(python3Parser.LogicalContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code logical}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitLogical(python3Parser.LogicalContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code multi}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterMulti(python3Parser.MultiContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code multi}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitMulti(python3Parser.MultiContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code addition}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterAddition(python3Parser.AdditionContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code addition}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitAddition(python3Parser.AdditionContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code shifting}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterShifting(python3Parser.ShiftingContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code shifting}
+	 * labeled alternative in {@link python3Parser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitShifting(python3Parser.ShiftingContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link python3Parser#atom}.
 	 * @param ctx the parse tree

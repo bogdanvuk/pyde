@@ -1,6 +1,6 @@
 from PyQt4.QtCore import QObject
 from pyde.ddi import Dependency, ddic
-from pyde.plugins.parser import ContextVisitor
+from pyde.plugins.parser import ContextVisitor, NodeVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
 import os
@@ -22,6 +22,45 @@ def get_ctx_parent_of_type(ctx, parent_type):
         
     return None
 
+class PathVisitor(object):
+ 
+    def visit(self, node):
+        """Visit a node."""
+        if node.type:
+            method = 'visit_' + node.type
+            visitor = getattr(self, method, self.generic_visit)
+        else:
+            visitor = self.generic_visit
+
+        if node.parent is not None:
+            cur_feature = node.get_feature_in_parent()[0]
+            method = 'visit_' + node.parent.type + '_' + cur_feature
+            if hasattr(self, method):
+                getattr(self, method)(node)
+
+        ret = visitor(node)
+                 
+        return ret
+     
+    def generic_visit(self, node):
+        if node.parent is not None:
+            self.visit(node.parent)
+        
+class ContentAssistVisitor(PathVisitor):
+    def __init__(self, editor, acceptor):
+        self.editor = editor
+        self.acceptor = acceptor
+        
+    def visit_expr_attr(self, node):
+        calee_ctx = node.parent['calee']
+        calee_text = self.editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
+        obj = eval(calee_text, self.editor.globals, self.editor.locals)
+        for d in dir(obj):
+            self.acceptor[d] = d
+
+    def visit_rel_path_path(self):
+        pass
+
 class CompleteCommand:
     
     def accept_global(self, editor):
@@ -38,51 +77,59 @@ class CompleteCommand:
     def __call__(self, editor, ast):
         cv = ContextVisitor(ast)
         cur_ctx = cv.context_at(editor.pos-1)
+        
+        if cur_ctx.type in cur_ctx.keywords:
+            cur_ctx = cv.context_at(editor.pos)
+            
+            if cur_ctx.type in cur_ctx.keywords:
+                return
 
         if cur_ctx is None:
             self.accept_global(editor)
         else:
-            print('else')
-            cur_parent = cur_ctx.parent
-            cur_feature = cur_ctx.get_feature_in_parent()
-            
-            rel_path_ctx = get_ctx_parent_of_type(cur_ctx, 'rel_path')
-            if rel_path_ctx is not None:
-                
-                part_ctx = get_ctx_parent_of_type(cur_ctx, 'part')
-                
-                part_feature = part_ctx.get_feature_in_parent()
-                last_segment = part_feature[1]
-                if cur_ctx.type == 'PATHSEP':
-                    last_segment += 1
-                
-                path = []
-                for i in range(last_segment):
-                    path.append(get_ctx_text(rel_path_ctx['part'][i], editor))
-                
-                path = '/' + ''.join(path)
-                print(path)
-                for f in os.listdir(path):
-                    if os.path.isdir(os.path.join(path,f)):
-                        f = f + '/'
-                        
-                    self.acceptor[f] = f
-            elif cur_ctx.type == 'NAME' and cur_parent.type == 'expr' and cur_feature[0] == 'value':
-                self.accept_global(editor)
-            elif cur_ctx.type == 'argument':
-                expr = get_ctx_parent_of_type(cur_ctx, 'expr')
-                obj = get_obj_for_ctx(expr['calee'], editor)
-                pass
-            elif cur_feature[0] == 'attr':
-                print('attr')
-                calee_ctx = cur_parent['calee']
-                calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
-                obj = eval(calee_text, editor.globals, editor.locals)
-                for d in dir(obj):
-                    self.acceptor[d] = d
-            else:
-                print('else')
-                pass
+            v = ContentAssistVisitor(editor, self.acceptor)
+            v.visit(cur_ctx)
+#             print('else')
+#             cur_parent = cur_ctx.parent
+#             cur_feature = cur_ctx.get_feature_in_parent()
+#             
+#             rel_path_ctx = get_ctx_parent_of_type(cur_ctx, 'rel_path')
+#             if rel_path_ctx is not None:
+#                 
+#                 part_ctx = get_ctx_parent_of_type(cur_ctx, 'part')
+#                 
+#                 part_feature = part_ctx.get_feature_in_parent()
+#                 last_segment = part_feature[1]
+#                 if cur_ctx.type == 'PATHSEP':
+#                     last_segment += 1
+#                 
+#                 path = []
+#                 for i in range(last_segment):
+#                     path.append(get_ctx_text(rel_path_ctx['part'][i], editor))
+#                 
+#                 path = '/' + ''.join(path)
+#                 print(path)
+#                 for f in os.listdir(path):
+#                     if os.path.isdir(os.path.join(path,f)):
+#                         f = f + '/'
+#                         
+#                     self.acceptor[f] = f
+#             elif cur_ctx.type == 'NAME' and cur_parent.type == 'expr' and cur_feature[0] == 'value':
+#                 self.accept_global(editor)
+#             elif cur_ctx.type == 'argument':
+#                 expr = get_ctx_parent_of_type(cur_ctx, 'expr')
+#                 obj = get_obj_for_ctx(expr['calee'], editor)
+#                 pass
+#             elif cur_feature[0] == 'attr':
+#                 print('attr')
+#                 calee_ctx = cur_parent['calee']
+#                 calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
+#                 obj = eval(calee_text, editor.globals, editor.locals)
+#                 for d in dir(obj):
+#                     self.acceptor[d] = d
+#             else:
+#                 print('else')
+#                 pass
 
 class PyInterpretContentAssist(QObject):
     
