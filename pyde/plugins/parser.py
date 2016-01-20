@@ -1,8 +1,8 @@
 import grammars
 import os
 import subprocess
+import collections
 import json
-from pyde.plugins.context import Context, ContextSlice
 
 uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
@@ -10,7 +10,7 @@ os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 class SequenceMatchError(Exception):
     pass
 
-class NodeVisitor(object):
+class NodeVisitor:
 
     def visit(self, node):
         """Visit a node."""
@@ -21,11 +21,12 @@ class NodeVisitor(object):
             visitor = self.generic_visit
 
         self.visit_all_enter(node)
-        ret = visitor(node)
         if node.parent is not None:
             method = 'visit_' + node.parent.type + '_' + self.cur_feature
             if hasattr(self, method):
                 getattr(self, method)(node)
+
+        ret = visitor(node)
                 
         self.visit_all_exit(node)
         return ret
@@ -121,6 +122,23 @@ class ParserRuleContext(list):
             return None
         
         return ContextSlice(start_slice.start, end_slice.stop)
+
+class ParserRuleContextVisitor:
+    def visit(self, node):
+        print(node.type)
+        if node.type:
+            method = 'visit_' + node.type
+            visitor = getattr(self, method, self.generic_visit)
+        else:
+            visitor = self.generic_visit
+
+        return visitor(node)
+    
+    def generic_visit(self, node):
+
+        if isinstance(node, collections.Iterable):
+            for n in node:
+                self.visit(n)
 
 def uri2str(self, separator = '/'):
     return separator + separator.join(map(str, self))
@@ -240,7 +258,7 @@ class ParseTreeBuilder:
             
         return rule
 
-class ContextBuilder(object):
+class ContextBuilder:
 
     def __init__(self, parse_tree, keywords):
         self.tree = None

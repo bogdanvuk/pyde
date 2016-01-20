@@ -35,41 +35,41 @@ public abstract class LexerAdaptor extends Lexer {
 
 	protected void handleBeginArgument() {
 		if (inLexerRule()) {
-			pushMode(ANTLRv4Lexer.LexerCharSet);
+			pushMode(antlr4Lexer.LexerCharSet);
 			more();
 		} else {
-			pushMode(ANTLRv4Lexer.Argument);
+			pushMode(antlr4Lexer.Argument);
 		}
 	}
 
 	protected void handleEndArgument() {
 		popMode();
 		if (_modeStack.size() > 0) {
-			setType(ANTLRv4Lexer.ARGUMENT_CONTENT);
+			setType(antlr4Lexer.ARGUMENT_CONTENT);
 		}
 	}
 
 	protected void handleEndAction() {
 		popMode();
 		if (_modeStack.size() > 0) {
-			setType(ANTLRv4Lexer.ACTION_CONTENT);
+			setType(antlr4Lexer.ACTION_CONTENT);
 		}
 	}
 
 	@Override
 	public Token emit() {
-		if (_type == ANTLRv4Lexer.ID) {
+		if (_type == antlr4Lexer.ID) {
 			String firstChar = _input.getText(Interval.of(_tokenStartCharIndex, _tokenStartCharIndex));
 			if (Character.isUpperCase(firstChar.charAt(0))) {
-				_type = ANTLRv4Lexer.TOKEN_REF;
+				_type = antlr4Lexer.TOKEN_REF;
 			} else {
-				_type = ANTLRv4Lexer.RULE_REF;
+				_type = antlr4Lexer.RULE_REF;
 			}
 
 			if (_currentRuleType == Token.INVALID_TYPE) { // if outside of rule def
 				_currentRuleType = _type; // set to inside lexer or parser rule
 			}
-		} else if (_type == ANTLRv4Lexer.SEMI) { // exit rule def
+		} else if (_type == antlr4Lexer.SEMI) { // exit rule def
 			_currentRuleType = Token.INVALID_TYPE;
 		}
 
@@ -77,11 +77,11 @@ public abstract class LexerAdaptor extends Lexer {
 	}
 
 	private boolean inLexerRule() {
-		return _currentRuleType == ANTLRv4Lexer.TOKEN_REF;
+		return _currentRuleType == antlr4Lexer.TOKEN_REF;
 	}
 
 	@SuppressWarnings("unused")
 	private boolean inParserRule() { // not used, but added for clarity
-		return _currentRuleType == ANTLRv4Lexer.RULE_REF;
+		return _currentRuleType == antlr4Lexer.RULE_REF;
 	}
 }
