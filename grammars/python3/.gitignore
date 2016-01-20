@@ -177,3 +177,12 @@
 /python3Parser$Yield_exprContext.class
 /python3Parser$Yield_stmtContext.class
 /python3Parser.class
+/python3Parser$AdditionContext.class
+/python3Parser$AtomicContext.class
+/python3Parser$FunccallContext.class
+/python3Parser$IndexingContext.class
+/python3Parser$LogicalContext.class
+/python3Parser$MemberContext.class
+/python3Parser$MultiContext.class
+/python3Parser$ShiftingContext.class
+/python3Parser$UnaryContext.class

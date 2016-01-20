@@ -1,14 +1,10 @@
-from PyQt4.QtCore import QObject
-from pyde.ddi import Dependency
 import grammars
 import os
 import subprocess
-from PyQt4.Qsci import QsciScintilla
 import json
-import time
-from PyQt4 import QtCore, QtGui
 from pyde.plugins.context import Context, ContextSlice
 
+uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
 class SequenceMatchError(Exception):
@@ -50,6 +46,21 @@ class NodeVisitor(object):
                     self.visit(elem)
             else:
                 self.visit(child)
+
+class ContextSlice:
+    def __init__(self, start, stop=None):
+        if stop is None:
+            stop = start
+        
+        self.stop = stop
+        self.start = start
+  
+    def contains(self, subslice):
+        if isinstance(subslice, int):
+            subslice = ContextSlice(subslice)
+            
+        return (self.start <= subslice.start) and (self.stop > subslice.stop)
+
 
 class ContextVisitor(NodeVisitor):
 
@@ -110,7 +121,59 @@ class ParserRuleContext(list):
             return None
         
         return ContextSlice(start_slice.start, end_slice.stop)
-        
+
+def uri2str(self, separator = '/'):
+    return separator + separator.join(map(str, self))
+
+class Context:
+    type = 'default'
+    
+    def __init__(self, parent=None):
+        self.parent = parent
+#         if parent is not None:
+#             self.parent.features[name] = self
+        self.features = {} #OrderedDict()
+    
+    def __str__(self):
+        return uri2str(self.uri)
+#         return '{0}: {1}-{2}: {3}'.format(self.name, self.start, self.stop, self.text)
+    
+    __repr__ = __str__
+    
+    @property
+    def uri(self):
+        if self.parent:
+            uri = self.parent.uri + list(self.get_feature_in_parent())
+        else:
+            uri = []
+            
+        return uri
+    
+    def get_feature_in_parent(self):
+        return self.parent.get_feature_for_child(self)
+
+    def get_feature_for_child(self, child):
+        for name, feature in self.features.items():
+            if isinstance(feature, list):
+                for i, cl in enumerate(feature):
+                    if cl == child:
+                        return (name, i)
+            else:
+                if feature == child:
+                    return (name,)
+        return None
+
+    
+    def __iter__(self):
+        return self.features.__iter__()
+    
+    def __getitem__(self, item):
+        return self.features[item]
+
+    def __setitem__(self, item, val):
+        self.features[item] = val
+
+
 class RuleContext(Context):
     type = 'parser_rule'
 
@@ -290,63 +353,6 @@ class Antlr4GenericParser:
         self.tree = builder.tree
         return self.tree
 
-class EditorAstManager(QObject):
-    
-    tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
-    
-    def __init__(self, mode : Dependency('mode/inst/')):
-        super().__init__()
-        self.qthread = QtCore.QThread()
-        self.moveToThread(self.qthread)
-        if mode.name in ['python', 'ipython']:
-            language = 'python3'
-            start_rule = 'file_input'
-        else:
-            language = mode.name
-            start_rule = 'main'
-            
-        self.parser = Antlr4GenericParser(language, start_rule)
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.parse)
-        self.timer.start(1000)
-        self.qthread.start()
-        self.editor = mode.editor.widget
-        self.editor.ast = self
-        self.mode = mode
-        self.language = language
-        self.editor.SCN_MODIFIED.connect(self.text_modified)
-        self.dirty = True
-        self.ast = None
- 
-    def __del__(self):
-        self.qthread.quit()
- 
-    def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
-                   foldPrev, token, annotationLinesAdded):
-          
-        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
-            ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
-            self.dirty = True
-
-    def read_only(self, cmd):
-        print('begin ast.read_only')
-        self.parse()
-        cmd(self.editor, self.ast)
-        print('end ast.read_only')
-
-    def parse(self):
-        if self.dirty:
-            self.dirty = False
-            self.ast = self.parser.parse(self.editor.text(), self.editor.active_range())
-            self.tree_modified.emit(self.ast)
-
-class IPythonEditorAstManager(EditorAstManager):
-
-    def parse(self):
-        if self.dirty:
-            self.dirty = False
-            self.ast = self.parser.parse(self.editor.text(), self.editor.cmd_range())
-            self.tree_modified.emit(self.ast)
         
 def Antlr4ParserFactory(lang_name, start_rule):
     class Antlr4Parser(Antlr4GenericParser):
