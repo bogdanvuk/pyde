@@ -13,10 +13,10 @@ absolute_path
   ;
 
 rel_path
-  :  (part_ += part)*
+  :  part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?
   ;
 
-part  :  name_=(NAME | HOME | VARIABLE_REFERENCE) (folder_=PATHSEP)?
+part  :  name_=(NAME | HOME | VARIABLE_REFERENCE)
   ;
 
 VARIABLE_REFERENCE

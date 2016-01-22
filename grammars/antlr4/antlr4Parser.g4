@@ -314,7 +314,10 @@ element
 		(	sfx_=ebnfSuffix
 		|
 		)
-	|	block_=ebnf
+	|	block_=block
+		(	sfx_=ebnfSuffix
+		|
+		)
 	|	actionBlock QUESTION?		// SEMPRED is actionBlock followed by QUESTION
 	;
 
@@ -384,7 +387,7 @@ setElement
 block
 	:	LPAREN
 		( optionsSpec? ruleAction* COLON )?
-		alternatives_=altList
+		altList_=altList
 		RPAREN
 	;
 

@@ -13,15 +13,6 @@ def get_obj_for_ctx(ctx, editor):
     text = get_ctx_text(ctx, editor)
     return eval(text, editor.globals, editor.locals)
 
-def get_ctx_parent_of_type(ctx, parent_type):
-    while ctx.parent is not None:
-        if ctx.parent.type == parent_type:
-            return ctx.parent
-    
-        ctx = ctx.parent
-        
-    return None
-
 class PathVisitor(object):
  
     def visit(self, node):

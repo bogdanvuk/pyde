@@ -7,6 +7,16 @@ import json
 uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
+def get_ctx_parent_of_type(ctx, *args):
+    while ctx.parent is not None:
+        if ctx.parent.type in args:
+            return ctx.parent
+    
+        ctx = ctx.parent
+        
+    return None
+
+
 class SequenceMatchError(Exception):
     pass
 
@@ -166,6 +176,37 @@ class Context:
             uri = []
             
         return uri
+    
+    def get_parent_of_type(self, *args):
+        ctx = self
+        while ctx.parent is not None:
+            if ctx.parent.type in args:
+                return ctx.parent
+        
+            ctx = ctx.parent
+            
+        return None
+    
+    def get_first_child_of_type(self, *args):
+        class ChildTypeVisitor(NodeVisitor):
+            class FoundElement(Exception):
+                def __init__(self, ctx):
+                    self.ctx = ctx
+
+            def __init__(self, node, *args):
+                self.types = args
+                try:
+                    self.visit(node)
+                except self.FoundElement as e:
+                    return e.ctx
+                
+                return None
+                
+            def visit(self, node):
+                if node.type in args:
+                    raise self.FoundElement(node)
+                
+        return ChildTypeVisitor(self, *args)
     
     def get_feature_in_parent(self):
         return self.parent.get_feature_for_child(self)

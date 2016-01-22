@@ -111,14 +111,14 @@ public class linpathParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(11);
-			switch ( getInterpreter().adaptivePredict(_input,0,_ctx) ) {
-			case 1:
+			_la = _input.LA(1);
+			if (_la==WS) {
 				{
 				setState(10);
 				match(WS);
 				}
-				break;
 			}
+
 			setState(13);
 			((MainContext)_localctx).path_ = path();
 			setState(15);
@@ -170,11 +170,9 @@ public class linpathParser extends Parser {
 		try {
 			setState(19);
 			switch (_input.LA(1)) {
-			case EOF:
 			case VARIABLE_REFERENCE:
 			case HOME:
 			case NAME:
-			case WS:
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(17);
@@ -248,11 +246,16 @@ public class linpathParser extends Parser {
 	public static class Rel_pathContext extends ParserRuleContext {
 		public PartContext part;
 		public List<PartContext> part_ = new ArrayList<PartContext>();
+		public Token folder_;
 		public List<PartContext> part() {
 			return getRuleContexts(PartContext.class);
 		}
 		public PartContext part(int i) {
 			return getRuleContext(PartContext.class,i);
+		}
+		public List<TerminalNode> PATHSEP() { return getTokens(linpathParser.PATHSEP); }
+		public TerminalNode PATHSEP(int i) {
+			return getToken(linpathParser.PATHSEP, i);
 		}
 		public Rel_pathContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -273,23 +276,40 @@ public class linpathParser extends Parser {
 		enterRule(_localctx, 6, RULE_rel_path);
 		int _la;
 		try {
+			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(27);
+			setState(24);
+			((Rel_pathContext)_localctx).part = part();
+			((Rel_pathContext)_localctx).part_.add(((Rel_pathContext)_localctx).part);
+			setState(29);
 			_errHandler.sync(this);
-			_la = _input.LA(1);
-			while ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << VARIABLE_REFERENCE) | (1L << HOME) | (1L << NAME))) != 0)) {
-				{
-				{
-				setState(24);
-				((Rel_pathContext)_localctx).part = part();
-				((Rel_pathContext)_localctx).part_.add(((Rel_pathContext)_localctx).part);
+			_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
+			while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
+				if ( _alt==1 ) {
+					{
+					{
+					setState(25);
+					match(PATHSEP);
+					setState(26);
+					((Rel_pathContext)_localctx).part = part();
+					((Rel_pathContext)_localctx).part_.add(((Rel_pathContext)_localctx).part);
+					}
+					} 
 				}
-				}
-				setState(29);
+				setState(31);
 				_errHandler.sync(this);
-				_la = _input.LA(1);
+				_alt = getInterpreter().adaptivePredict(_input,3,_ctx);
 			}
+			setState(33);
+			_la = _input.LA(1);
+			if (_la==PATHSEP) {
+				{
+				setState(32);
+				((Rel_pathContext)_localctx).folder_ = match(PATHSEP);
+				}
+			}
+
 			}
 		}
 		catch (RecognitionException re) {
@@ -305,11 +325,9 @@ public class linpathParser extends Parser {
 
 	public static class PartContext extends ParserRuleContext {
 		public Token name_;
-		public Token folder_;
 		public TerminalNode NAME() { return getToken(linpathParser.NAME, 0); }
 		public TerminalNode HOME() { return getToken(linpathParser.HOME, 0); }
 		public TerminalNode VARIABLE_REFERENCE() { return getToken(linpathParser.VARIABLE_REFERENCE, 0); }
-		public TerminalNode PATHSEP() { return getToken(linpathParser.PATHSEP, 0); }
 		public PartContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -331,7 +349,7 @@ public class linpathParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(30);
+			setState(35);
 			((PartContext)_localctx).name_ = _input.LT(1);
 			_la = _input.LA(1);
 			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << VARIABLE_REFERENCE) | (1L << HOME) | (1L << NAME))) != 0)) ) {
@@ -339,15 +357,6 @@ public class linpathParser extends Parser {
 			} else {
 				consume();
 			}
-			setState(32);
-			_la = _input.LA(1);
-			if (_la==PATHSEP) {
-				{
-				setState(31);
-				((PartContext)_localctx).folder_ = match(PATHSEP);
-				}
-			}
-
 			}
 		}
 		catch (RecognitionException re) {
@@ -362,17 +371,17 @@ public class linpathParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\7%\4\2\t\2\4\3\t"+
+		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\7(\4\2\t\2\4\3\t"+
 		"\3\4\4\t\4\4\5\t\5\4\6\t\6\3\2\5\2\16\n\2\3\2\3\2\5\2\22\n\2\3\3\3\3\5"+
-		"\3\26\n\3\3\4\3\4\3\4\3\5\7\5\34\n\5\f\5\16\5\37\13\5\3\6\3\6\5\6#\n\6"+
-		"\3\6\2\2\7\2\4\6\b\n\2\3\4\2\3\3\5\6$\2\r\3\2\2\2\4\25\3\2\2\2\6\27\3"+
-		"\2\2\2\b\35\3\2\2\2\n \3\2\2\2\f\16\7\7\2\2\r\f\3\2\2\2\r\16\3\2\2\2\16"+
-		"\17\3\2\2\2\17\21\5\4\3\2\20\22\7\7\2\2\21\20\3\2\2\2\21\22\3\2\2\2\22"+
-		"\3\3\2\2\2\23\26\5\b\5\2\24\26\5\6\4\2\25\23\3\2\2\2\25\24\3\2\2\2\26"+
-		"\5\3\2\2\2\27\30\7\4\2\2\30\31\5\b\5\2\31\7\3\2\2\2\32\34\5\n\6\2\33\32"+
-		"\3\2\2\2\34\37\3\2\2\2\35\33\3\2\2\2\35\36\3\2\2\2\36\t\3\2\2\2\37\35"+
-		"\3\2\2\2 \"\t\2\2\2!#\7\4\2\2\"!\3\2\2\2\"#\3\2\2\2#\13\3\2\2\2\7\r\21"+
-		"\25\35\"";
+		"\3\26\n\3\3\4\3\4\3\4\3\5\3\5\3\5\7\5\36\n\5\f\5\16\5!\13\5\3\5\5\5$\n"+
+		"\5\3\6\3\6\3\6\2\2\7\2\4\6\b\n\2\3\4\2\3\3\5\6\'\2\r\3\2\2\2\4\25\3\2"+
+		"\2\2\6\27\3\2\2\2\b\32\3\2\2\2\n%\3\2\2\2\f\16\7\7\2\2\r\f\3\2\2\2\r\16"+
+		"\3\2\2\2\16\17\3\2\2\2\17\21\5\4\3\2\20\22\7\7\2\2\21\20\3\2\2\2\21\22"+
+		"\3\2\2\2\22\3\3\2\2\2\23\26\5\b\5\2\24\26\5\6\4\2\25\23\3\2\2\2\25\24"+
+		"\3\2\2\2\26\5\3\2\2\2\27\30\7\4\2\2\30\31\5\b\5\2\31\7\3\2\2\2\32\37\5"+
+		"\n\6\2\33\34\7\4\2\2\34\36\5\n\6\2\35\33\3\2\2\2\36!\3\2\2\2\37\35\3\2"+
+		"\2\2\37 \3\2\2\2 #\3\2\2\2!\37\3\2\2\2\"$\7\4\2\2#\"\3\2\2\2#$\3\2\2\2"+
+		"$\t\3\2\2\2%&\t\2\2\2&\13\3\2\2\2\7\r\21\25\37#";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {
