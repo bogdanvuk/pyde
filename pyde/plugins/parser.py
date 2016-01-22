@@ -324,23 +324,24 @@ class ContextBuilder:
 
 class Token:
     
-    def __init__(self, t, s):
+    def __init__(self, t, s, text=''):
         self.type = t
         self.slice = s
+        self.text = text
     
     def __repr__(self):
         return "{}: {}".format(self.type, self.slice.eval())
       
     def __str__(self):
-        return self.slice.eval()
+        return self.text
 
-def create_tokens(token_json, active_range):
+def create_tokens(token_json, text, active_range):
 #     active_range = editor.active_range()
     tokens = []
     for tj in token_json:
         t = tj['type']
         s = ContextSlice(tj['start'] + active_range[0], tj['stop'] + active_range[0] + 1)
-        tokens.append(Token(t,s))
+        tokens.append(Token(t,s,text[s.start:s.stop]))
 
     return tokens
 
@@ -349,18 +350,19 @@ class Antlr4GenericParser:
     def __init__(self, language, start_rule):
         self.language = language
         self.start_rule = start_rule
-        grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
+#         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
+        grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
         with open(os.path.join(grammars_path, language, language) + '.keywords') as data_file:    
             self.keywords = json.load(data_file)
     
     def parse(self, text, text_range):
-        text = text[text_range[0]: text_range[1]]
+        active_text = text[text_range[0]: text_range[1]]
         self.dirty = False
         p = subprocess.Popen(['java', 'pyinterface.Main', 
                               self.language + '.' + self.language, 
-                              self.start_rule, '-json', text + '\n'], stdout=subprocess.PIPE).communicate()[0]
+                              self.start_rule, '-json', active_text + '\n'], stdout=subprocess.PIPE).communicate()[0]
         parse_out = json.loads(p.decode())
-        tokens = create_tokens(parse_out['tokens'], text_range)
+        tokens = create_tokens(parse_out['tokens'], text, text_range)
         dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
         parse_builder = ParseTreeBuilder(tokens, text_range)

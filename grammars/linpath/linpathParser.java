@@ -309,6 +309,7 @@ public class linpathParser extends Parser {
 		public TerminalNode NAME() { return getToken(linpathParser.NAME, 0); }
 		public TerminalNode HOME() { return getToken(linpathParser.HOME, 0); }
 		public TerminalNode VARIABLE_REFERENCE() { return getToken(linpathParser.VARIABLE_REFERENCE, 0); }
+		public TerminalNode PATHSEP() { return getToken(linpathParser.PATHSEP, 0); }
 		public PartContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}

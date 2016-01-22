@@ -3090,8 +3090,10 @@ public class antlr4Parser extends Parser {
 	}
 
 	public static class ElementContext extends ParserRuleContext {
-		public AtomContext atom;
-		public List<AtomContext> name_ = new ArrayList<AtomContext>();
+		public LabeledElementContext lbl_;
+		public EbnfSuffixContext sfx_;
+		public AtomContext name_;
+		public EbnfContext block_;
 		public LabeledElementContext labeledElement() {
 			return getRuleContext(LabeledElementContext.class,0);
 		}
@@ -3133,7 +3135,7 @@ public class antlr4Parser extends Parser {
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(480);
-				labeledElement();
+				((ElementContext)_localctx).lbl_ = labeledElement();
 				setState(483);
 				switch (_input.LA(1)) {
 				case QUESTION:
@@ -3141,7 +3143,7 @@ public class antlr4Parser extends Parser {
 				case PLUS:
 					{
 					setState(481);
-					ebnfSuffix();
+					((ElementContext)_localctx).sfx_ = ebnfSuffix();
 					}
 					break;
 				case TOKEN_REF:
@@ -3167,8 +3169,7 @@ public class antlr4Parser extends Parser {
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(485);
-				((ElementContext)_localctx).atom = atom();
-				((ElementContext)_localctx).name_.add(((ElementContext)_localctx).atom);
+				((ElementContext)_localctx).name_ = atom();
 				setState(488);
 				switch (_input.LA(1)) {
 				case QUESTION:
@@ -3176,7 +3177,7 @@ public class antlr4Parser extends Parser {
 				case PLUS:
 					{
 					setState(486);
-					ebnfSuffix();
+					((ElementContext)_localctx).sfx_ = ebnfSuffix();
 					}
 					break;
 				case TOKEN_REF:
@@ -3202,7 +3203,7 @@ public class antlr4Parser extends Parser {
 				enterOuterAlt(_localctx, 3);
 				{
 				setState(490);
-				ebnf();
+				((ElementContext)_localctx).block_ = ebnf();
 				}
 				break;
 			case 4:
@@ -3235,6 +3236,9 @@ public class antlr4Parser extends Parser {
 	}
 
 	public static class LabeledElementContext extends ParserRuleContext {
+		public IdContext id_;
+		public AtomContext name_;
+		public BlockContext block_;
 		public IdContext id() {
 			return getRuleContext(IdContext.class,0);
 		}
@@ -3268,7 +3272,7 @@ public class antlr4Parser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(497);
-			id();
+			((LabeledElementContext)_localctx).id_ = id();
 			setState(498);
 			_la = _input.LA(1);
 			if ( !(_la==ASSIGN || _la==PLUS_ASSIGN) ) {
@@ -3285,13 +3289,13 @@ public class antlr4Parser extends Parser {
 			case NOT:
 				{
 				setState(499);
-				atom();
+				((LabeledElementContext)_localctx).name_ = atom();
 				}
 				break;
 			case LPAREN:
 				{
 				setState(500);
-				block();
+				((LabeledElementContext)_localctx).block_ = block();
 				}
 				break;
 			default:
@@ -3311,6 +3315,8 @@ public class antlr4Parser extends Parser {
 	}
 
 	public static class EbnfContext extends ParserRuleContext {
+		public BlockContext block_;
+		public BlockSuffixContext sfx_;
 		public BlockContext block() {
 			return getRuleContext(BlockContext.class,0);
 		}
@@ -3339,13 +3345,13 @@ public class antlr4Parser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(503);
-			block();
+			((EbnfContext)_localctx).block_ = block();
 			setState(505);
 			_la = _input.LA(1);
 			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << QUESTION) | (1L << STAR) | (1L << PLUS))) != 0)) {
 				{
 				setState(504);
-				blockSuffix();
+				((EbnfContext)_localctx).sfx_ = blockSuffix();
 				}
 			}
 
@@ -3907,11 +3913,12 @@ public class antlr4Parser extends Parser {
 	}
 
 	public static class BlockContext extends ParserRuleContext {
+		public AltListContext alternatives_;
 		public TerminalNode LPAREN() { return getToken(antlr4Parser.LPAREN, 0); }
+		public TerminalNode RPAREN() { return getToken(antlr4Parser.RPAREN, 0); }
 		public AltListContext altList() {
 			return getRuleContext(AltListContext.class,0);
 		}
-		public TerminalNode RPAREN() { return getToken(antlr4Parser.RPAREN, 0); }
 		public TerminalNode COLON() { return getToken(antlr4Parser.COLON, 0); }
 		public OptionsSpecContext optionsSpec() {
 			return getRuleContext(OptionsSpecContext.class,0);
@@ -3978,7 +3985,7 @@ public class antlr4Parser extends Parser {
 			}
 
 			setState(586);
-			altList();
+			((BlockContext)_localctx).alternatives_ = altList();
 			setState(587);
 			match(RPAREN);
 			}

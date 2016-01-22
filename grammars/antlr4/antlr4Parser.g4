@@ -306,22 +306,22 @@ alternative
 	;
 
 element
-	:	labeledElement
-		(	ebnfSuffix
+	:	lbl_=labeledElement
+		(	sfx_=ebnfSuffix
 		|
 		)
-	|	name_+=atom
-		(	ebnfSuffix
+	|	name_=atom
+		(	sfx_=ebnfSuffix
 		|
 		)
-	|	ebnf
+	|	block_=ebnf
 	|	actionBlock QUESTION?		// SEMPRED is actionBlock followed by QUESTION
 	;
 
 labeledElement
-	:	id ( ASSIGN | PLUS_ASSIGN )
-		(	atom
-		|	block
+	:	id_=id ( ASSIGN | PLUS_ASSIGN )
+		(	name_=atom
+		|	block_=block
 		)
 	;
 
@@ -329,7 +329,7 @@ labeledElement
 // EBNF and blocks
 
 ebnf
-	:	block blockSuffix?
+	:	block_=block sfx_=blockSuffix?
 	;
 
 blockSuffix
@@ -384,7 +384,7 @@ setElement
 block
 	:	LPAREN
 		( optionsSpec? ruleAction* COLON )?
-		altList
+		alternatives_=altList
 		RPAREN
 	;
 

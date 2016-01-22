@@ -16,7 +16,7 @@ rel_path
   :  (part_ += part)*
   ;
 
-part  :  name_=(NAME | HOME | VARIABLE_REFERENCE) (folder_='/')?
+part  :  name_=(NAME | HOME | VARIABLE_REFERENCE) (folder_=PATHSEP)?
   ;
 
 VARIABLE_REFERENCE
