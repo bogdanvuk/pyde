@@ -3,6 +3,7 @@ import json
 import subprocess
 from pyde.plugins.parser import ContextBuilder, Context,ParserRuleContextVisitor,\
     Antlr4GenericParser, ContextVisitor, NodeVisitor, get_ctx_parent_of_type
+import os
 
 def parse_tree_gen(grammar_file, grammar_text):
         
@@ -148,38 +149,129 @@ class NextRulesVisitor:
         
         return self.next_rules
 
+class ParserRuleContext(list):
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
+
+    def root(self):
+        node = self
+        while (node.parent is not None):
+            node = node.parent
+        
+        return node
+    
+    def __repr__(self):
+#         return super(ParserRuleContext, self).__repr__()
+        if hasattr(self, 'type'):
+            str = self.type
+            if len(self) > 1:
+#                 print(super(ParserRuleContext, self).__repr__())
+                str += ': ' + super(ParserRuleContext, self).__repr__()
+            return str
+        else:
+            return super(ParserRuleContext, self).__repr__()
+
+class ParseTreeBuilder:
+    def __init__(self):
+        self.cur_parent = None 
+    
+    def visit(self, node):
+        rule = ParserRuleContext(self.cur_parent)
+        for k,v in node.items():
+            if k == 'feature':
+                # remove '_' at the end of the feature name, the hack to allow
+                # for features to have same names as rules in ANTLR4
+                setattr(rule, k, v[:-1])  
+            elif k != 'children':
+                setattr(rule, k, v)
+        
+        self.cur_parent = rule
+        for c in node['children']:
+            rule.append(self.visit(c))
+            
+        return rule
+
+def loadGrammarAst(grammar):
+    import pyde
+    
+    with open(os.path.join(pyde.__path__[0], '..', 'grammars', grammar, grammar + 'AST.js')) as ast_file:    
+        ast_js = json.load(ast_file)
+
+    rules = {}    
+    for name, rule in ast_js.items():
+        b = ParseTreeBuilder()
+        ruleCtx = b.visit(rule)
+        rules[name] = ruleCtx
+        
+    return rules
+
+class ASTStateVisitor(ParserRuleContextVisitor):
+    def __init__(self):
+        self.states = {}
+        
+    def visit(self, node):
+        if hasattr(node, 'state'):
+            if node.state >= 0:
+                self.states[node.state] = node
+                
+        return super().visit(node)
+
+def createASTStatesMap(rules):
+    v = ASTStateVisitor()
+    for _, r in rules.items():
+        v.visit(r)
+        
+    return v.states
+
+def getSuggestions(text):
+    loadGrammarAst('linpath')         
+    p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
+                      'linpath', 'main', text], stdout=subprocess.PIPE).communicate()[0]
+
+    suggestions = json.loads(p.decode())
+    return suggestions
+
 if __name__ == "__main__":
-    
-    grammar_file = '../linpath/linpath.g4'
-    start_rule_name = 'main'
-    with open(grammar_file, 'r') as g:
-        grammar_text=g.read()
-
-    parse_tree = parse_tree_gen(grammar_file, grammar_text)
-    parse_rules = get_rules(parse_tree)
-
-#     test_text = "ddic[' ']\n"
+    rules = loadGrammarAst('linpath')
+    states = createASTStatesMap(rules)
+    suggestions = getSuggestions('')
+    for s in suggestions:
+        for state in s['state_stack']:
+            grammar = states[state]
+            if hasattr(grammar, 'feature'):
+                print('visit_' + grammar.root().name + '_' + grammar.feature)
+            pass
+#     grammar_file = '../linpath/linpath.g4'
+#     start_rule_name = 'main'
+#     with open(grammar_file, 'r') as g:
+#         grammar_text=g.read()
+# 
+#     parse_tree = parse_tree_gen(grammar_file, grammar_text)
+#     parse_rules = get_rules(parse_tree)
+# 
+# #     test_text = "ddic[' ']\n"
+# #     
+# #     p = subprocess.Popen(['java', 'pyinterface.Main', 
+# #                       'python3.python3', 
+# #                       'file_input', '-gui', "ddic[' ']\n"], stdout=subprocess.PIPE).communicate()[0]
+# #     p = subprocess.Popen(['java', 'pyinterface.Main', 
+# #                       'linpath.linpath', 
+# #                       'main', '-gui', test_text + '\n'], stdout=subprocess.PIPE).communicate()[0]
+#     test_text = "view/proba/"
+# 
+#     parser = Antlr4GenericParser('linpath', 'main')
+#     test_tree = parser.parse(test_text, (0, len(test_text)))
+#     v = ContextVisitor(test_tree)
+#     ctx = v.context_at(10)
+#     v = NextRulesVisitor(parse_rules)
+#     next_rules = v.get_next_rules(ctx)
+#     pass
 #     
-#     p = subprocess.Popen(['java', 'pyinterface.Main', 
-#                       'python3.python3', 
-#                       'file_input', '-gui', "ddic[' ']\n"], stdout=subprocess.PIPE).communicate()[0]
-#     p = subprocess.Popen(['java', 'pyinterface.Main', 
-#                       'linpath.linpath', 
-#                       'main', '-gui', test_text + '\n'], stdout=subprocess.PIPE).communicate()[0]
-    test_text = "view/proba/"
-
-    parser = Antlr4GenericParser('linpath', 'main')
-    test_tree = parser.parse(test_text, (0, len(test_text)))
-    v = ContextVisitor(test_tree)
-    ctx = v.context_at(10)
-    v = NextRulesVisitor(parse_rules)
-    next_rules = v.get_next_rules(ctx)
-    pass
-    
-#     v = GrammarParseVisitor()
-#     v.visit()
-    
-#     root = Context()
-#     root.rule = start_rule
+# #     v = GrammarParseVisitor()
+# #     v.visit()
+#     
+# #     root = Context()
+# #     root.rule = start_rule
 
     

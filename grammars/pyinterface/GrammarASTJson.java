@@ -29,7 +29,6 @@ import org.antlr.v4.runtime.RecognitionException;
 
 public class GrammarASTJson implements GrammarASTVisitor {
 	JSONObject allRules;
-	JSONObject rule;
 	Stack<JSONArray> childrenStack;
 	Stack<JSONObject> jsonStack;
 	Grammar g;
@@ -47,39 +46,100 @@ public class GrammarASTJson implements GrammarASTVisitor {
 	
 	public JSONObject toJson() {
 		allRules = new JSONObject();
-//		Stack<JSONArray> childrenStack = new Stack<JSONArray>();
-//		Stack<JSONObject> jsonStack = new Stack<JSONObject>();
-//
+
 //		this.jsonStack.push(new JSONObject());
 //    	this.childrenStack.push(new JSONArray());
     	g.ast.visit(this);
     	return this.allRules;
 	}
 
-	public void visitAll(CommonTree commonTree) {
-		if( commonTree.getChildren() != null) {
-			for( Object c: commonTree.getChildren()) {
+	public JSONObject visitAll(GrammarAST node) {
+		
+		if (jsonStack != null) {
+	   		jsonStack.push(new JSONObject());
+	   		if (!childrenStack.isEmpty()) {
+	   			childrenStack.peek().put(this.jsonStack.peek());
+	   		}
+	   		childrenStack.push(new JSONArray());
+		}
+
+		if( node.getChildren() != null) {
+			for( Object c: node.getChildren()) {
 				((GrammarAST) c).visit(this);
 			}
 		}
+		
+		if (jsonStack != null) {
+			try {
+				if (node.atnState == null) {
+					jsonStack.peek().put("state", -1);
+				} else {
+					jsonStack.peek().put("state", node.atnState.stateNumber);
+				}
+				jsonStack.peek().put("type", ANTLRParser.tokenNames[node.getType()]);
+				jsonStack.peek().put("children", childrenStack.pop());
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+			return jsonStack.pop();
+		}
+		
+		return null;
 	}
 	
 	@Override
 	public Object visit(GrammarAST node) {
-		this.visitAll(node);		
-		return null;
+		JSONObject rule;
+		if (node.getType() == ANTLRParser.PLUS_ASSIGN || 
+				node.getType() == ANTLRParser.ASSIGN) {
+			rule = (JSONObject) ((GrammarAST) node.getChild(1)).visit(this);
+			try {
+				rule.put("feature", node.getChild(0).getText());
+				if (node.getType() == ANTLRParser.PLUS_ASSIGN) {
+					rule.put("featureAccumulation", true);
+				} else {
+					rule.put("featureAccumulation", false);
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		} else { 
+			rule = this.visitAll(node);
+		}
+		return rule;
 	}
 
 	@Override
 	public Object visit(GrammarRootAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(RuleAST node) {
 
-		rule = new JSONObject();
+		
+		childrenStack = new Stack<JSONArray>();
+		jsonStack = new Stack<JSONObject>();
+		
+//		for(GrammarAST field: node.getNodesWithType(ANTLRParser.ID)){
+//			String fieldName = field.getText();
+//			try {
+//				JSONObject jsField;
+//				if (!rule.has(fieldName)) {
+//					jsField = new JSONObject();
+//					jsField.put("name", fieldName);
+//					jsField.put("atn_states", new JSONArray());
+//					rule.put(fieldName, jsField);
+//				} else {
+//					jsField = (JSONObject) rule.get(fieldName);
+//				}
+//				JSONArray jsAtnStates = (JSONArray) jsField.get("atn_states");
+//				jsAtnStates.put(((GrammarAST) field.parent.getChild(1)).atnState.stateNumber);
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			}
+//		}
+		JSONObject rule = this.visitAll((GrammarAST) node.getFirstDescendantWithType(ANTLRParser.ALT));
 		try {
 			allRules.put(node.getRuleName(), rule);
 			rule.put("fields", new JSONObject());
@@ -87,92 +147,78 @@ public class GrammarASTJson implements GrammarASTVisitor {
 		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-		for(GrammarAST field: node.getNodesWithType(ANTLRParser.ID)){
-			String fieldName = field.getText();
-			try {
-				JSONObject jsField;
-				if (!rule.has(fieldName)) {
-					jsField = new JSONObject();
-					jsField.put("name", fieldName);
-					jsField.put("atn_states", new JSONArray());
-					rule.put(fieldName, jsField);
-				} else {
-					jsField = (JSONObject) rule.get(fieldName);
-				}
-				JSONArray jsAtnStates = (JSONArray) jsField.get("atn_states");
-				jsAtnStates.put(((GrammarAST) field.parent.getChild(1)).atnState.stateNumber);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-		//this.visitAll(node.getFirstDescendantWithType(ANTLRParser.ALT));		
-		return null;
+		childrenStack = null;
+		jsonStack = null;
+		return rule;
 	}
 
 	@Override
 	public Object visit(BlockAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(OptionalBlockAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(PlusBlockAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(StarBlockAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(AltAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(NotAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(PredAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(RangeAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(SetAST node) {
-		this.visitAll(node);
-		return null;
+		return this.visitAll(node);
 	}
 
 	@Override
 	public Object visit(RuleRefAST node) {
-		this.visitAll(node);
-		return null;
+		JSONObject rule = this.visitAll(node);
+		try {
+			rule.put("ref", node.getText());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		return rule;
 	}
 
 	@Override
 	public Object visit(TerminalAST node) {
-		this.visitAll(node);
-		return null;
+		JSONObject rule = this.visitAll(node);
+		try {
+			rule.put("ref", node.getText());
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+
+		return rule;
 	}
 	
 }

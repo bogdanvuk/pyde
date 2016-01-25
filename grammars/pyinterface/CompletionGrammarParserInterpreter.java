@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.antlr.v4.runtime.ANTLRErrorStrategy;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserInterpreter;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNDeserializer;
@@ -25,6 +27,7 @@ import org.json.JSONObject;
 
 public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter {
 	JSONArray suggestions;
+	CompletionErrorListener errListener;
 	
 	public static class CompletionErrorStrategy extends BailButConsumeErrorStrategy {
 		JSONArray suggestions;
@@ -35,18 +38,65 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 		
 		@Override
 		public void recover(Parser recognizer, RecognitionException e) {
-			JSONObject s = new JSONObject();
-			suggestions.put(s);
 			GrammarParserInterpreter r = (GrammarParserInterpreter) recognizer;
-			try {
-				s.put("invoking_state", r.getContext().invokingState);
-				s.put("current_state", e.getOffendingState());
-				s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
-			} catch (JSONException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			if (r.getContext().invokingState >= 0) {
+				JSONObject s = new JSONObject();
+				suggestions.put(s);
+				try {
+					JSONArray stateStack = new JSONArray();
+					stateStack.put(e.getOffendingState());
+					ParserRuleContext ctx = r.getContext();
+					while (ctx != null){
+						if (ctx.invokingState >= 0) {
+							stateStack.put(ctx.invokingState);
+						}
+						ctx = ctx.getParent();
+					}
+					s.put("state_stack", stateStack);
+					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+				} catch (JSONException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 			}
 			super.recover(recognizer, e);
+		}
+	}
+	
+	public static class CompletionErrorListener extends BaseErrorListener {
+		JSONArray suggestions;
+		
+		public CompletionErrorListener() {
+			suggestions = new JSONArray();
+		}
+
+		public void syntaxError(Recognizer<?,?> recognizer,
+               Object offendingSymbol,
+               int line,
+               int charPositionInLine,
+               String msg,
+               RecognitionException e) {
+			GrammarParserInterpreter r = (GrammarParserInterpreter) recognizer;
+			if (r.getContext().invokingState >= 0) {
+				JSONObject s = new JSONObject();
+				suggestions.put(s);
+				try {
+					JSONArray stateStack = new JSONArray();
+					stateStack.put(e.getOffendingState());
+					ParserRuleContext ctx = r.getContext();
+					while (ctx != null){
+						if (ctx.invokingState >= 0) {
+							stateStack.put(ctx.invokingState);
+						}
+						ctx = ctx.getParent();
+					}
+					s.put("state_stack", stateStack);
+					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+				} catch (JSONException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
 		}
 	}
 	
@@ -54,6 +104,8 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 		super(g, 
 			new ATNDeserializer().deserialize(ATNSerializer.getSerializedAsChars(g.atn)), 
 			input);
+		errListener = new CompletionErrorListener();
+		this.addErrorListener(errListener);
 	}
 	
 	public CompletionGrammarParserInterpreter(Grammar g, ATN atn, TokenStream input) {
@@ -73,25 +125,35 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 		suggestions = new JSONArray();
 		for (DecisionInfo decisionInfo: this.getParseInfo().getDecisionInfo()) {
 			LookaheadEventInfo lookaheadEventInfo = decisionInfo.SLL_MaxLookEvent;
+			if (lookaheadEventInfo != null) {
 //			if ((lookaheadEventInfo.startIndex <= caretIndex) &&
 //					(lookaheadEventInfo.stopIndex >= caretIndex)) {
-			System.out.format("d: %d, start: %d, stop: %d\n", lookaheadEventInfo.decision, lookaheadEventInfo.startIndex, lookaheadEventInfo.stopIndex);
+				//System.out.format("d: %d, start: %d, stop: %d\n", lookaheadEventInfo.decision, lookaheadEventInfo.startIndex, lookaheadEventInfo.stopIndex);
 				List<ParserRuleContext> lookaheadParseTrees =
 						CompletionGrammarParserInterpreter.getLookaheadParseTrees(g, 
 								this, 
 								this.getTokenStream(), 
 								startRuleIndex, 
 								lookaheadEventInfo.decision,
-//								caretIndex,
+								caretIndex,
 //								caretIndex);
-								lookaheadEventInfo.startIndex,
-								lookaheadEventInfo.stopIndex);
-				for (int i = 0; i < lookaheadParseTrees.size(); i++) {
-					ParserRuleContext lt = lookaheadParseTrees.get(i);
-					System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
-				}
-//			}
+//								lookaheadEventInfo.startIndex,
+								caretIndex);
+//								lookaheadEventInfo.stopIndex);
+//				for (int i = 0; i < lookaheadParseTrees.size(); i++) {
+//					ParserRuleContext lt = lookaheadParseTrees.get(i);
+//					System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
+//				}
+			}
 		}
+		for (int i = 0; i < errListener.suggestions.length(); i++) {
+			try {
+				suggestions.put(errListener.suggestions.get(i));
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+
 		return suggestions;
 	}
 

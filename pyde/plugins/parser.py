@@ -135,7 +135,6 @@ class ParserRuleContext(list):
 
 class ParserRuleContextVisitor:
     def visit(self, node):
-        print(node.type)
         if node.type:
             method = 'visit_' + node.type
             visitor = getattr(self, method, self.generic_visit)

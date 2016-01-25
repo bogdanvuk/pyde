@@ -12,3 +12,6 @@
 /CompletionGrammarParserInterpreter.class
 /CompletionGrammarParserInterpreter$BailButConsumeErrorStrategy.class
 /CompletionGrammarParserInterpreter$CompletionErrorStrategy.class
+/CompletionGrammarParserInterpreter$CompletionErrorListener.class
+/GrammarJsonDump.class
+/CompletionSuggestions.class

@@ -183,8 +183,9 @@ public class CompletionMain {
 								   int decision
 								   ) throws RecognitionException, IOException
 	{
-		input = "a/bb/cc";
-		int caretIndex = 4;
+		input = "";
+		
+		int caretIndex = 1;
 		Grammar g = new Grammar(new String(Files.readAllBytes(Paths.get("/home/bvukobratovic/projects/pyde/grammars/linpath/linpath_test.g4"))));
 		
 		GrammarASTJson js = new GrammarASTJson(g);
@@ -195,6 +196,7 @@ public class CompletionMain {
 		CommonTokenStream tokens = new CommonTokenStream(lexEngine); 
 
 		CompletionGrammarParserInterpreter parser = new CompletionGrammarParserInterpreter(g, tokens);
+		
 		JSONArray s = parser.getSuggestions(g, startRuleIndex, caretIndex);
 		System.out.println(s);
 	}
