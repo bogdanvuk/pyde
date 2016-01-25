@@ -168,12 +168,12 @@ public interface antlr4ParserListener extends ParseTreeListener {
 	 */
 	void exitModeSpec(antlr4Parser.ModeSpecContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link antlr4Parser#rules}.
+	 * Enter a parse tree produced by {@link antlr4Parser#allRules}.
 	 * @param ctx the parse tree
 	 */
 	void enterRules(antlr4Parser.RulesContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link antlr4Parser#rules}.
+	 * Exit a parse tree produced by {@link antlr4Parser#allRules}.
 	 * @param ctx the parse tree
 	 */
 	void exitRules(antlr4Parser.RulesContext ctx);

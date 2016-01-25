@@ -19,7 +19,7 @@ import org.json.JSONArray;
 
 public class AntlrParseListener implements ParseTreeListener {
 	Parser parser;
-	JSONObject jsonTop;
+
 	Stack<JSONArray> childrenStack = new Stack<JSONArray>();
 	Stack<JSONObject> jsonStack = new Stack<JSONObject>();
 

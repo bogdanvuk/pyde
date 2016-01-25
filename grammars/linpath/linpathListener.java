@@ -28,26 +28,6 @@ public interface linpathListener extends ParseTreeListener {
 	 */
 	void exitPath(linpathParser.PathContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link linpathParser#absolute_path}.
-	 * @param ctx the parse tree
-	 */
-	void enterAbsolute_path(linpathParser.Absolute_pathContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link linpathParser#absolute_path}.
-	 * @param ctx the parse tree
-	 */
-	void exitAbsolute_path(linpathParser.Absolute_pathContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link linpathParser#rel_path}.
-	 * @param ctx the parse tree
-	 */
-	void enterRel_path(linpathParser.Rel_pathContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link linpathParser#rel_path}.
-	 * @param ctx the parse tree
-	 */
-	void exitRel_path(linpathParser.Rel_pathContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link linpathParser#part}.
 	 * @param ctx the parse tree
 	 */

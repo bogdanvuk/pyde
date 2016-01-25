@@ -1,19 +1,9 @@
 grammar linpath;
 
-main  :  WS? path_ = path WS?
-  ;
+main : path EOF;
 
 path
-  :  rel_path
-  |  absolute_path
-  ;
-
-absolute_path
-  :  '/' rel_path_=rel_path
-  ;
-
-rel_path
-  :  part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?
+  :  PATHSEP? part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?
   ;
 
 part  :  name_=(NAME | HOME | VARIABLE_REFERENCE)

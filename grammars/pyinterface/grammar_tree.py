@@ -67,87 +67,86 @@ class LabeledElementSearch(NodeVisitor):
         if text[:-1] == self.lbl_id:
             raise self.FoundElement(node)
 
-def list_alt_start_rules(alt, rules, start_rules):
-    for elem in alt['elem']:
-        finished = list_elem_start_rules(elem, rules, start_rules)
-        
-        if finished:
-            return True
+class NextRulesVisitor:
+    def __init__(self, rules):
+        self.rules = rules
+        self.next_rules = []
 
-def list_block_start_rules(block, rules, start_rules):
-    if 'alt' in block:
-        for alt in block['alt']:
-            list_alt_start_rules(alt, rules, start_rules)
-    else:
-        start_rules.append(block)
-
-def list_elem_start_rules(elem, rules, start_rules):
-    if 'block' in elem:
-        block = elem['block']
-        list_block_start_rules(block['altList'], rules, start_rules)
-    elif 'name' in elem:
-        rule_ref = elem['name'].rule.text
-        child_rule = rules[rule_ref]
-        list_block_start_rules(child_rule, rules, start_rules)
-    elif 'lbl' in elem:
-        rule_ref = elem['lbl']
-        list_elem_start_rules(elem['lbl'], rules, start_rules)
-          
-    # If next element is not optional, we are done searching for next
-    # rule in this side of tree
-    if ('sfx' not in elem) or (elem['sfx'].type == 'PLUS'):
-        return True
-    else:
-        return False
-
-def next_element_start_rules(ctx, rules, next_rules):
-    elem = ctx
-    while True:
-        elem = elem.get_parent_of_type('element')
-        if elem is None:
-            return False 
-        
-        path = elem.get_feature_in_parent()
-        alt = elem.parent
-    
-        # Can current element be repeated by * or + ? If so, the next rule can
-        # be the present rule repeated
-        if ('sfx' in elem) and (elem['sfx'].type in ['STAR', 'PLUS']):
-            list_elem_start_rules(elem, rules, next_rules)
-        
-        # If current element is one in the sequence of elements in the parent
-        # alternative, the next rule is searched within th next element in the
-        # sequence.   
-        if path[1] + 1 < len(alt['elem']):
-            next_elem = alt['elem'][path[1] + 1]
-            if list_elem_start_rules(next_elem, rules, next_rules):
-                return True
+    def list_alt_start_rules(self, alt):
+        for elem in alt['elem']:
+            finished = self.list_elem_start_rules(elem)
             
-#             # If next element is not optional, we are done searching for next
-#             # rule in this side of tree
-#             if ('sfx' not in next_elem) or (next_elem['sfx'].type == 'PLUS'):
-#                 return True
-        
-def next_rule_in_ctx(path, ctx, rules, next_rules):
-    rule = rules[ctx.type]
-    v = LabeledElementSearch()
-    rule_ctx = v.search(rule, path[0])
-#     altlist = get_ctx_parent_of_type(ctx, 'altlist', 'ruleAltList')
-    
-    return next_element_start_rules(rule_ctx, rules, next_rules)
+            if finished:
+                return True
 
-def next_rule_in_parent(ctx, rules, next_rules):
-    path = ctx.get_feature_in_parent()
-    return next_rule_in_ctx(path, ctx.parent, rules, next_rules)
-    
-def next_rule(ctx, rules):
-    next_rules = []
-    finished = False
-    while (not finished) and (ctx.parent is not None):
-        finished = next_rule_in_parent(ctx, rules, next_rules)
-        ctx = ctx.parent
-    
-    return next_rules
+    def list_block_start_rules(self, block):
+        if 'alt' in block:
+            for alt in block['alt']:
+                self.list_alt_start_rules(alt)
+        else:
+            self.next_rules.append(block)
+
+    def list_elem_start_rules(self, elem):
+        if 'block' in elem:
+            block = elem['block']
+            self.list_block_start_rules(block['altList'])
+        elif 'name' in elem:
+            rule_ref = elem['name'].rule.text
+            child_rule = self.rules[rule_ref]
+            self.list_block_start_rules(child_rule)
+        elif 'lbl' in elem:
+            #Although 'labeledElement' rule is not identical to 'element'
+            #rule, it has 'name' and 'block' features which behave the
+            #same
+            self.list_elem_start_rules(elem['lbl'])
+              
+        # If next element is not optional, we are done searching for next
+        # rule in this side of tree
+        if ('sfx' not in elem) or (elem['sfx'].type == 'PLUS'):
+            return True
+        else:
+            return False
+
+    def next_element_start_rules(self, elem):
+        while elem is not None:
+            path = elem.get_feature_in_parent()
+            alt = elem.parent
+        
+            # Can current element be repeated by * or + ? If so, the next rule can
+            # be the present rule repeated
+            if ('sfx' in elem) and (elem['sfx'].type in ['STAR', 'PLUS']):
+                self.list_elem_start_rules(elem)
+            
+            # If current element is one in the sequence of elements in the parent
+            # alternative, the next rule is searched within th next element in the
+            # sequence.   
+            if path[1] + 1 < len(alt['elem']):
+                next_elem = alt['elem'][path[1] + 1]
+                if self.list_elem_start_rules(next_elem):
+                    return True
+
+            elem = elem.get_parent_of_type('element')
+            
+        return False
+        
+    def get_element_rule_for_ctx(self, ctx):
+        path = ctx.get_feature_in_parent()
+        rule = self.rules[ctx.parent.type] #Get the rule associated with parent of ctx
+        
+        #Find the 'lblElement' that connects to the rule associated with ctx
+        v = LabeledElementSearch()
+        lbl = v.search(rule, path[0])
+        #Get the 'element' rule which is the parent of lbl
+        return lbl.get_parent_of_type('element')
+
+    def get_next_rules(self, ctx):
+        finished = False
+        while (not finished) and (ctx.parent is not None):
+            elem_rule = self.get_element_rule_for_ctx(ctx)
+            finished = self.next_element_start_rules(elem_rule)
+            ctx = ctx.parent
+        
+        return self.next_rules
 
 if __name__ == "__main__":
     
@@ -172,8 +171,9 @@ if __name__ == "__main__":
     parser = Antlr4GenericParser('linpath', 'main')
     test_tree = parser.parse(test_text, (0, len(test_text)))
     v = ContextVisitor(test_tree)
-    ctx = v.context_at(9)
-    next_rules = next_rule(ctx, parse_rules)
+    ctx = v.context_at(10)
+    v = NextRulesVisitor(parse_rules)
+    next_rules = v.get_next_rules(ctx)
     pass
     
 #     v = GrammarParseVisitor()

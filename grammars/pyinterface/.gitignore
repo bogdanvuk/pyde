@@ -1,3 +1,14 @@
 /Main.class
 /Python3ParseListener.class
 /AntlrParseListener.class
+/CompletionMain.class
+/AbstractCompletionParserATNSimulator.class
+/CompletionParserInterpreter.class
+/InterpreterTreeTextProvider.class
+/CompletionMain$1VerboseListener.class
+/VerboseListener.class
+/GrammarASTJson.class
+/GrammarASTJson$GatherNextPossibleRules.class
+/CompletionGrammarParserInterpreter.class
+/CompletionGrammarParserInterpreter$BailButConsumeErrorStrategy.class
+/CompletionGrammarParserInterpreter$CompletionErrorStrategy.class
