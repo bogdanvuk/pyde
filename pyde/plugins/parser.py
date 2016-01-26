@@ -76,7 +76,8 @@ class ContextSlice:
 class ContextVisitor(NodeVisitor):
 
     class FoundLeafException(Exception):
-        pass
+        def __init__(self, node):
+            self.node = node
 
     def __init__(self, root):
         self.root = root
@@ -86,23 +87,20 @@ class ContextVisitor(NodeVisitor):
         self.pos = pos
         try:
             self.visit(self.root)
-        except self.FoundLeafException:
-            return self.context
+        except self.FoundLeafException as e:
+            return e.node
     
     def visit(self, node):
-
         if node.slice.contains(self.pos):
-            if not node.features:
-                self.context = node
-                raise self.FoundLeafException
-            else:
-                for c in node.features:
-                    child = node.features[c]
-                    if isinstance(child, list):
-                        for i,elem in enumerate(child):
-                            self.visit(elem)
-                    else:
-                        self.visit(child)
+            for c in node.features:
+                child = node.features[c]
+                if isinstance(child, list):
+                    for i,elem in enumerate(child):
+                        self.visit(elem)
+                else:
+                    self.visit(child)
+            
+            raise self.FoundLeafException(node)
 
 class ParserRuleContext(list):
     def __init__(self, parent):
@@ -133,7 +131,7 @@ class ParserRuleContext(list):
         
         return ContextSlice(start_slice.start, end_slice.stop)
 
-class ParserRuleContextVisitor:
+class ParseTreeVisitor:
     def visit(self, node):
         if node.type:
             method = 'visit_' + node.type
@@ -370,7 +368,7 @@ class Token:
         self.text = text
     
     def __repr__(self):
-        return "{}: {}".format(self.type, self.slice.eval())
+        return "{}: {}".format(self.type, self.text)
       
     def __str__(self):
         return self.text
@@ -400,15 +398,15 @@ class Antlr4GenericParser:
         self.dirty = False
         p = subprocess.Popen(['java', 'pyinterface.Main', 
                               self.language + '.' + self.language, 
-                              self.start_rule, '-json', active_text + '\n'], stdout=subprocess.PIPE).communicate()[0]
+                              self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
         parse_out = json.loads(p.decode())
-        tokens = create_tokens(parse_out['tokens'], text, text_range)
+        self.tokens = create_tokens(parse_out['tokens'], text, text_range)
         dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
-        parse_builder = ParseTreeBuilder(tokens, text_range)
+        parse_builder = ParseTreeBuilder(self.tokens, text_range)
         parse_builder.visit(dict_tree)
         self.parse_tree = parse_builder.tree
-        builder = ContextBuilder(tokens, self.keywords)
+        builder = ContextBuilder(self.tokens, self.keywords)
         builder.visit(self.parse_tree)
         self.tree = builder.tree
         return self.tree

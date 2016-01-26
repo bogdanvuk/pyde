@@ -1,6 +1,6 @@
 grammar linpath;
 
-main : path EOF;
+main : path_ = path EOF;
 
 path
   :  PATHSEP? part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?

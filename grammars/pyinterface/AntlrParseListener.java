@@ -124,7 +124,7 @@ public class AntlrParseListener implements ParseTreeListener {
 //    	}
 
     	try {
-    		JSONArray fields = new JSONArray();
+    		JSONObject fields = new JSONObject();
 //    		jsonStack.peek().put("_fields", ctx.start.getTokenIndex());
         	for(Field field : ctx.getClass().getDeclaredFields())
         	{
@@ -142,8 +142,7 @@ public class AntlrParseListener implements ParseTreeListener {
                                 }
                             }
 
-                            jsonStack.peek().put(fieldName, field_ids);
-                            fields.put(fieldName);
+                            fields.put(fieldName, field_ids);
 
                         } else {
 
@@ -154,8 +153,7 @@ public class AntlrParseListener implements ParseTreeListener {
 
                             int ret = getChildIDFromPointer(ctx, value);
                             if (ret >= 0) {
-                                jsonStack.peek().put(fieldName, ret);
-                                fields.put(fieldName);
+                                fields.put(fieldName, ret);
                             }
                         }
                     } catch (IllegalArgumentException | IllegalAccessException e) {
@@ -182,10 +180,11 @@ public class AntlrParseListener implements ParseTreeListener {
 //        		} catch (IllegalArgumentException | IllegalAccessException e) {
 //        		}
         	}
-        	jsonStack.peek().put("_fields", fields);
+        	jsonStack.peek().put("features", fields);
 			jsonStack.peek().put("start", ctx.start.getTokenIndex());
 	    	jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
-	    	jsonStack.peek().put("grammar", parser.getGrammarFileName());
+	    	jsonStack.peek().put("text", ctx.getText());
+//	    	jsonStack.peek().put("grammar", parser.getGrammarFileName());
 //	    	childrenStack.peek().length()
 			jsonStack.pop().put("children", childrenStack.pop());
 		} catch (JSONException e) {

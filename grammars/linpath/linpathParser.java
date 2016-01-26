@@ -80,10 +80,11 @@ public class linpathParser extends Parser {
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 	public static class MainContext extends ParserRuleContext {
+		public PathContext path_;
+		public TerminalNode EOF() { return getToken(linpathParser.EOF, 0); }
 		public PathContext path() {
 			return getRuleContext(PathContext.class,0);
 		}
-		public TerminalNode EOF() { return getToken(linpathParser.EOF, 0); }
 		public MainContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -105,7 +106,7 @@ public class linpathParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(6);
-			path();
+			((MainContext)_localctx).path_ = path();
 			setState(7);
 			match(EOF);
 			}

@@ -297,6 +297,7 @@ public class Main {
 							jsTok.put("stop", tok.getStopIndex());
 							jsTok.put("channel", tok.getChannel());
 							jsTok.put("index", tok.getTokenIndex());
+							jsTok.put("text", tok.getText());
 							jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
 							jsTok.put("col", tok.getCharPositionInLine());
 							jsTokens.put(jsTok);

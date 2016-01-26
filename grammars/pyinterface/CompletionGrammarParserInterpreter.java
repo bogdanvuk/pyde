@@ -116,8 +116,8 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 			int startRuleIndex,
 			int caretIndex
 			) {
-		InterpreterTreeTextProvider nodeTextProvider =
-			new InterpreterTreeTextProvider(g.getRuleNames());
+//		InterpreterTreeTextProvider nodeTextProvider =
+//			new InterpreterTreeTextProvider(g.getRuleNames());
 
 		this.setProfile(true);
 		this.parse(startRuleIndex);
