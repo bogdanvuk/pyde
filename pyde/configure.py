@@ -5,8 +5,8 @@ import sys
 from pyde.editors.python import PythonEdit
 from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.context import ContextProvider
-from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser,\
-    EditorAstManager, IPythonEditorAstManager
+from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
+from pyde.plugins.ast_manager import EditorAstManager, IPythonEditorAstManager
 from pyde.plugins.editor_mode import PythonMode, IPythonMode
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions

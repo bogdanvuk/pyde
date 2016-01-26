@@ -3,6 +3,7 @@ import os
 import subprocess
 import collections
 import json
+from collections import namedtuple
 
 uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
@@ -73,64 +74,6 @@ class ContextSlice:
         return (self.start <= subslice.start) and (self.stop > subslice.stop)
 
 
-class ContextVisitor(NodeVisitor):
-
-    class FoundLeafException(Exception):
-        def __init__(self, node):
-            self.node = node
-
-    def __init__(self, root):
-        self.root = root
- 
-    def context_at(self, pos):
-        self.context = None
-        self.pos = pos
-        try:
-            self.visit(self.root)
-        except self.FoundLeafException as e:
-            return e.node
-    
-    def visit(self, node):
-        if node.slice.contains(self.pos):
-            for c in node.features:
-                child = node.features[c]
-                if isinstance(child, list):
-                    for i,elem in enumerate(child):
-                        self.visit(elem)
-                else:
-                    self.visit(child)
-            
-            raise self.FoundLeafException(node)
-
-class ParserRuleContext(list):
-    def __init__(self, parent):
-        self.parent = parent
-        super().__init__()
-        
-    @property
-    def slice(self):
-        i_start = None
-        for i,c in enumerate(self):
-            start_slice = c.slice
-            if start_slice is not None:
-                i_start = i
-                break
-        else:
-            return None
-
-        for i, c in reversed(list(enumerate(self))):
-            if i == i_start:
-                end_slice = start_slice
-                break
-            else:
-                end_slice = c.slice
-                if end_slice is not None:
-                    break
-        else:
-            return None
-        
-        return ContextSlice(start_slice.start, end_slice.stop)
-
 class ParseTreeVisitor:
     def visit(self, node):
         if node.type:
@@ -150,216 +93,6 @@ class ParseTreeVisitor:
 def uri2str(self, separator = '/'):
     return separator + separator.join(map(str, self))
 
-class Context:
-    type = 'default'
-    
-    def __init__(self, parent=None):
-        self.parent = parent
-#         if parent is not None:
-#             self.parent.features[name] = self
-        self.features = {} #OrderedDict()
-    
-    def __str__(self):
-        return uri2str(self.uri)
-#         return '{0}: {1}-{2}: {3}'.format(self.name, self.start, self.stop, self.text)
-    
-    __repr__ = __str__
-    
-    @property
-    def uri(self):
-        if self.parent:
-            uri = self.parent.uri + list(self.get_feature_in_parent())
-        else:
-            uri = []
-            
-        return uri
-    
-    def get_parent_of_type(self, *args):
-        ctx = self
-        while ctx.parent is not None:
-            if ctx.parent.type in args:
-                return ctx.parent
-        
-            ctx = ctx.parent
-            
-        return None
-    
-    def get_first_child_of_type(self, *args):
-        class ChildTypeVisitor(NodeVisitor):
-            class FoundElement(Exception):
-                def __init__(self, ctx):
-                    self.ctx = ctx
-
-            def __init__(self, node, *args):
-                self.types = args
-                try:
-                    self.visit(node)
-                except self.FoundElement as e:
-                    return e.ctx
-                
-                return None
-                
-            def visit(self, node):
-                if node.type in args:
-                    raise self.FoundElement(node)
-                
-        return ChildTypeVisitor(self, *args)
-    
-    def get_feature_in_parent(self):
-        return self.parent.get_feature_for_child(self)
-
-    def get_feature_for_child(self, child):
-        for name, feature in self.features.items():
-            if isinstance(feature, list):
-                for i, cl in enumerate(feature):
-                    if cl == child:
-                        return (name, i)
-            else:
-                if feature == child:
-                    return (name,)
-        return None
-
-    
-    def __iter__(self):
-        return self.features.__iter__()
-    
-    def __getitem__(self, item):
-        return self.features[item]
-
-    def __setitem__(self, item, val):
-        self.features[item] = val
-
-
-class RuleContext(Context):
-    type = 'parser_rule'
-
-    @property
-    def slice(self):
-        return self.rule.slice
-
-class ParseTreeBuilder:
-    def __init__(self, tokens, active_range):
-        self.cur_parent = None
-        self.tree = None
-        self.tokens = tokens
-        self.cur_tok_index = -1
-        self.active_range = active_range
-
-    def visit(self, node):
-        if node['type'] == 'tokref':
-            return self.visit_token(node)
-        else:
-            return self.visit_rule(node)
-
-    def visit_token(self, node):
-        index = node['index']
-        if index >= 0:
-            self.cur_tok_index = index
-            self.tokens[index].parent = self.cur_parent
-            return self.tokens[index]
-        else:
-            t = node['toktype']
-            if self.cur_tok_index >= 0: 
-                start = self.tokens[self.cur_tok_index].slice.stop # + self.active_range[0]
-            else:
-                start = self.active_range[0]
-                
-            stop = self.tokens[self.cur_tok_index + 1].slice.start + 1 # + self.active_range[0]
-            s = ContextSlice(start, stop)
-            return Token(t,s)
-
-    def visit_rule(self, node):
-        #         context = Context(name=node['type'], parent=self.cur_parent)
-        rule = ParserRuleContext(self.cur_parent)
-        rule.type = node['type']
-#         rule.editor = self.editor
-        
-        if self.tree is None:
-            self.tree = rule
-            
-        self.cur_parent = rule
-        
-        if 'children' in node:        
-            children = list(range(len(node['children'])))
-        else:
-            children = []
-        
-        for c in children:
-            child = node['children'][c]
-            rule.append(self.visit(child))
-        
-        rule.fields = {}
-        for field_name in node['_fields']:
-            rule.fields[field_name] = node[field_name] 
-
-        self.cur_parent = rule.parent
-            
-        return rule
-
-class ContextBuilder:
-
-    def __init__(self, parse_tree, keywords):
-        self.tree = None
-        self.cur_parent = None
-        self.parse_tree = parse_tree
-        self.keywords = keywords
-
-    def visit(self, node):
-        if isinstance(node, Token):
-            return self.visit_token(node)
-        else:
-            return self.visit_rule(node)
-
-    def visit_token(self, token):
-        context = RuleContext(self.cur_parent)
-        context.type = token.type
-        context.rule = token
-        context.keywords = self.keywords
-        return context
-
-    def visit_rule(self, node):
-        #         context = Context(name=node['type'], parent=self.cur_parent)
-        context = RuleContext(self.cur_parent)
-        context.type = node.type
-        context.keywords = self.keywords
-          
-        if self.tree is None:
-            self.tree = context
-
-        self.cur_parent = context
-        
-        if node.fields:
-            for field_name in node.fields:
-                field = node.fields[field_name]
-                if isinstance(field, int):
-                    child = node[field]
-                    context[field_name] = self.visit(child)
-                elif isinstance(field, list):
-                    field_val = []
-                    for elem in field:
-                        child = node[elem]
-                        field_val.append(self.visit(child))
-                        
-                    context[field_name] = field_val
-    
-        self.cur_parent = context.parent
-        context.rule = node
-        
-        if context.parent:
-            if len(node) == 1:
-                if not node.fields:
-                    child = node[0]
-                    return self.visit(child)
-#                     free_children[0].parent = self.cur_parent
-#                     return free_children[0]
-#             elif len(children) > 1:
-#                 if not node['_fields']:
-#                     for n in free_children:
-#                         context[n.name] = n
-        
-        context.rule.context = context
-        return context
-
 class Token:
     
     def __init__(self, t, s, text=''):
@@ -373,25 +106,204 @@ class Token:
     def __str__(self):
         return self.text
 
-def create_tokens(token_json, text, active_range):
-#     active_range = editor.active_range()
-    tokens = []
-    for tj in token_json:
-        t = tj['type']
-        s = ContextSlice(tj['start'] + active_range[0], tj['stop'] + active_range[0] + 1)
-        tokens.append(Token(t,s,text[s.start:s.stop]))
+class TokenSequence(list):
+    def __init__(self, tokens_js = None, pos_offset=0):
+        super().__init__()
+        for tj in tokens_js:
+            type_name = tj['type']
+            s = ContextSlice(tj['start'] + pos_offset, tj['stop'] + pos_offset + 1)
+            t = Token(type_name,s,tj['text'])
+            self.append(t)
+    
+    def token_at_pos(self, pos):
+        for i,t in enumerate(self):
+            if t.slice.start >= pos:
+                return i,t
+            
+        return len(self), None
 
-    return tokens
+class GrammarASTBuilder:
+    def __init__(self):
+        self.cur_parent = None 
+    
+    def visit(self, node):
+        rule = ParserRuleContext(self.cur_parent)
+        for k,v in node.items():
+            if k == 'feature':
+                # remove '_' at the end of the feature name, the hack to allow
+                # for features to have same names as rules in ANTLR4
+                setattr(rule, k, v[:-1])  
+            elif k != 'children':
+                setattr(rule, k, v)
+        
+        self.cur_parent = rule
+        for c in node['children']:
+            rule.append(self.visit(c))
+            
+        return rule
+
+class ParserRuleContext(list):
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
+
+    def root(self):
+        node = self
+        while (node.parent is not None):
+            node = node.parent
+        
+        return node
+    
+    def __repr__(self):
+#         return super(ParserRuleContext, self).__repr__()
+        if hasattr(self, 'type'):
+            text = self.type
+            if len(self) > 1:
+#                 print(super(ParserRuleContext, self).__repr__())
+                text += ': ' + super(ParserRuleContext, self).__repr__()
+            return text
+        else:
+            return super(ParserRuleContext, self).__repr__()
+        
+    @property
+    def slice(self):
+        return ContextSlice(self[0].slice.start, self[-1].slice.stop)
+
+class SemanticNode:
+    def __init__(self, features, rule, parse_node = None, parent = None):
+        self.features = features
+        self.parse_node = parse_node
+        self.type = rule.type
+        self.rule = rule
+        self.parent = parent
+
+class SemanticTreeBuilder(ParseTreeVisitor):
+    def __init__(self, semantic_ast, common_fields):
+        self.cur_parent = None
+        self.common_fields = common_fields
+        self.semantic_ast = semantic_ast
+        
+    def visit(self, node):
+        if hasattr(node, 'features') and node.features:
+            parent = self.cur_parent
+            semantic_node = self.semantic_ast[node.type](parse_node = node, parent=parent)
+            node.semantic_node = semantic_node
+            self.cur_parent = semantic_node 
+            for k,v in node.features.items():
+                if isinstance(v, collections.Iterable):
+                    setattr(semantic_node, k, [])
+                    for n in v:
+                        getattr(semantic_node, k).append(self.visit(node[n]))
+                else:
+                    setattr(semantic_node, k, self.visit(node[v]))
+
+            for k,v in self.common_fields.items():
+                setattr(semantic_node, k, v)
+
+            self.cur_parent = parent
+            return semantic_node
+        else:
+            return node.text
+
+class SemanticRule:
+    def __init__(self, type_name, rule):
+        self.type = type_name
+        self.rule = rule
+        self.features = {}
+        
+    def feature_for_state(self, state):
+        for n, f in self.features.items():
+            if state in f['states']:
+                return n
+            
+        return None
+    
+    def __call__(self, **kwargs):
+        return SemanticNode(list(self.features.keys()), self, **kwargs)        
+
+class SemanticASTBuilder(ParseTreeVisitor):
+    def __init__(self, ast):
+        self.ast = ast
+        
+    def build(self):
+        self.semantic_ast = {}
+        for name, rule in self.ast.items():
+            self.semantic_rule = SemanticRule(name, rule)
+            self.visit(rule)
+            self.semantic_ast[name] = self.semantic_rule
+        
+        return self.semantic_ast
+    
+    def visit(self, node):
+        if hasattr(node, 'feature'):
+            if node.feature not in self.semantic_rule.features:
+                self.semantic_rule.features[node.feature] = {'name': node.feature, 'states': [], 'rules': []}
+            
+            self.semantic_rule.features[node.feature]['states'].append(node.state)
+            self.semantic_rule.features[node.feature]['cumul'] = node.featureAccumulation
+            self.semantic_rule.features[node.feature]['rules'].append(node)
+            
+        super().visit(node)
+
+class ParseTreeBuilder:
+    def __init__(self, tokens, common_fields):
+        self.cur_parent = None 
+        self.common_fields = common_fields
+        self.tokens = tokens
+    
+    def visit(self, node):
+        if node['type'] == 'tokref':
+            if node['index'] >= 0:
+                self.tokens[node['index']].parent = self.cur_parent
+                return self.tokens[node['index']]
+            else:
+                return None
+        else:
+            parent = self.cur_parent
+            rule = ParserRuleContext(parent)
+            self.cur_parent = rule
+            for k,v in node.items():
+                if k != 'children':
+                    setattr(rule, k, v)
+                    
+            for k,v in self.common_fields.items():
+                setattr(rule, k, v)
+            
+            for c in node['children']:
+                rule.append(self.visit(c))
+            
+            self.cur_parent = parent
+            return rule
+
+Suggestion = namedtuple('Suggestion', 'type feature node')
 
 class Antlr4GenericParser:
     
     def __init__(self, language, start_rule):
         self.language = language
         self.start_rule = start_rule
+        self.ast = self.loadGrammarAst()
+        self.semantic_ast = self.buildSemanticAst()
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
-        grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
-        with open(os.path.join(grammars_path, language, language) + '.keywords') as data_file:    
-            self.keywords = json.load(data_file)
+#         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
+
+    def loadGrammarAst(self):
+        import pyde
+        
+        with open(os.path.join(pyde.__path__[0], '..', 'grammars', self.language, self.language + 'AST.js')) as ast_file:    
+            ast_js = json.load(ast_file)
+    
+        rules = {}    
+        for name, rule in ast_js.items():
+            b = GrammarASTBuilder()
+            ruleCtx = b.visit(rule)
+            rules[name] = ruleCtx
+            
+        return rules
+
+    def buildSemanticAst(self):
+        b = SemanticASTBuilder(self.ast)
+        return b.build()
     
     def parse(self, text, text_range):
         active_text = text[text_range[0]: text_range[1]]
@@ -400,17 +312,59 @@ class Antlr4GenericParser:
                               self.language + '.' + self.language, 
                               self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
         parse_out = json.loads(p.decode())
-        self.tokens = create_tokens(parse_out['tokens'], text, text_range)
+        self.tokens = TokenSequence(parse_out['tokens'], text_range[0])
         dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
-        parse_builder = ParseTreeBuilder(self.tokens, text_range)
-        parse_builder.visit(dict_tree)
-        self.parse_tree = parse_builder.tree
-        builder = ContextBuilder(self.tokens, self.keywords)
-        builder.visit(self.parse_tree)
-        self.tree = builder.tree
-        return self.tree
+        common_fields = {'ast': self.ast, 'token': self.tokens}
+        parse_builder = ParseTreeBuilder(self.tokens, common_fields)
+        self.parse_tree = parse_builder.visit(dict_tree)
+        
+        common_fields = {'ast': self.semantic_ast}
+        builder = SemanticTreeBuilder(self.semantic_ast, common_fields)
+        self.semantic_tree = builder.visit(self.parse_tree)
+        return self.semantic_tree
 
+    def semantic_node_for_token(self, t):
+        rule_node = t
+        while(rule_node is not None):
+            if hasattr(rule_node, 'semantic_node'):
+                return rule_node.semantic_node
+            
+            rule_node = rule_node.parent
+            
+        return None
+
+    def place_suggestion(self, suggestion, node):
+        suggestions = []
+        while(node != None):
+            for state in suggestion['state_stack']:
+                for n, f in node.rule.features.items():
+                    if state in f['states']:
+                        suggestions.append(Suggestion(type=node.type, feature=n, node=node))
+                        return suggestions
+                    
+        return suggestions
+    
+    def completion_suggestions(self, text, text_range):
+        active_text = text[text_range[0]: text_range[1]]
+        p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
+                          self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
+    
+        suggestions_js = json.loads(p.decode())
+        carret_index = text_range[1]
+        i, carret_token = self.tokens.token_at_pos(carret_index)
+        if (carret_token is None) or (carret_index == carret_token.slice.start):
+            pre_carret_token = self.tokens[i-1] 
+    #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
+        
+        carret_ctx = self.semantic_node_for_token(carret_token)
+        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
+        
+        suggestions = []
+        for s in suggestions_js:
+            suggestions.extend(self.place_suggestion(s, pre_carret_ctx))
+            
+        return suggestions
         
 def Antlr4ParserFactory(lang_name, start_rule):
     class Antlr4Parser(Antlr4GenericParser):

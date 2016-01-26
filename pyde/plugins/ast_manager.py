@@ -52,6 +52,12 @@ class EditorAstManager(QtCore.QObject):
             self.dirty = False
             self.ast = self.parser.parse(self.editor.text(), self.editor.active_range())
             self.tree_modified.emit(self.ast)
+            
+    def completion_suggestions(self, text, text_range):
+        self.parse()
+        self.suggestions = self.parser.completion_suggestions(self.editor.text(), self.editor.active_range())
+#             self.tree_modified.emit(self.ast)
+
 
 class IPythonEditorAstManager(EditorAstManager):
 
