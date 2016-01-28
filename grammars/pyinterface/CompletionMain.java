@@ -147,14 +147,14 @@ public class CompletionMain {
 	{
 		
 		int startRuleIndex = g.getRule(startRuleName).index;
-		InterpreterTreeTextProvider nodeTextProvider =
-					new InterpreterTreeTextProvider(g.getRuleNames());
+//		InterpreterTreeTextProvider nodeTextProvider =
+//					new InterpreterTreeTextProvider(g.getRuleNames());
 		
 		LexerInterpreter lexEngine = lg.createLexerInterpreter(new ANTLRInputStream(input));
 		CommonTokenStream tokens = new CommonTokenStream(lexEngine);
 		GrammarParserInterpreter parser = g.createGrammarParserInterpreter(tokens);
 		parser.removeErrorListeners();
-		parser.addErrorListener(new VerboseListener());
+//		parser.addErrorListener(new VerboseListener());
 		parser.setProfile(true);
 		ParseTree t = parser.parse(startRuleIndex);
 
@@ -172,7 +172,7 @@ public class CompletionMain {
 		
 		for (int i = 0; i < lookaheadParseTrees.size(); i++) {
 			ParserRuleContext lt = lookaheadParseTrees.get(i);
-			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
+//			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
 //			assertEquals(expectedTrees[i], Trees.toStringTree(lt, nodeTextProvider));
 		}
 	}
@@ -211,8 +211,8 @@ public class CompletionMain {
 		GrammarASTJson js = new GrammarASTJson(g);
 		JSONObject rules = js.toJson();
 		int startRuleIndex = g.getRule(startRuleName).index;
-		InterpreterTreeTextProvider nodeTextProvider =
-					new InterpreterTreeTextProvider(g.getRuleNames());
+//		InterpreterTreeTextProvider nodeTextProvider =
+//					new InterpreterTreeTextProvider(g.getRuleNames());
 
 		linpathLexer lexEngine = new linpathLexer(new ANTLRInputStream(input));
 		CommonTokenStream tokens = new CommonTokenStream(lexEngine);	// 
@@ -236,7 +236,7 @@ public class CompletionMain {
 		
 		for (int i = 0; i < lookaheadParseTrees.size(); i++) {
 			ParserRuleContext lt = lookaheadParseTrees.get(i);
-			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
+//			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
 //			assertEquals(expectedTrees[i], Trees.toStringTree(lt, nodeTextProvider));
 		}
 	}
@@ -265,8 +265,8 @@ public class CompletionMain {
 ////		assertEquals(expectedParseTree, t.toStringTree(parser));
 
 		int startRuleIndex = g.getRule(startRuleName).index;
-		InterpreterTreeTextProvider nodeTextProvider =
-					new InterpreterTreeTextProvider(g.getRuleNames());
+//		InterpreterTreeTextProvider nodeTextProvider =
+//					new InterpreterTreeTextProvider(g.getRuleNames());
 
 		LexerInterpreter lexEngine = lg.createLexerInterpreter(new ANTLRInputStream(input));
 		CommonTokenStream tokens = new CommonTokenStream(lexEngine);
@@ -290,7 +290,7 @@ public class CompletionMain {
 //		assertEquals(expectedTrees.length, lookaheadParseTrees.size());
 		for (int i = 0; i < lookaheadParseTrees.size(); i++) {
 			ParserRuleContext lt = lookaheadParseTrees.get(i);
-			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
+//			System.out.println("parse tree: "+Trees.toStringTree(lt, nodeTextProvider));
 //			assertEquals(expectedTrees[i], Trees.toStringTree(lt, nodeTextProvider));
 		}
 

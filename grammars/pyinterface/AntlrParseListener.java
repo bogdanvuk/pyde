@@ -181,8 +181,12 @@ public class AntlrParseListener implements ParseTreeListener {
 //        		}
         	}
         	jsonStack.peek().put("features", fields);
-			jsonStack.peek().put("start", ctx.start.getTokenIndex());
-	    	jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
+        	if (ctx.stop != null) {
+        		jsonStack.peek().put("stop", ctx.stop.getTokenIndex());
+        	}
+        	if (ctx.start != null) {
+        		jsonStack.peek().put("start", ctx.start.getTokenIndex());
+        	}
 	    	jsonStack.peek().put("text", ctx.getText());
 //	    	jsonStack.peek().put("grammar", parser.getGrammarFileName());
 //	    	childrenStack.peek().length()

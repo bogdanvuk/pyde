@@ -1,5 +1,6 @@
 package pyinterface;
 
+import org.antlr.v4.tool.Alternative;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.GrammarParserInterpreter.BailButConsumeErrorStrategy;
 import org.antlr.v4.tool.ast.AltAST;
@@ -23,6 +24,7 @@ import org.json.JSONArray;
 import java.util.Stack;
 
 import org.antlr.runtime.tree.CommonTree;
+import org.antlr.v4.analysis.LeftRecursiveRuleAltInfo;
 import org.antlr.v4.parse.ANTLRParser;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
@@ -32,6 +34,7 @@ public class GrammarASTJson implements GrammarASTVisitor {
 	Stack<JSONArray> childrenStack;
 	Stack<JSONObject> jsonStack;
 	Grammar g;
+	LeftRecursiveRuleAltInfo leftRecursiveAltInfo;
 
 	public static class GatherNextPossibleRules extends BailButConsumeErrorStrategy {
 		@Override
@@ -65,7 +68,10 @@ public class GrammarASTJson implements GrammarASTVisitor {
 
 		if( node.getChildren() != null) {
 			for( Object c: node.getChildren()) {
-				((GrammarAST) c).visit(this);
+				GrammarAST n = (GrammarAST) c;
+				if (n.getType() != ANTLRParser.ELEMENT_OPTIONS) {
+					n.visit(this);
+				}
 			}
 		}
 		
@@ -90,10 +96,13 @@ public class GrammarASTJson implements GrammarASTVisitor {
 	@Override
 	public Object visit(GrammarAST node) {
 		JSONObject rule;
-		if (node.getType() == ANTLRParser.PLUS_ASSIGN || 
-				node.getType() == ANTLRParser.ASSIGN) {
+		if ((node.getType() == ANTLRParser.PLUS_ASSIGN || 
+				node.getType() == ANTLRParser.ASSIGN)  &&
+				(node.getChild(0).getText().endsWith("_") ||
+				node.getChild(0).getText().endsWith("p"))) {
 			rule = (JSONObject) ((GrammarAST) node.getChild(1)).visit(this);
 			try {
+				//System.out.println("feature: " + node.getChild(0).getText());
 				rule.put("feature", node.getChild(0).getText());
 				if (node.getType() == ANTLRParser.PLUS_ASSIGN) {
 					rule.put("featureAccumulation", true);
@@ -174,8 +183,20 @@ public class GrammarASTJson implements GrammarASTVisitor {
 
 	@Override
 	public Object visit(AltAST node) {
+		leftRecursiveAltInfo = node.leftRecursiveAltInfo; 
+//		if (node.leftRecursiveAltInfo != null) {
+//			this.leftRecAltLabel = node.leftRecursiveAltInfo.leftRecursiveRuleRefLabel;
+//			this.isLeftRecAltLabelList = node.leftRecursiveAltInfo.isListLabel;
+//			if (node.leftRecursiveAltInfo.leftRecursiveRuleRefLabel != null) {
+//				this.leftRecAltLabel = node.leftRecursiveAltInfo.leftRecursiveRuleRefLabel;
+//			}
+//		}
+//		Object ret = this.visitAll(node);
+//		this.leftRecAltLabel = null;
+//		return ret;
 		return this.visitAll(node);
 	}
+	
 
 	@Override
 	public Object visit(NotAST node) {
@@ -184,7 +205,24 @@ public class GrammarASTJson implements GrammarASTVisitor {
 
 	@Override
 	public Object visit(PredAST node) {
-		return this.visitAll(node);
+		JSONObject rule = new JSONObject();
+		try {
+			rule.put("feature", leftRecursiveAltInfo.leftRecursiveRuleRefLabel);
+			rule.put("featureAccumulation", leftRecursiveAltInfo.isListLabel);
+			rule.put("ref", ((Alternative) node.resolver).rule.name);
+			if (node.atnState == null) {
+				rule.put("state", -1);
+			} else {
+				rule.put("state", node.atnState.stateNumber);
+			}
+			rule.put("type", ANTLRParser.tokenNames[ANTLRParser.RULE_REF]);
+			rule.put("children", new JSONArray());
+			childrenStack.peek().put(rule);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		
+		return rule;
 	}
 
 	@Override

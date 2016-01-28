@@ -12,7 +12,7 @@ class ArglistVisitor(NodeVisitor):
         self.ca_nodes = []
         
     def visit_arglist(self, node):
-        func = get_obj_for_ctx(node.parent['calee'], self.editor)
+        func = get_obj_for_ctx(node.parent.callable, self.editor)
         try:
             args, _, _, _, kwonlyargs, _, annotations = getfullargspec(func)
         except TypeError:
@@ -23,7 +23,7 @@ class ArglistVisitor(NodeVisitor):
                 if annot.language == 'linpath':
                     for i, arg in enumerate(args):
                         if arg == annot_arg:
-                            self.ca_nodes.append(node['arg'][i])
+                            self.ca_nodes.append(node.arg[i])
         pass
 
 class InterpretPathParser(QObject):
@@ -48,12 +48,7 @@ class InterpretPathParser(QObject):
         v = ArglistVisitor(self.editor)
         v.visit(tree)
         for n in v.ca_nodes:
-            if 'value' in n:
-                val = n['value']
-            
-            if val.type == 'STRING_LITERAL':
-                val['path'] = self.parser.parse(self.editor.text(), (val.slice.start+1, val.slice.stop-1))
-                val['path'].parent = val['path'] 
-                pass
+            n.value = self.parser.parse(self.editor.text(), (n.parse_node.slice.start+1, n.parse_node.slice.stop-1))
+            n.value.parent = n 
                 
         pass

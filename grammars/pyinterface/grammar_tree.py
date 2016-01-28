@@ -481,12 +481,13 @@ from pyde.plugins.parser import Antlr4GenericParser
 
 
 if __name__ == "__main__":
-    text = 'a/b/c/d'
+    text = ''
     carret_index = 8
-    parser = Antlr4GenericParser('linpath', 'main')
+    parser = Antlr4GenericParser('python3', 'file_input')
     parser.parse(text, (0, len(text)))
     s = parser.completion_suggestions(text, (0, carret_index))
-    print(s)
+    for i in s: 
+        print(i)
 #     parser.parse(test_text, (0, len(test_text)))
 # 
 #     i, carret_token = parser.tokens.token_at_pos(carret_index)

@@ -7,7 +7,7 @@ from pyde.view import View
 from PyQt4 import QtCore
 import sys
 import gc
-from pyde.plugins.parser import ContextVisitor
+#from pyde.plugins.parser import ContextVisitor
 
 class ContentAssistContext(ViewContext):
     @property
@@ -53,8 +53,8 @@ class ContentAssist(QObject):
     
 class GetCurContextCmd:
     def __call__(self, editor, ast):
-        cv = ContextVisitor(ast)
-        self.cur_ctx = cv.context_at(editor.anchor-1)
+#        cv = ContextVisitor(ast)
+        self.cur_ctx = ast.tokens.token_at_pos(editor.anchor-1)
     
 class ContentAssistWidget(QtCore.QObject):
     

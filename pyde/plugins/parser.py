@@ -25,22 +25,25 @@ class NodeVisitor:
 
     def visit(self, node):
         """Visit a node."""
-        if node.type:
-            method = 'visit_' + node.type
-            visitor = getattr(self, method, self.generic_visit)
+        if isinstance(node, SemanticNode):
+            if node.type:
+                method = 'visit_' + node.type
+                visitor = getattr(self, method, self.generic_visit)
+            else:
+                visitor = self.generic_visit
+    
+            self.visit_all_enter(node)
+            if node.parent is not None:
+                method = 'visit_' + node.parent.type + '_' + self.cur_feature
+                if hasattr(self, method):
+                    getattr(self, method)(node)
+    
+            ret = visitor(node)
+                    
+            self.visit_all_exit(node)
+            return ret
         else:
-            visitor = self.generic_visit
-
-        self.visit_all_enter(node)
-        if node.parent is not None:
-            method = 'visit_' + node.parent.type + '_' + self.cur_feature
-            if hasattr(self, method):
-                getattr(self, method)(node)
-
-        ret = visitor(node)
-                
-        self.visit_all_exit(node)
-        return ret
+            return None
     
     def visit_all_enter(self, node):
         pass
@@ -51,13 +54,14 @@ class NodeVisitor:
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
         for c in node.features:
-            child = node.features[c]
-            self.cur_feature = c
-            if isinstance(child, list):
-                for elem in child:
-                    self.visit(elem)
-            else:
-                self.visit(child)
+            child = getattr(node, c, None)
+            if child:
+                self.cur_feature = c
+                if isinstance(child, list):
+                    for elem in child:
+                        self.visit(elem)
+                else:
+                    self.visit(child)
 
 class ContextSlice:
     def __init__(self, start, stop=None):
@@ -113,14 +117,15 @@ class TokenSequence(list):
             type_name = tj['type']
             s = ContextSlice(tj['start'] + pos_offset, tj['stop'] + pos_offset + 1)
             t = Token(type_name,s,tj['text'])
+            t.index = len(self)
             self.append(t)
     
     def token_at_pos(self, pos):
-        for i,t in enumerate(self):
+        for t in self:
             if t.slice.start >= pos:
-                return i,t
+                return t
             
-        return len(self), None
+        return None
 
 class GrammarASTBuilder:
     def __init__(self):
@@ -185,6 +190,8 @@ class SemanticTreeBuilder(ParseTreeVisitor):
         
     def visit(self, node):
         if hasattr(node, 'features') and node.features:
+            if 'callable' in node.features:
+                pass
             parent = self.cur_parent
             semantic_node = self.semantic_ast[node.type](parse_node = node, parent=parent)
             node.semantic_node = semantic_node
@@ -202,6 +209,8 @@ class SemanticTreeBuilder(ParseTreeVisitor):
 
             self.cur_parent = parent
             return semantic_node
+        elif (isinstance(node, collections.Iterable)) and (len(node) > 0):
+            return self.visit(node[0])
         else:
             return node.text
 
@@ -277,6 +286,61 @@ class ParseTreeBuilder:
 
 Suggestion = namedtuple('Suggestion', 'type feature node')
 
+class NextRulesVisitor(ParseTreeVisitor):
+    def __init__(self, rules):
+        self.rules = rules
+        self.next_rules = []
+        self.rule_name_stack = []
+ 
+    def visit(self, node):
+        if hasattr(node, 'feature'):
+            self.next_rules.append(Suggestion(type=node.root().name, feature=node.feature, node=None))
+        return super().visit(node)
+     
+    def visit_ALT(self, node):
+#         if hasattr(node[0], 'feature'):
+#             self.next_rules.append(node[0])
+        for n in node: 
+            ret = self.visit(n)
+            if ret:
+                return True
+             
+        return False
+     
+    def visit_SET(self, node):
+        for n in node:
+            self.visit(n)
+             
+        return True
+         
+    def visit_OPTIONAL(self, node):
+        self.visit(node[0])
+        return False
+     
+    def visit_CLOSURE(self, node):
+        self.visit(node[0])
+        return False
+ 
+    def visit_POSITIVE_CLOSURE(self, node):
+        self.visit(node[0])
+        return False
+     
+    def visit_TOKEN_REF(self, node):
+        return True
+     
+    def visit_RULE_REF(self, node):
+        if node.ref == 'expr':
+            pass
+        
+        if node.ref in self.rule_name_stack:
+            return True
+        else:
+            self.next_rules.append(Suggestion(type=node.ref, feature=None, node=None))
+            self.rule_name_stack.append(node.ref)
+            return self.visit(self.rules[node.ref])
+#             self.rule_name_stack.pop()
+#             return ret
+
 class Antlr4GenericParser:
     
     def __init__(self, language, start_rule):
@@ -284,6 +348,7 @@ class Antlr4GenericParser:
         self.start_rule = start_rule
         self.ast = self.loadGrammarAst()
         self.semantic_ast = self.buildSemanticAst()
+        pass
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
 
@@ -335,6 +400,7 @@ class Antlr4GenericParser:
         return None
 
     def place_suggestion(self, suggestion, node):
+#        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
         suggestions = []
         while(node != None):
             for state in suggestion['state_stack']:
@@ -352,18 +418,26 @@ class Antlr4GenericParser:
     
         suggestions_js = json.loads(p.decode())
         carret_index = text_range[1]
-        i, carret_token = self.tokens.token_at_pos(carret_index)
+        carret_token = self.tokens.token_at_pos(carret_index)
         if (carret_token is None) or (carret_index == carret_token.slice.start):
-            pre_carret_token = self.tokens[i-1] 
+            pre_carret_token = self.tokens[carret_token.index-1] 
     #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
         
         carret_ctx = self.semantic_node_for_token(carret_token)
         pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
         
         suggestions = []
-        for s in suggestions_js:
-            suggestions.extend(self.place_suggestion(s, pre_carret_ctx))
-            
+        if not suggestions_js:
+            v = NextRulesVisitor(self.ast)
+            v.visit(self.ast[self.start_rule])
+            suggestions.extend(v.next_rules)
+        else:
+            for s in suggestions_js:
+                suggestions.extend(self.place_suggestion(s, pre_carret_ctx))
+        
+        for s in suggestions: 
+            print(s)
+        
         return suggestions
         
 def Antlr4ParserFactory(lang_name, start_rule):

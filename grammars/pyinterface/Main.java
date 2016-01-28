@@ -114,7 +114,7 @@ public class Main {
 		while ( i<args.length ) {
 			String arg = args[i];
 			i++;
-			if ( arg.charAt(0)!='-' ) {
+			if ((arg.isEmpty()) || ( arg.charAt(0)!='-' )) {
 				inputText = arg; //.replaceAll("\\\\n", "\n");
 				continue;
 			}
@@ -297,7 +297,11 @@ public class Main {
 							jsTok.put("stop", tok.getStopIndex());
 							jsTok.put("channel", tok.getChannel());
 							jsTok.put("index", tok.getTokenIndex());
-							jsTok.put("text", tok.getText());
+							if (tok.getStartIndex() <= tok.getStopIndex()) {
+								jsTok.put("text", tok.getText());
+							} else {
+								jsTok.put("text", "");
+							}
 							jsTok.put("type", parser.getVocabulary().getSymbolicName(tok.getType()));
 							jsTok.put("col", tok.getCharPositionInLine());
 							jsTokens.put(jsTok);

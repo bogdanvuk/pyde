@@ -53,6 +53,8 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 						ctx = ctx.getParent();
 					}
 					s.put("state_stack", stateStack);
+					s.put("token", e.getOffendingToken().getTokenIndex());
+					s.put("type", e.toString());
 					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
 				} catch (JSONException e1) {
 					// TODO Auto-generated catch block
@@ -91,6 +93,8 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 						ctx = ctx.getParent();
 					}
 					s.put("state_stack", stateStack);
+					s.put("token", e.getOffendingToken().getTokenIndex());
+					s.put("type", e.toString());
 					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
 				} catch (JSONException e1) {
 					// TODO Auto-generated catch block
@@ -116,8 +120,8 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 			int startRuleIndex,
 			int caretIndex
 			) {
-//		InterpreterTreeTextProvider nodeTextProvider =
-//			new InterpreterTreeTextProvider(g.getRuleNames());
+		InterpreterTreeTextProvider nodeTextProvider =
+			new InterpreterTreeTextProvider(g.getRuleNames());
 
 		this.setProfile(true);
 		this.parse(startRuleIndex);
@@ -140,10 +144,10 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 //								lookaheadEventInfo.startIndex,
 								caretIndex);
 //								lookaheadEventInfo.stopIndex);
-//				for (int i = 0; i < lookaheadParseTrees.size(); i++) {
-//					ParserRuleContext lt = lookaheadParseTrees.get(i);
+				for (int i = 0; i < lookaheadParseTrees.size(); i++) {
+					ParserRuleContext lt = lookaheadParseTrees.get(i);
 //					System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
-//				}
+				}
 			}
 		}
 		for (int i = 0; i < errListener.suggestions.length(); i++) {

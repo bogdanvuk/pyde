@@ -1,6 +1,6 @@
 from PyQt4.QtCore import QObject
 from pyde.ddi import Dependency, ddic
-from pyde.plugins.parser import ContextVisitor, NodeVisitor
+#from pyde.plugins.parser import ContextVisitor, NodeVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
 import os
@@ -10,8 +10,7 @@ def get_ctx_text(ctx, editor):
     return editor.text()[ctx.slice.start:ctx.slice.stop]
     
 def get_obj_for_ctx(ctx, editor):
-    text = get_ctx_text(ctx, editor)
-    return eval(text, editor.globals, editor.locals)
+    return eval(ctx.parse_node.text, editor.globals, editor.locals)
 
 class PathVisitor(object):
  
@@ -65,21 +64,27 @@ class CompleteCommand:
                 self.acceptor[l] = l
 
     
-    def __call__(self, editor, ast):
-        cv = ContextVisitor(ast)
-        cur_ctx = cv.context_at(editor.pos-1)
-        
-        if cur_ctx.type in cur_ctx.keywords:
-            cur_ctx = cv.context_at(editor.pos)
-            
-            if cur_ctx.type in cur_ctx.keywords:
-                return
-
-        if cur_ctx is None:
-            self.accept_global(editor)
-        else:
-            v = ContentAssistVisitor(editor, self.acceptor)
-            v.visit(cur_ctx)
+    def complete_main_path(self, editor, node):
+        pass
+    
+    def complete_expr(self, editor, node):
+        self.accept_global(editor)
+    
+    #     def __call__(self, editor, ast):
+#         cv = ContextVisitor(ast)
+#         cur_ctx = cv.context_at(editor.pos-1)
+#         
+#         if cur_ctx.type in cur_ctx.keywords:
+#             cur_ctx = cv.context_at(editor.pos)
+#             
+#             if cur_ctx.type in cur_ctx.keywords:
+#                 return
+# 
+#         if cur_ctx is None:
+#             self.accept_global(editor)
+#         else:
+#             v = ContentAssistVisitor(editor, self.acceptor)
+#             v.visit(cur_ctx)
 #             print('else')
 #             cur_parent = cur_ctx.parent
 #             cur_feature = cur_ctx.get_feature_in_parent()
@@ -125,6 +130,7 @@ class CompleteCommand:
 class PyInterpretContentAssist(QObject):
     
     read_ast = QtCore.pyqtSignal(object)
+    complete_sig = QtCore.pyqtSignal(object)
     
     def __init__(self, 
                  editor : Dependency('view/', lambda e: isinstance(e.widget, ddic['cls/ipython'])),
@@ -147,9 +153,13 @@ class PyInterpretContentAssist(QObject):
         editor = view.widget
         self.complete_cmd.acceptor = acceptor
         
-        self.read_ast.connect(editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
-        self.read_ast.emit(self.complete_cmd)
-        self.read_ast.disconnect()
+#         self.read_ast.connect(editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
+#         self.read_ast.emit(self.complete_cmd)
+#         self.read_ast.disconnect()
+        self.complete_sig.connect(editor.ast.completion_suggestions, type=QtCore.Qt.BlockingQueuedConnection)
+        self.complete_sig.emit(self.complete_cmd)
+        self.complete_sig.disconnect()
+
 #         editor.ast.read_only(self.complete_cmd)
 #         if hasattr(editor, 'ast'):
 #             editor.ast.read_ast()
