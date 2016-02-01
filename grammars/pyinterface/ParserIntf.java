@@ -46,6 +46,7 @@ public class ParserIntf {
 	JSONObject json = null;
 	Lexer lexer;
 	Class<? extends Parser> parserClass;
+	Constructor<? extends Lexer> lexerCtor;
 	Parser parser;
 
 	public ParserIntf(String[] args) throws Exception {
@@ -75,8 +76,7 @@ public class ParserIntf {
 			}
 		}
 
-		Constructor<? extends Lexer> lexerCtor = lexerClass.getConstructor(CharStream.class);
-		lexer = lexerCtor.newInstance((CharStream)null);
+		lexerCtor = lexerClass.getConstructor(CharStream.class);
 
 		parserClass = null;
 		parser = null;
@@ -109,7 +109,7 @@ public class ParserIntf {
 //		System.out.print(inputText);
 //		System.out.println("END_RECEIVED;");
 		Reader r = new StringReader(inputText);
-		
+		lexer = lexerCtor.newInstance((CharStream)null);		
 //        Reader r = new StringReader(inputText);
 		process(lexer, parserClass, parser, r);
 	}

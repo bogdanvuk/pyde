@@ -58,4 +58,6 @@ if __name__ == '__main__':
                 f.write(ret)
             import sys
             sys.exit(0)
+        else:
+            print('same')
 #     print(ret)
