@@ -24,9 +24,14 @@ import sun.misc.IOUtils;
 //import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
@@ -35,12 +40,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 import javax.print.PrintException;
 
 public class ParserIntf {
 	public static final String LEXER_START_RULE_NAME = "tokens";
+	
+	static FileInputStream requestStream;
+	static FileOutputStream responseStream;
 
+	static FastIPC server;
 	protected String grammarName;
 	protected String startRuleName;
 	JSONObject json = null;
@@ -48,6 +61,7 @@ public class ParserIntf {
 	Class<? extends Parser> parserClass;
 	Constructor<? extends Lexer> lexerCtor;
 	Parser parser;
+	protected static final Logger logger=Logger.getLogger("MYLOG");
 
 	public ParserIntf(String[] args) throws Exception {
 		if ( args.length < 2 ) {
@@ -58,6 +72,9 @@ public class ParserIntf {
 		grammarName = args[0];
 		startRuleName = args[1];
 		
+		FileHandler fh = new FileHandler("/home/bvukobratovic/projects/pyde/parser_intf.log",true);
+		fh.setFormatter(new SimpleFormatter());
+        logger.addHandler(fh);
 		String lexerName = grammarName+"Lexer";
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		Class<? extends Lexer> lexerClass = null;
@@ -93,6 +110,12 @@ public class ParserIntf {
 	
 	public static void main(String[] args) throws Exception {
 		ParserIntf parserIntf = new ParserIntf(args);
+		logger.info("START SERVER");
+//		int port = 32000;
+//        server = new FastIPC(port);
+//		out = new PrintWriter((new BufferedWriter(new FileWriter("pyde/out"))));
+//		in = new PrintWriter((new BufferedWriter(new FileWriter("pyde/in"))));
+        logger.info("Connected");
  		if(args.length >= 2) {
  			while(true) {
  				parserIntf.process();
@@ -102,20 +125,49 @@ public class ParserIntf {
 
 	public void process() throws Exception {
 //		System.out.println("exec "+grammarName+"."+startRuleName);
-		
-		byte[] inputEncoded = IOUtils.readFully(System.in, -1, true);
-		String inputText = new String(inputEncoded);
+		requestStream = new  FileInputStream("/tmp/pyde_out");
+	    responseStream = new FileOutputStream("/tmp/pyde_in");
+
+		StringBuilder inputText = new StringBuilder();
+		int inp = requestStream.read();
+		logger.info(Integer.toString(inp));
+        while ((inp != -1) && (inp != 26))
+		{
+		    // converts integer to character
+        	inputText.append((char)inp);
+        	inp=requestStream.read();
+//        	if (inp < 30) {
+//        		logger.info(Integer.toString(inp));
+//        	}
+		}
+        
+//        while (text.isEmpty() || (text.charAt(0) != (char) 26)) {
+//            inputText.append(text);
+//            inputText.append("\n");
+//            try {
+//            	text = server.recv();
+//            } catch (Exception msg) {
+//				logger.info(msg.toString());
+//			} 
+//        }
+        logger.info(inputText.toString());
+//		byte[] inputEncoded = IOUtils.readFully(System.in, -1, true);
+		long startTime = System.currentTimeMillis();
+//		String inputText = new String(inputEncoded);
 //		System.out.println("RECEIVED:");
 //		System.out.print(inputText);
 //		System.out.println("END_RECEIVED;");
-		Reader r = new StringReader(inputText);
+		Reader r = new StringReader(inputText.toString());
+//		Reader r = new StringReader("proba\n");
 		lexer = lexerCtor.newInstance((CharStream)null);		
 //        Reader r = new StringReader(inputText);
+		System.out.format("Prepare the stream: %d\n", System.currentTimeMillis() - startTime);
 		process(lexer, parserClass, parser, r);
 	}
 	
 	protected void process(Lexer lexer, Class<? extends Parser> parserClass, Parser parser, Reader r) throws IOException, IllegalAccessException, InvocationTargetException, PrintException {
 		try {
+			long startTime = System.currentTimeMillis();
 			ANTLRInputStream input = new ANTLRInputStream(r);
 			lexer.setInputStream(input);
 			CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -127,11 +179,15 @@ public class ParserIntf {
 			parser.setBuildParseTree(true);
 
 			parser.setTokenStream(tokens);
-
+			
+			System.out.format("Prepare the parser/lexer: %d\n", System.currentTimeMillis() - startTime);
+			startTime = System.currentTimeMillis();
 			try {
+				startTime = System.currentTimeMillis();
 				Method startRule = parserClass.getMethod(startRuleName);
 				ParserRuleContext tree = (ParserRuleContext)startRule.invoke(parser, (Object[])null);
-				
+				System.out.format("Parse: %d\n", System.currentTimeMillis() - startTime);
+				startTime = System.currentTimeMillis();
 				ParseTreeWalker walker = new ParseTreeWalker(); // create standard walker
 
 				this.json = new JSONObject();
@@ -162,10 +218,11 @@ public class ParserIntf {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-
+				
+				System.out.format("Dump Tokens: %d\n", System.currentTimeMillis() - startTime);
 //				parser.addParseListener(new AntlrParseListener(parser, jsTree));
 
-
+				startTime = System.currentTimeMillis();
 				AntlrParseListener listener = new AntlrParseListener(parser, jsTree);
 				walker.walk(listener, tree); // initiate walk of tree with listener
 
@@ -176,7 +233,26 @@ public class ParserIntf {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				System.out.println(out.toString());
+				System.out.format("Dump Parse Tree: %d\n", System.currentTimeMillis() - startTime);
+				startTime = System.currentTimeMillis();
+				String text = out.toString();
+				System.out.format("Serialize: %d\n", System.currentTimeMillis() - startTime);
+				startTime = System.currentTimeMillis();
+//				System.out.println(text);
+				logger.info("RESPONSE:");
+				//BufferedWriter log = new BufferedWriter(new OutputStreamWriter(System.out, "ASCII"), 256);
+//				server.send(text);
+				responseStream.write(text.getBytes());
+				responseStream.write("\n".getBytes());
+				responseStream.flush();
+//                server.send("\n");
+//                server.flush();
+
+//				log.write(text);
+//				log.write("\n");
+//				log.flush();
+				System.out.format("Send Results: %d\n", System.currentTimeMillis() - startTime);
+				System.out.println();
 			}
 			catch (NoSuchMethodException nsme) {
 				System.err.println("No method for rule "+startRuleName+" or it has arguments");

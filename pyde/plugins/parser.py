@@ -4,6 +4,7 @@ import subprocess
 import collections
 import json
 from collections import namedtuple
+from pyde.plugins.pipe_textio import PipeTextIO
 
 uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
@@ -348,7 +349,8 @@ class Antlr4GenericParser:
         self.start_rule = start_rule
         self.ast = self.loadGrammarAst()
         self.semantic_ast = self.buildSemanticAst()
-        pass
+        self.parser_io = PipeTextIO('java', ['pyinterface.ParserIntf', self.language + '.' + self.language, self.start_rule])
+        self.parser_io.connect()
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
 
@@ -373,10 +375,14 @@ class Antlr4GenericParser:
     def parse(self, text, text_range):
         active_text = text[text_range[0]: text_range[1]]
         self.dirty = False
-        p = subprocess.Popen(['java', 'pyinterface.Main', 
-                              self.language + '.' + self.language, 
-                              self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
-        parse_out = json.loads(p.decode())
+        
+#         p = subprocess.Popen(['java', 'pyinterface.Main', 
+#                               self.language + '.' + self.language, 
+#                               self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
+#         parse_out = json.loads(p.decode())
+        ret = self.parser_io.communicate(active_text)
+        print(ret)
+        parse_out = json.loads(ret)
         self.tokens = TokenSequence(parse_out['tokens'], text_range[0])
         dict_tree = parse_out['tree']
 #             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
