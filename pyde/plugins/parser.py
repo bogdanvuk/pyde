@@ -129,8 +129,9 @@ class TokenSequence(list):
         return None
 
 class GrammarASTBuilder:
-    def __init__(self):
-        self.cur_parent = None 
+    def __init__(self, state_rules = []):
+        self.cur_parent = None
+        self.state_rules = state_rules
     
     def visit(self, node):
         rule = ParserRuleContext(self.cur_parent)
@@ -141,7 +142,10 @@ class GrammarASTBuilder:
                 setattr(rule, k, v[:-1])  
             elif k != 'children':
                 setattr(rule, k, v)
-        
+
+        if rule.state >= 0:
+            self.state_rules[rule.state] = rule
+            
         self.cur_parent = rule
         for c in node['children']:
             rule.append(self.visit(c))
@@ -351,6 +355,9 @@ class Antlr4GenericParser:
         self.semantic_ast = self.buildSemanticAst()
         self.parser_io = PipeTextIO('java', ['pyinterface.ParserIntf', self.language + '.' + self.language, self.start_rule])
         self.parser_io.connect()
+        self.suggestion_io = PipeTextIO('java', ['pyinterface.CompletionSuggestions', self.language, self.start_rule])
+        self.suggestion_io.connect()
+
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
 
@@ -360,9 +367,10 @@ class Antlr4GenericParser:
         with open(os.path.join(pyde.__path__[0], '..', 'grammars', self.language, self.language + 'AST.js')) as ast_file:    
             ast_js = json.load(ast_file)
     
-        rules = {}    
+        rules = {}
+        self.state_ast_rules = {}  
         for name, rule in ast_js.items():
-            b = GrammarASTBuilder()
+            b = GrammarASTBuilder(self.state_ast_rules)
             ruleCtx = b.visit(rule)
             rules[name] = ruleCtx
             
@@ -409,40 +417,50 @@ class Antlr4GenericParser:
 #        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
         suggestions = []
         while(node != None):
-            for state in suggestion['state_stack']:
-                for n, f in node.rule.features.items():
-                    if state in f['states']:
-                        suggestions.append(Suggestion(type=node.type, feature=n, node=node))
-                        return suggestions
+            if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
+                v = NextRulesVisitor(self.ast)
+                v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
+                return v.next_rules
+            else:
+                for state in suggestion['state_stack']:
+                    for n, f in node.rule.features.items():
+                        if state in f['states']:
+                            suggestions.append(Suggestion(type=node.type, feature=n, node=node))
+                            return suggestions
                     
         return suggestions
     
     def completion_suggestions(self, text, text_range):
         active_text = text[text_range[0]: text_range[1]]
-        p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
-                          self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
-    
-        suggestions_js = json.loads(p.decode())
+#         p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
+#                           self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
+        ret = self.suggestion_io.communicate(active_text)
+#         ret = '[{"state_stack":[153],"type":"org.antlr.v4.runtime.NoViableAltException","token":0}]'
+        suggestions_js = json.loads(ret)
         carret_index = text_range[1]
         carret_token = self.tokens.token_at_pos(carret_index)
         if (carret_token is None) or (carret_index == carret_token.slice.start):
-            pre_carret_token = self.tokens[carret_token.index-1] 
+            carret_token = self.tokens[carret_token.index-1] 
     #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
         
         carret_ctx = self.semantic_node_for_token(carret_token)
-        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
+#        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
         
         suggestions = []
-        if not suggestions_js:
-            v = NextRulesVisitor(self.ast)
-            v.visit(self.ast[self.start_rule])
-            suggestions.extend(v.next_rules)
-        else:
-            for s in suggestions_js:
-                suggestions.extend(self.place_suggestion(s, pre_carret_ctx))
+        for s in suggestions_js:
+            suggestions.extend(self.place_suggestion(s, carret_ctx))
         
-        for s in suggestions: 
-            print(s)
+#         suggestions = []
+#         if not suggestions_js:
+#             v = NextRulesVisitor(self.ast)
+#             v.visit(self.ast[self.start_rule])
+#             suggestions.extend(v.next_rules)
+#         else:
+#             for s in suggestions_js:
+#                 suggestions.extend(self.place_suggestion(s, carret_ctx))
+#         
+#         for s in suggestions: 
+#             print(s)
         
         return suggestions
         

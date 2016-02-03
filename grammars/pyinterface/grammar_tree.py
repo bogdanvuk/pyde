@@ -481,8 +481,8 @@ from pyde.plugins.parser import Antlr4GenericParser
 
 
 if __name__ == "__main__":
-    text = ''
-    carret_index = 8
+    text = 'ddic.'
+    carret_index = 5
     parser = Antlr4GenericParser('python3', 'file_input')
     parser.parse(text, (0, len(text)))
     s = parser.completion_suggestions(text, (0, carret_index))

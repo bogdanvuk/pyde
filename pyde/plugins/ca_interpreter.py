@@ -70,6 +70,8 @@ class CompleteCommand:
     def complete_expr(self, editor, node):
         self.accept_global(editor)
     
+    def complete_expr_attr(self, editor, node):
+        pass
     #     def __call__(self, editor, ast):
 #         cv = ContextVisitor(ast)
 #         cur_ctx = cv.context_at(editor.pos-1)
