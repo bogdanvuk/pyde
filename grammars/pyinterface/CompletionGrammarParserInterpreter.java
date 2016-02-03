@@ -6,6 +6,8 @@ import java.util.List;
 import org.antlr.v4.runtime.ANTLRErrorStrategy;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.InputMismatchException;
+import org.antlr.v4.runtime.NoViableAltException;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserInterpreter;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -31,17 +33,21 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 	
 	public static class CompletionErrorStrategy extends BailButConsumeErrorStrategy {
 		JSONArray suggestions;
+		int carretIndex;
 		
-		public CompletionErrorStrategy() {
-			suggestions = new JSONArray();
+		public CompletionErrorStrategy(JSONArray s, int stopIndex) {
+			suggestions = s;
+			carretIndex = stopIndex;
 		}
 		
 		@Override
 		public void recover(Parser recognizer, RecognitionException e) {
 			GrammarParserInterpreter r = (GrammarParserInterpreter) recognizer;
-			if (r.getContext().invokingState >= 0) {
+//			if (r.getContext().invokingState >= 0) {
+//			if (InputMismatchException.class.isInstance(e)) {
+			if (carretIndex <= e.getOffendingToken().getTokenIndex()) {
 				JSONObject s = new JSONObject();
-				suggestions.put(s);
+				
 				try {
 					JSONArray stateStack = new JSONArray();
 					stateStack.put(e.getOffendingState());
@@ -55,7 +61,18 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 					s.put("state_stack", stateStack);
 					s.put("token", e.getOffendingToken().getTokenIndex());
 					s.put("type", e.toString());
-					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+					String sJson = s.toString();
+					for (int i = 0; i < suggestions.length(); i++) {
+						JSONObject sPrev = suggestions.getJSONObject(i);
+						if (sPrev.toString().equals(sJson)) {
+							super.recover(recognizer, e);
+							return;
+						}
+						//if (sPrev.getInt("token") == )
+					}
+					suggestions.put(s);
+//					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+					System.out.println(s.toString());
 				} catch (JSONException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -67,9 +84,11 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 	
 	public static class CompletionErrorListener extends BaseErrorListener {
 		JSONArray suggestions;
+		boolean syntaxErrSuggestion;
 		
-		public CompletionErrorListener() {
-			suggestions = new JSONArray();
+		public CompletionErrorListener(JSONArray s) {
+			suggestions = s;
+			syntaxErrSuggestion = false;
 		}
 
 		public void syntaxError(Recognizer<?,?> recognizer,
@@ -79,9 +98,11 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
                String msg,
                RecognitionException e) {
 			GrammarParserInterpreter r = (GrammarParserInterpreter) recognizer;
-			if (r.getContext().invokingState >= 0) {
+//			if (r.getContext().invokingState >= 0) {
+			if ((InputMismatchException.class.isInstance(e)) ||
+				(NoViableAltException.class.isInstance(e))) {
+				syntaxErrSuggestion = true;
 				JSONObject s = new JSONObject();
-				suggestions.put(s);
 				try {
 					JSONArray stateStack = new JSONArray();
 					stateStack.put(e.getOffendingState());
@@ -95,7 +116,16 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 					s.put("state_stack", stateStack);
 					s.put("token", e.getOffendingToken().getTokenIndex());
 					s.put("type", e.toString());
-					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+//					s.put("rule", r.getVocabulary().getSymbolicName(r.getContext().getRuleIndex()));
+					String sJson = s.toString();
+					for (int i = 0; i < suggestions.length(); i++) {
+						JSONObject sPrev = suggestions.getJSONObject(i);
+						if (sPrev.toString().equals(sJson)) {
+							return;
+						}
+						//if (sPrev.getInt("token") == )
+					}
+					suggestions.put(s);
 				} catch (JSONException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -108,15 +138,14 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 		super(g, 
 			new ATNDeserializer().deserialize(ATNSerializer.getSerializedAsChars(g.atn)), 
 			input);
-		errListener = new CompletionErrorListener();
-		this.addErrorListener(errListener);
 	}
 	
 	public CompletionGrammarParserInterpreter(Grammar g, ATN atn, TokenStream input) {
 		super(g, atn, input);
 	}
 	
-	public JSONArray getSuggestions(Grammar g,
+	public void getSuggestions(Grammar g,
+			JSONArray suggestions,
 			int startRuleIndex,
 			int caretIndex
 			) {
@@ -124,46 +153,53 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 			new InterpreterTreeTextProvider(g.getRuleNames());
 
 		this.setProfile(true);
+		errListener = new CompletionErrorListener(suggestions);
+		this.removeErrorListeners();
+		this.addErrorListener(errListener);
 		this.parse(startRuleIndex);
-
-		suggestions = new JSONArray();
-		for (DecisionInfo decisionInfo: this.getParseInfo().getDecisionInfo()) {
-			LookaheadEventInfo lookaheadEventInfo = decisionInfo.SLL_MaxLookEvent;
-			if (lookaheadEventInfo != null) {
-//			if ((lookaheadEventInfo.startIndex <= caretIndex) &&
-//					(lookaheadEventInfo.stopIndex >= caretIndex)) {
-				//System.out.format("d: %d, start: %d, stop: %d\n", lookaheadEventInfo.decision, lookaheadEventInfo.startIndex, lookaheadEventInfo.stopIndex);
-				List<ParserRuleContext> lookaheadParseTrees =
-						CompletionGrammarParserInterpreter.getLookaheadParseTrees(g, 
-								this, 
-								this.getTokenStream(), 
-								startRuleIndex, 
-								lookaheadEventInfo.decision,
-								caretIndex,
-//								caretIndex);
-//								lookaheadEventInfo.startIndex,
-								caretIndex);
-//								lookaheadEventInfo.stopIndex);
-				for (int i = 0; i < lookaheadParseTrees.size(); i++) {
-					ParserRuleContext lt = lookaheadParseTrees.get(i);
-//					System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
+		if (errListener.syntaxErrSuggestion == false) {
+			for (DecisionInfo decisionInfo: this.getParseInfo().getDecisionInfo()) {
+				LookaheadEventInfo lookaheadEventInfo = decisionInfo.SLL_MaxLookEvent;
+				if (lookaheadEventInfo != null) {
+//				if (lookaheadEventInfo.stopIndex <= caretIndex) { //&&
+	//					(lookaheadEventInfo.stopIndex >= caretIndex)) {
+					System.out.format("d: %d, start: %d, stop: %d\n", lookaheadEventInfo.decision, lookaheadEventInfo.startIndex, lookaheadEventInfo.stopIndex);
+					List<ParserRuleContext> lookaheadParseTrees =
+							CompletionGrammarParserInterpreter.getLookaheadParseTrees(g, 
+									this, 
+									this.getTokenStream(), 
+									suggestions,
+									startRuleIndex, 
+									lookaheadEventInfo.decision,
+//									caretIndex,
+	//								caretIndex);
+									Integer.max(lookaheadEventInfo.startIndex, caretIndex),
+									
+									caretIndex+1);
+	//								lookaheadEventInfo.stopIndex);
+					for (int i = 0; i < lookaheadParseTrees.size(); i++) {
+						ParserRuleContext lt = lookaheadParseTrees.get(i);
+						System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
+					}
 				}
 			}
-		}
-		for (int i = 0; i < errListener.suggestions.length(); i++) {
-			try {
-				suggestions.put(errListener.suggestions.get(i));
-			} catch (JSONException e) {
-				e.printStackTrace();
 			}
-		}
+//		}
+//		for (int i = 0; i < errListener.suggestions.length(); i++) {
+//			try {
+//				suggestions.put(errListener.suggestions.get(i));
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			}
+//		}
 
-		return suggestions;
+//		return suggestions;
 	}
 
 	public static List<ParserRuleContext> getLookaheadParseTrees(Grammar g,
 																 CompletionGrammarParserInterpreter originalParser,
 																 TokenStream tokens,
+																 JSONArray suggestions,
 																 int startRuleIndex,
 																 int decision,
 																 int startIndex,
@@ -172,7 +208,7 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 		List<ParserRuleContext> trees = new ArrayList<ParserRuleContext>();
 		// Create a new parser interpreter to parse the ambiguous subphrase
 		ParserInterpreter parser = deriveTempParserInterpreter(g, originalParser, tokens);
-		CompletionErrorStrategy errorHandler = new CompletionErrorStrategy();
+		CompletionErrorStrategy errorHandler = new CompletionErrorStrategy(suggestions, stopIndex);
 		parser.setErrorHandler(errorHandler);
 
 		DecisionState decisionState = originalParser.getATN().decisionToState.get(decision);
@@ -200,13 +236,13 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 			trees.add(subtree);
 		}
 		
-		for (int i = 0; i < errorHandler.suggestions.length(); i++) {
-			try {
-				originalParser.suggestions.put(errorHandler.suggestions.get(i));
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
+//		for (int i = 0; i < errorHandler.suggestions.length(); i++) {
+//			try {
+//				originalParser.suggestions.put(errorHandler.suggestions.get(i));
+//			} catch (JSONException e) {
+//				e.printStackTrace();
+//			}
+//		}
 
 		
 		return trees;

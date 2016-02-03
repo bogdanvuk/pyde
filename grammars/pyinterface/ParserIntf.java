@@ -53,9 +53,11 @@ public class ParserIntf {
 	static FileInputStream requestStream;
 	static FileOutputStream responseStream;
 
-	static FastIPC server;
+//	static FastIPC server;
 	protected String grammarName;
 	protected String startRuleName;
+	protected String fifoIn;
+	protected String fifoOut;
 	JSONObject json = null;
 	Lexer lexer;
 	Class<? extends Parser> parserClass;
@@ -71,7 +73,12 @@ public class ParserIntf {
 		}
 		grammarName = args[0];
 		startRuleName = args[1];
-		
+		fifoIn = args[2];
+		fifoOut = args[3];
+
+		requestStream = new  FileInputStream(fifoIn);
+	    responseStream = new FileOutputStream(fifoOut);
+
 		FileHandler fh = new FileHandler("/home/bvukobratovic/projects/pyde/parser_intf.log",true);
 		fh.setFormatter(new SimpleFormatter());
         logger.addHandler(fh);
@@ -125,8 +132,6 @@ public class ParserIntf {
 
 	public void process() throws Exception {
 //		System.out.println("exec "+grammarName+"."+startRuleName);
-		requestStream = new  FileInputStream("/tmp/pyde_out");
-	    responseStream = new FileOutputStream("/tmp/pyde_in");
 
 		StringBuilder inputText = new StringBuilder();
 		int inp = requestStream.read();
