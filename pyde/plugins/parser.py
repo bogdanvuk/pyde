@@ -18,6 +18,33 @@ def get_ctx_parent_of_type(ctx, *args):
         
     return None
 
+def semantic_for_state_stack(node, state_stack):
+    for state in state_stack:
+        for n, f in node.rule.features.items():
+            if state in f['states']:
+                if f['cumul']:
+                    feature = (n, len(getattr(node, n)))
+                else:
+                    feature = (n, None)
+                
+                return node, feature
+
+    return None, None
+
+def semantic_feature_in_parent(node):
+    if node.parent:
+        for f in node.parent.features:
+            if hasattr(node.parent, f):
+                child = getattr(node.parent, f)
+                if isinstance(child, list):
+                    for i, elem in enumerate(child):
+                        if elem == node:
+                            return node.parent, (f, i)
+                else:
+                    if child == node:
+                        return node.parent, (f, None)
+    return None, None
+
 def semantic_for_rule_node(rule_node):
     while((rule_node is not None) and (rule_node.parent is not None)):
         parent = rule_node.parent
@@ -425,6 +452,7 @@ class Antlr4GenericParser:
         self.semantic_tree = builder.visit(self.parse_tree)
         return self.semantic_tree
 
+
     def place_suggestion(self, suggestion, node, feature):
 #        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
         suggestions = []
@@ -434,17 +462,11 @@ class Antlr4GenericParser:
             v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
             return v.next_rules
         elif node is not None:
-            for state in suggestion['state_stack']:
-                for n, f in node.rule.features.items():
-                    if state in f['states']:
-                        if f['cumul']:
-                            feature = (n, len(getattr(node, n)))
-                        else:
-                            feature = (n, None)
-                            
-                        suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
-                        return suggestions
-                    
+            node, feature = semantic_for_state_stack(node, suggestion['state_stack'])
+            while (node):
+                suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
+                node, feature = semantic_feature_in_parent(node)
+                                
         return suggestions
     
     def completion_suggestions(self, text, text_range):
@@ -467,7 +489,11 @@ class Antlr4GenericParser:
             suggestions_js = json.loads(ret)
             #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
             carret_ctx, feature = semantic_for_rule_node(carret_token)
-            
+            node = carret_ctx
+            while (node):
+                suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
+                node, feature = semantic_feature_in_parent(node)
+
             if (carret_ctx is not None): 
                 suggestions.append(Suggestion(type=carret_ctx.type, feature=feature, node=carret_ctx))
         #        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)

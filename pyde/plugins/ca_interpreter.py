@@ -64,13 +64,24 @@ class CompleteCommand:
                 self.acceptor[l] = l
 
     
-    def complete_main_path(self, editor, node):
+    def complete_main_path(self, editor, node, feature):
         pass
     
-    def complete_part_name(self, editor, node):
+    def complete_part_name(self, editor, node, feature):
         pass
     
     def complete_path_part(self, editor, node, feature):
+        parts = [p.parse_node.text for p in node.part][:feature[1]]
+        path = '/' + os.path.join(*parts)
+#         if feature[1] == len(node.part):
+#             path = node.parse_node.text[:-1]
+#             
+        for f in os.listdir(path):
+            if os.path.isdir(os.path.join(path, f)):
+                f += '/'
+            
+            self.acceptor[f] = f
+
         pass
     
     def complete_expr(self, editor, node):
