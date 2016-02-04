@@ -123,6 +123,7 @@ public class linpathParser extends Parser {
 	}
 
 	public static class PathContext extends ParserRuleContext {
+		public Token abs_;
 		public PartContext part;
 		public List<PartContext> part_ = new ArrayList<PartContext>();
 		public Token folder_;
@@ -163,7 +164,7 @@ public class linpathParser extends Parser {
 			if (_la==PATHSEP) {
 				{
 				setState(9);
-				match(PATHSEP);
+				((PathContext)_localctx).abs_ = match(PATHSEP);
 				}
 			}
 

@@ -67,10 +67,21 @@ class CompleteCommand:
     def complete_main_path(self, editor, node):
         pass
     
+    def complete_part_name(self, editor, node):
+        pass
+    
+    def complete_path_part(self, editor, node, feature):
+        pass
+    
     def complete_expr(self, editor, node):
         self.accept_global(editor)
     
     def complete_expr_attr(self, editor, node):
+        obj_text = node.object.parse_node.text
+        obj = eval(obj_text, editor.globals, editor.locals)
+        for d in dir(obj):
+            self.acceptor[d] = d
+        
         pass
     #     def __call__(self, editor, ast):
 #         cv = ContextVisitor(ast)

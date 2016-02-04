@@ -51,10 +51,16 @@ class ContentAssist(QObject):
         selected = self.editor.SendScintilla(QsciScintilla.SCI_AUTOCGETCURRENT)
         self.close_selected(selected, None)
     
-class GetCurContextCmd:
+class GetCaStartCmd:
     def __call__(self, editor, ast):
 #        cv = ContextVisitor(ast)
-        self.cur_ctx = ast.tokens.token_at_pos(editor.anchor-1)
+        cur_ctx = ast.tokens.token_at_pos(editor.anchor-1)
+        if cur_ctx is None:
+            self.ca_start = editor.anchor
+        elif cur_ctx.type == 'NAME':
+            self.ca_start = cur_ctx.slice.start
+        else:
+            self.ca_start = cur_ctx.slice.stop
     
 class ContentAssistWidget(QtCore.QObject):
     
@@ -77,18 +83,21 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
-        self.cur_ctx_cmd = GetCurContextCmd()
+        self.ca_start_cmd = GetCaStartCmd()
 
         self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
-        self.read_ast.emit(self.cur_ctx_cmd)
+        self.read_ast.emit(self.ca_start_cmd)
         self.read_ast.disconnect()
         
-        if self.cur_ctx_cmd.cur_ctx is None:
-            self.ca_start = self.editor.anchor
-        elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
-            self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
-        else:
-            self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
+        self.ca_start = self.ca_start_cmd.ca_start
+#         print()
+#         
+#         if self.cur_ctx_cmd.cur_ctx is None:
+#             self.ca_start = self.editor.anchor
+#         elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
+#             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
+#         else:
+#             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
             
         self.show()
 

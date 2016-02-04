@@ -3,7 +3,7 @@ grammar linpath;
 main : path_ = path EOF;
 
 path
-  :  PATHSEP? part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?
+  :  (abs_=PATHSEP)? part_ += part (PATHSEP part_ += part)* (folder_=PATHSEP)?
   ;
 
 part  :  name_=(NAME | HOME | VARIABLE_REFERENCE)

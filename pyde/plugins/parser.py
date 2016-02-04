@@ -18,6 +18,24 @@ def get_ctx_parent_of_type(ctx, *args):
         
     return None
 
+def semantic_for_rule_node(rule_node):
+    while((rule_node is not None) and (rule_node.parent is not None)):
+        parent = rule_node.parent
+        if hasattr(rule_node, 'semantic_node'):
+            return rule_node, None
+        elif hasattr(parent, 'features'):
+            for f, child in parent.features.items():
+                if isinstance(child, list):
+                    for i, elem in enumerate(child):
+                        if parent[elem] == rule_node:
+                            return parent.semantic_node, (f, i)
+                else:
+                    if parent[child] == rule_node:
+                        return parent.semantic_node, (f, None)
+        
+        rule_node = parent
+        
+    return None, None
 
 class SequenceMatchError(Exception):
     pass
@@ -123,7 +141,7 @@ class TokenSequence(list):
     
     def token_at_pos(self, pos):
         for t in self:
-            if t.slice.start >= pos:
+            if (pos > t.slice.start) and (pos <= t.slice.stop):
                 return t
             
         return None
@@ -299,7 +317,11 @@ class NextRulesVisitor(ParseTreeVisitor):
  
     def visit(self, node):
         if hasattr(node, 'feature'):
-            self.next_rules.append(Suggestion(type=node.root().name, feature=node.feature, node=None))
+            if node.featureAccumulation:
+                feature = (node.feature, 0)
+            else:
+                feature = (node.feature, None)
+            self.next_rules.append(Suggestion(type=node.root().name, feature=feature, node=None))
         return super().visit(node)
      
     def visit_ALT(self, node):
@@ -403,52 +425,56 @@ class Antlr4GenericParser:
         self.semantic_tree = builder.visit(self.parse_tree)
         return self.semantic_tree
 
-    def semantic_node_for_token(self, t):
-        rule_node = t
-        while(rule_node is not None):
-            if hasattr(rule_node, 'semantic_node'):
-                return rule_node.semantic_node
-            
-            rule_node = rule_node.parent
-            
-        return None
-
-    def place_suggestion(self, suggestion, node):
+    def place_suggestion(self, suggestion, node, feature):
 #        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
         suggestions = []
-        while(node != None):
-            if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
-                v = NextRulesVisitor(self.ast)
-                v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
-                return v.next_rules
-            else:
-                for state in suggestion['state_stack']:
-                    for n, f in node.rule.features.items():
-                        if state in f['states']:
-                            suggestions.append(Suggestion(type=node.type, feature=n, node=node))
-                            return suggestions
+        
+        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
+            v = NextRulesVisitor(self.ast)
+            v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
+            return v.next_rules
+        elif node is not None:
+            for state in suggestion['state_stack']:
+                for n, f in node.rule.features.items():
+                    if state in f['states']:
+                        if f['cumul']:
+                            feature = (n, len(getattr(node, n)))
+                        else:
+                            feature = (n, None)
+                            
+                        suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
+                        return suggestions
                     
         return suggestions
     
     def completion_suggestions(self, text, text_range):
-        active_text = text[text_range[0]: text_range[1]]
-#         p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
-#                           self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
-        ret = self.suggestion_io.communicate(active_text)
-#         ret = '[{"state_stack":[153],"type":"org.antlr.v4.runtime.NoViableAltException","token":0}]'
-        suggestions_js = json.loads(ret)
+        suggestions = []
         carret_index = text_range[1]
         carret_token = self.tokens.token_at_pos(carret_index)
-        if (carret_token is None) or (carret_index == carret_token.slice.start):
-            carret_token = self.tokens[carret_token.index-1] 
-    #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
-        
-        carret_ctx = self.semantic_node_for_token(carret_token)
-#        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
-        
-        suggestions = []
-        for s in suggestions_js:
-            suggestions.extend(self.place_suggestion(s, carret_ctx))
+#         if (carret_token is None) or (carret_index == carret_token.slice.start):
+#             carret_token = self.tokens[carret_token.index-1] 
+        if (carret_token is None):
+            carret_token = self.tokens[0] 
+
+        if not hasattr(carret_token, 'island_grammar_root'): 
+
+            active_text = text[text_range[0]: carret_index]#carret_token.slice.start]
+    #         p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
+    #                           self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
+            ret = self.suggestion_io.communicate(active_text)
+            print(ret)
+    #         ret = '[{"state_stack":[153],"type":"org.antlr.v4.runtime.NoViableAltException","token":0}]'
+            suggestions_js = json.loads(ret)
+            #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)
+            carret_ctx, feature = semantic_for_rule_node(carret_token)
+            
+            if (carret_ctx is not None): 
+                suggestions.append(Suggestion(type=carret_ctx.type, feature=feature, node=carret_ctx))
+        #        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
+                
+            
+            for s in suggestions_js:
+                suggestions.extend(self.place_suggestion(s, carret_ctx, feature))
         
 #         suggestions = []
 #         if not suggestions_js:

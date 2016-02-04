@@ -197,8 +197,8 @@ public class CompletionMain {
 
 		CompletionGrammarParserInterpreter parser = new CompletionGrammarParserInterpreter(g, tokens);
 		
-		JSONArray s = parser.getSuggestions(g, startRuleIndex, caretIndex);
-		System.out.println(s);
+//		JSONArray s = parser.getSuggestions(g, startRuleIndex, caretIndex);
+//		System.out.println(s);
 	}
 	
 	public void testLinpathParser( String input,

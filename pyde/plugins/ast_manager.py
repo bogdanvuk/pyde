@@ -6,6 +6,7 @@ from pyde.plugins.parser import Antlr4GenericParser
 class EditorAstManager(QtCore.QObject):
     
     tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
+    suggestions_created = QtCore.pyqtSignal(object, object, object) #['QWidget'])
     
     def __init__(self, mode : Dependency('mode/inst/')):
         super().__init__()
@@ -55,7 +56,8 @@ class EditorAstManager(QtCore.QObject):
             
     def completion_suggestions(self, cmd):
         self.parse()
-        self.suggestions = self.parser.completion_suggestions(self.editor.text(), self.editor.active_range())
+        carret_pos = self.editor.pos
+        self.suggestions = self.parser.completion_suggestions(self.editor.text(), (self.editor.active_range()[0], carret_pos))
         for s in self.suggestions:
             if s.feature:
                 method_name = '_'.join(['complete', s.type, s.feature])
@@ -74,3 +76,23 @@ class IPythonEditorAstManager(EditorAstManager):
             self.dirty = False
             self.ast = self.parser.parse(self.editor.text(), self.editor.cmd_range())
             self.tree_modified.emit(self.ast)
+            
+    def completion_suggestions(self, cmd):
+        self.parse()
+        carret_pos = self.editor.pos
+        cmd_range = self.editor.active_range()
+        if (carret_pos >= cmd_range[0]) and (carret_pos <= cmd_range[1]): 
+            self.suggestions = self.parser.completion_suggestions(self.editor.text(), (cmd_range[0], carret_pos))
+            self.suggestions_created.emit(self.suggestions, self.editor.text(), (cmd_range[0], carret_pos))
+            for s in self.suggestions:
+                print(s)
+                if s.feature:
+                    method_name = '_'.join(['complete', s.type, s.feature[0]])
+                else:
+                    method_name = '_'.join(['complete', s.type])
+                    
+                if hasattr(cmd, method_name):
+                    if s.feature:
+                        getattr(cmd, method_name)(self.editor, s.node, s.feature)
+                    else:
+                        getattr(cmd, method_name)(self.editor, s.node)
