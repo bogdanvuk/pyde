@@ -20,6 +20,7 @@ import org.antlr.v4.runtime.atn.ATNSerializer;
 import org.antlr.v4.runtime.atn.DecisionInfo;
 import org.antlr.v4.runtime.atn.DecisionState;
 import org.antlr.v4.runtime.atn.LookaheadEventInfo;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.Trees;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.GrammarParserInterpreter;
@@ -179,6 +180,11 @@ public class CompletionGrammarParserInterpreter extends GrammarParserInterpreter
 	//								lookaheadEventInfo.stopIndex);
 					for (int i = 0; i < lookaheadParseTrees.size(); i++) {
 						ParserRuleContext lt = lookaheadParseTrees.get(i);
+//						ParseTreeWalker walker = new ParseTreeWalker();
+//						JSONObject jsTree = new JSONObject();
+//						AntlrParseListener listener = new AntlrParseListener(this, jsTree);
+//						walker.walk(listener, lt); // initiate walk of tree with listener
+//						System.out.println(jsTree.toString());
 						System.out.println("parse tree: "+org.antlr.v4.gui.Trees.toStringTree(lt, nodeTextProvider));
 					}
 				}

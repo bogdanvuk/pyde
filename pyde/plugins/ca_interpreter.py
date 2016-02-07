@@ -5,6 +5,7 @@ from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
 import os
 from PyQt4 import QtCore
+from collections import namedtuple
 
 def get_ctx_text(ctx, editor):
     return editor.text()[ctx.slice.start:ctx.slice.stop]
@@ -51,26 +52,33 @@ class ContentAssistVisitor(PathVisitor):
     def visit_rel_path_path(self):
         pass
 
+Completion = namedtuple('Completion', 'template start_pos')
+
 class CompleteCommand:
     
-    def accept_global(self, editor):
+    def accept_global(self, editor, parse_node):
+        if parse_node is not None:
+            start = parse_node.slice.start
+        else:
+            start = editor.anchor
+        
         for g in editor.globals:
             if callable(editor.globals[g]):
-                self.acceptor[g] = TemplFunc(editor.globals[g])
+                self.acceptor[g] = Completion(TemplFunc(editor.globals[g]), start)
             else:
-                self.acceptor[g] = g
+                self.acceptor[g] = Completion(g, start)
             
             for l in editor.locals:
-                self.acceptor[l] = l
+                self.acceptor[l] = Completion(l, start)
 
     
-    def complete_main_path(self, editor, node, feature):
+    def complete_main_path(self, editor, node, feature, parse_node):
         pass
     
-    def complete_part_name(self, editor, node, feature):
+    def complete_part_name(self, editor, node, feature, parse_node):
         pass
     
-    def complete_path_part(self, editor, node, feature):
+    def complete_path_part(self, editor, node, feature, parse_node):
         parts = [p.parse_node.text for p in node.part][:feature[1]]
         path = '/' + os.path.join(*parts)
 #         if feature[1] == len(node.part):
@@ -80,18 +88,28 @@ class CompleteCommand:
             if os.path.isdir(os.path.join(path, f)):
                 f += '/'
             
-            self.acceptor[f] = f
+            if parse_node is not None:
+                start = parse_node.slice.start
+            else:
+                start = editor.anchor
+                
+            self.acceptor[f] = Completion(f, start)
 
         pass
     
-    def complete_expr(self, editor, node):
-        self.accept_global(editor)
+    def complete_expr(self, editor, node, parse_node):
+        self.accept_global(editor, parse_node)
     
-    def complete_expr_attr(self, editor, node):
+    def complete_expr_attr(self, editor, node, feature, parse_node):
         obj_text = node.object.parse_node.text
         obj = eval(obj_text, editor.globals, editor.locals)
+        if parse_node is not None:
+            start = parse_node.slice.start
+        else:
+            start = editor.pos
+
         for d in dir(obj):
-            self.acceptor[d] = d
+            self.acceptor[d] = Completion(d, start)
         
         pass
     #     def __call__(self, editor, ast):

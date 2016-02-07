@@ -18,6 +18,19 @@ def get_ctx_parent_of_type(ctx, *args):
         
     return None
 
+def parser_node_child_by_feature(node, feature):
+    try:
+        feature_index = node.features[feature[0]]
+        
+        if feature[1] is not None:
+            feature_index = feature_index[feature[1]]
+        
+        return node[feature_index]
+    except (KeyError, IndexError):
+        pass
+    
+    return None
+
 def semantic_for_state_stack(node, state_stack):
     for state in state_stack:
         for n, f in node.rule.features.items():
@@ -231,6 +244,13 @@ class SemanticNode:
         self.type = rule.type
         self.rule = rule
         self.parent = parent
+        
+    def __getitem__(self, feature):
+        child = getattr(self, feature[0]);
+        if feature[1]:
+            return child[feature[1]]
+        else:
+            return child
 
 class SemanticTreeBuilder(ParseTreeVisitor):
     def __init__(self, semantic_ast, common_fields):
@@ -334,13 +354,18 @@ class ParseTreeBuilder:
             self.cur_parent = parent
             return rule
 
-Suggestion = namedtuple('Suggestion', 'type feature node')
+Suggestion = namedtuple('Suggestion', 'type feature node parse_node')
 
 class NextRulesVisitor(ParseTreeVisitor):
-    def __init__(self, rules):
+    def __init__(self, rules, semantic_node):
         self.rules = rules
         self.next_rules = []
         self.rule_name_stack = []
+        self.semantic_node = semantic_node
+        if self.semantic_node:
+            self.parse_node = self.semantic_node.parse_node
+        else:
+            self.parse_node = None
  
     def visit(self, node):
         if hasattr(node, 'feature'):
@@ -348,7 +373,7 @@ class NextRulesVisitor(ParseTreeVisitor):
                 feature = (node.feature, 0)
             else:
                 feature = (node.feature, None)
-            self.next_rules.append(Suggestion(type=node.root().name, feature=feature, node=None))
+            self.next_rules.append(Suggestion(type=node.root().name, feature=feature, node=self.semantic_node, parse_node=self.parse_node))
         return super().visit(node)
      
     def visit_ALT(self, node):
@@ -389,7 +414,7 @@ class NextRulesVisitor(ParseTreeVisitor):
         if node.ref in self.rule_name_stack:
             return True
         else:
-            self.next_rules.append(Suggestion(type=node.ref, feature=None, node=None))
+            self.next_rules.append(Suggestion(type=node.ref, feature=None, node=self.semantic_node, parse_node=self.parse_node))
             self.rule_name_stack.append(node.ref)
             return self.visit(self.rules[node.ref])
 #             self.rule_name_stack.pop()
@@ -458,13 +483,14 @@ class Antlr4GenericParser:
         suggestions = []
         
         if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
-            v = NextRulesVisitor(self.ast)
+            v = NextRulesVisitor(self.ast, node)
             v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
             return v.next_rules
         elif node is not None:
             node, feature = semantic_for_state_stack(node, suggestion['state_stack'])
             while (node):
-                suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
+                parse_node_child = parser_node_child_by_feature(node.parse_node, feature)
+                suggestions.append(Suggestion(type=node.type, feature=feature, node=node, parse_node=parse_node_child))
                 node, feature = semantic_feature_in_parent(node)
                                 
         return suggestions
@@ -491,11 +517,12 @@ class Antlr4GenericParser:
             carret_ctx, feature = semantic_for_rule_node(carret_token)
             node = carret_ctx
             while (node):
-                suggestions.append(Suggestion(type=node.type, feature=feature, node=node))
+                parse_node_child = parser_node_child_by_feature(node.parse_node, feature)
+                suggestions.append(Suggestion(type=node.type, feature=feature, node=node, parse_node = parse_node_child))
                 node, feature = semantic_feature_in_parent(node)
 
-            if (carret_ctx is not None): 
-                suggestions.append(Suggestion(type=carret_ctx.type, feature=feature, node=carret_ctx))
+#             if (carret_ctx is not None): 
+#                 suggestions.append(Suggestion(type=carret_ctx.type, feature=feature, node=carret_ctx))
         #        pre_carret_ctx = self.semantic_node_for_token(pre_carret_token)
                 
             

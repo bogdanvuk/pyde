@@ -85,20 +85,20 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
         self.ca_start_cmd = GetCaStartCmd()
 
-        self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
-        self.read_ast.emit(self.ca_start_cmd)
-        self.read_ast.disconnect()
-        
-        self.ca_start = self.ca_start_cmd.ca_start
-#         print()
+#         self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
+#         self.read_ast.emit(self.ca_start_cmd)
+#         self.read_ast.disconnect()
 #         
-#         if self.cur_ctx_cmd.cur_ctx is None:
-#             self.ca_start = self.editor.anchor
-#         elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
-#             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
-#         else:
-#             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
-            
+#         self.ca_start = self.ca_start_cmd.ca_start
+# #         print()
+# #         
+# #         if self.cur_ctx_cmd.cur_ctx is None:
+# #             self.ca_start = self.editor.anchor
+# #         elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
+# #             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
+# #         else:
+# #             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
+#             
         self.show()
 
     def previous_line(self):
@@ -108,11 +108,25 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SendScintilla(QsciScintilla.SCI_LINEDOWN)
 
     def show(self):
-        print('show: ' + self.editor.text()[self.ca_start:self.editor.pos])
-        print('show list: ', ' '.join(sorted(self.sieve())))
-        self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
-                                 self.editor.pos - self.ca_start, 
-                                 ' '.join(sorted(self.sieve())).encode())
+#         print('show: ' + self.editor.text()[self.ca_start:self.editor.pos])
+#         print('show list: ', ' '.join(sorted(self.sieve())))
+        self.ca_list_starting_with = sorted(self.sieve_starting_with())
+        self.ca_list_anywhere = sorted(self.sieve_anywhere())
+        self.ca_list = self.ca_list_starting_with + self.ca_list_anywhere
+        if self.ca_list:
+            self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
+                                     0, 
+                                     (' '.join(self.ca_list)).encode())
+            self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSELECT,
+                          1,
+                          self.ca_list[0].encode())
+            self.editor.SendScintilla(QsciScintilla.SCI_VCHOME)
+
+#         elif len(self.ca_list) == 1:
+#             self.close_selected(self.ca_list[0].encode(), None)
+        else:
+            self.close_canceled()
+#         for name in self.ca_list:
 
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
@@ -130,30 +144,14 @@ class ContentAssistWidget(QtCore.QObject):
         
         cur_pos = self.editor.pos
         
-        text = self.editor.text()
-        
-        for i in range(cur_pos-1, 0, -1):
-            if not (text[i].isalnum() or text[i] == '_'):
-                search_word_start_pos = i + 1
-                break
+        ca_selected = self.items[selected.decode()]
+        self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, ca_selected.start_pos, cur_pos)
+        template = ca_selected.template
+        if hasattr(template, 'apply'):
+            template.apply(self.editor)
         else:
-            search_word_start_pos = 0
-            
-        for i in range(cur_pos, len(text)):
-            if not (text[i].isalnum() or text[i] == '_'):
-                search_word_end_pos = i
-                break
-        else:
-            search_word_end_pos = len(text)
-        
-        self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, search_word_start_pos, search_word_end_pos - search_word_start_pos)
-        selected_obj = self.items[selected.decode()]
-
-        if hasattr(selected_obj, 'apply'):
-            selected_obj.apply(self.editor)
-        else:
-            self.editor.insert(str(selected_obj))
-            self.editor.pos += len(str(selected_obj))
+            self.editor.insert(str(ca_selected.template))
+            self.editor.pos += len(str(ca_selected.template))
         
         
         
@@ -176,34 +174,70 @@ class ContentAssistWidget(QtCore.QObject):
         self.ca.deactivate()
         self.view.delete()
 
-    def fill_query(self):
-        text = self.editor.text()[self.ca_start:self.editor.pos]
+    def find_longest_common_sequence(self, l):
         common_text = ""
-
-        for k in sorted(self.sieve()):
+        
+        for c in l:
+            text = self.editor.text()[self.items[c].start_pos:self.editor.pos]
             if common_text:
-                s = SequenceMatcher(None, common_text, k)
-                match = s.find_longest_match(0, len(common_text), 0, len(k))
+                s = SequenceMatcher(None, common_text, c)
+                match = s.find_longest_match(0, len(common_text), 0, len(c))
                 if text or (match.b == 0):
-                    common_text = k[match.b:match.b + match.size]
+                    common_text = c[match.b:match.b + match.size]
+                    insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
                     if not common_text:
                         break
             else:
-                common_text = k
+                common_text = c
+                insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
+
+        return common_text, insert_text
+    
+    def fill_query(self):
+        
+        common_text = ""
+        if len(self.ca_list) == 1:
+            self.close_selected(self.ca_list[0].encode(), None)
+            return
+        elif self.ca_list_starting_with:
+            common_text, insert_text = self.find_longest_common_sequence(self.ca_list_starting_with)
+        else:
+            common_text, insert_text = self.find_longest_common_sequence(self.ca_list_anywhere)
 
         if common_text:
-            self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.ca_start, self.editor.pos - self.ca_start)
-            self.editor.insert(common_text)
-            self.editor.pos = self.ca_start + len(common_text)
+#             self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.ca_start, self.editor.pos - self.ca_start)
+            self.editor.insert(insert_text)
+            self.editor.pos += len(insert_text)
+            
         self.show()
-    
-    def sieve(self):
-        text = self.editor.text()[self.ca_start:self.editor.pos]
-#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
-        for k in self.items:
 
-            if (not text) or (text in k):
-                yield k
+    def sieve(self):
+        text = self.editor.text() #[self.ca_start:self.editor.pos]
+        cur_pos = self.editor.pos
+#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
+        for name, ca_item in self.items.items():
+            ca_text = text[ca_item.start_pos:cur_pos]
+            if (not ca_text) or (ca_text in name):
+                yield name
+    
+    def sieve_starting_with(self):
+        text = self.editor.text() #[self.ca_start:self.editor.pos]
+        cur_pos = self.editor.pos
+#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
+        for name, ca_item in self.items.items():
+            ca_text = text[ca_item.start_pos:cur_pos]
+            if (not ca_text) or (name.startswith(ca_text)):
+                yield name
+
+    def sieve_anywhere(self):
+        text = self.editor.text() #[self.ca_start:self.editor.pos]
+        cur_pos = self.editor.pos
+#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
+        for name, ca_item in self.items.items():
+            ca_text = text[ca_item.start_pos:cur_pos]
+            if (ca_text in name) and (not name.startswith(ca_text)):
+                yield name
+
 
     
 # app.register_global("content_assist", ContentAssist())

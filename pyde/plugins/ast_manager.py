@@ -93,6 +93,6 @@ class IPythonEditorAstManager(EditorAstManager):
                     
                 if hasattr(cmd, method_name):
                     if s.feature:
-                        getattr(cmd, method_name)(self.editor, s.node, s.feature)
+                        getattr(cmd, method_name)(self.editor, s.node, s.feature, s.parse_node)
                     else:
-                        getattr(cmd, method_name)(self.editor, s.node)
+                        getattr(cmd, method_name)(self.editor, s.node, s.parse_node)

@@ -481,9 +481,11 @@ from pyde.plugins.parser import Antlr4GenericParser
 
 
 if __name__ == "__main__":
-    text = 'ddic.'
+#     text = 'ddic.'
+    text = '/a/b/'
     carret_index = 5
-    parser = Antlr4GenericParser('python3', 'file_input')
+#     parser = Antlr4GenericParser('python3', 'file_input')
+    parser = Antlr4GenericParser('linpath', 'main')
     parser.parse(text, (0, len(text)))
     s = parser.completion_suggestions(text, (0, carret_index))
     for i in s: 
