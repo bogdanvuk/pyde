@@ -61,6 +61,16 @@ class GetCaStartCmd:
             self.ca_start = cur_ctx.slice.start
         else:
             self.ca_start = cur_ctx.slice.stop
+
+def find_longest_match_at_start(s1, s2):
+    ret = ''
+    for c1, c2 in zip(s1, s2):
+        if c1==c2:
+            ret += c1
+        else:
+            break
+        
+    return ret
     
 class ContentAssistWidget(QtCore.QObject):
     
@@ -81,8 +91,11 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SCN_AUTOCSELECTION.connect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.connect(self.close_canceled)
         self.editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
-        self.editor.SCN_MODIFIED.connect(self.text_modified)
+        self.editor.SCN_CHARADDED.connect(self.show)
+#         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
+        self.editor.SendScintilla(QsciScintilla.SCI_SETMODEVENTMASK, (QsciScintilla.SC_MOD_INSERTTEXT | QsciScintilla.SC_MOD_DELETETEXT))
+        self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETCANCELATSTART, False)
         self.ca_start_cmd = GetCaStartCmd()
 
 #         self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
@@ -113,14 +126,19 @@ class ContentAssistWidget(QtCore.QObject):
         self.ca_list_starting_with = sorted(self.sieve_starting_with())
         self.ca_list_anywhere = sorted(self.sieve_anywhere())
         self.ca_list = self.ca_list_starting_with + self.ca_list_anywhere
+        min_pos = self.editor.pos
+        for _,i in self.items.items():
+            if i.start_pos < min_pos:
+                min_pos = i.start_pos
+                 
         if self.ca_list:
             self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
-                                     0, 
+                                     self.editor.pos - min_pos, 
                                      (' '.join(self.ca_list)).encode())
             self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSELECT,
                           1,
                           self.ca_list[0].encode())
-            self.editor.SendScintilla(QsciScintilla.SCI_VCHOME)
+#             self.editor.SendScintilla(QsciScintilla.SCI_VCHOME)
 
 #         elif len(self.ca_list) == 1:
 #             self.close_selected(self.ca_list[0].encode(), None)
@@ -128,12 +146,23 @@ class ContentAssistWidget(QtCore.QObject):
             self.close_canceled()
 #         for name in self.ca_list:
 
-    def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
-                   foldPrev, token, annotationLinesAdded):
-        
-        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0):
-            print('modified')
-            self.show()
+#     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
+#                    foldPrev, token, annotationLinesAdded):
+#         
+#         print("Event: ", '%02x'%mtype)
+#         print("Text: ", text)
+#         if ((mtype & QsciScintilla.SC_MOD_CHANGESTYLE) != 0):
+#             if self.modified:
+#                 self.show()
+#                 
+#             self.modified = False
+#             
+#         elif ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0):
+#             print('modified')
+#             self.modified = True
+#             self.show()
+#         elif ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
+#             self.show()
 
     def close_selected(self, selected, param):
         print('close_selected')
@@ -160,7 +189,9 @@ class ContentAssistWidget(QtCore.QObject):
         self.show()
         
     def close_canceled(self):
+#        pass
         print('canceled')
+
 #         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.close()
         
@@ -168,33 +199,59 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SCN_AUTOCSELECTION.disconnect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.disconnect(self.close_canceled)
         self.editor.SCN_AUTOCCHARDELETED.disconnect(self.close_char_deleted)
-        self.editor.SCN_MODIFIED.disconnect(self.text_modified)
+        self.editor.SCN_CHARADDED.connect(self.show)
+#         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         
         self.ca.deactivate()
         self.view.delete()
 
-    def find_longest_common_sequence(self, l):
+    def find_longest_common_sequence(self, l, anywhere=False):
         common_text = ""
-        
+        insert_text = ""
         for c in l:
             text = self.editor.text()[self.items[c].start_pos:self.editor.pos]
+            if text:
+                c = ''.join(c.partition(text)[1:])
+                
             if common_text:
-                s = SequenceMatcher(None, common_text, c)
-                match = s.find_longest_match(0, len(common_text), 0, len(c))
-                if text or (match.b == 0):
+                if anywhere and (not text):
+                    s = SequenceMatcher(None, common_text, c)
+                    match = s.find_longest_match(0, len(common_text), 0, len(c))
                     common_text = c[match.b:match.b + match.size]
-                    insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
-                    if not common_text:
-                        break
+                else:
+                    common_text = find_longest_match_at_start(common_text, c)            
             else:
                 common_text = c
-                insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
-
+            
+            insert_text = common_text[len(text):]
+            if not common_text:
+                break
+    
+                
         return common_text, insert_text
+
+#     def find_longest_common_sequence(self, l):
+#         common_text = ""
+#         
+#         for c in l:
+#             text = self.editor.text()[self.items[c].start_pos:self.editor.pos]
+#             if common_text:
+#                 s = SequenceMatcher(None, common_text, c)
+#                 match = s.find_longest_match(0, len(common_text), 0, len(c))
+#                 if text or (match.b == 0):
+#                     common_text = c[match.b:match.b + match.size]
+#                     insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
+#                     if not common_text:
+#                         break
+#             else:
+#                 common_text = c
+#                 insert_text = common_text[self.editor.pos - self.items[c].start_pos:]
+# 
+#         return common_text, insert_text
     
     def fill_query(self):
-        
+
         common_text = ""
         if len(self.ca_list) == 1:
             self.close_selected(self.ca_list[0].encode(), None)
