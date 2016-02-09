@@ -78,6 +78,18 @@ class CompleteCommand:
     def complete_part_name(self, editor, node, feature, parse_node):
         pass
     
+    def complete_view_name_value(self, editor, node, feature, parse_node):
+        if parse_node is not None:
+            start = parse_node.slice.start
+        else:
+            start = editor.anchor
+                
+        for k in editor.view.parent:
+            if k in self.acceptor:
+                pass
+            else:
+                self.acceptor[k] = Completion(k, start)
+    
     def complete_path_part(self, editor, node, feature, parse_node):
         parts = [p.parse_node.text for p in node.part][:feature[1]]
         path = '/' + os.path.join(*parts)

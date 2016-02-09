@@ -238,8 +238,8 @@ class ParserRuleContext(list):
         return ContextSlice(self[0].slice.start, self[-1].slice.stop)
 
 class SemanticNode:
-    def __init__(self, features, rule, parse_node = None, parent = None):
-        self.features = features
+    def __init__(self, rule, parse_node = None, parent = None):
+        self.features = list(rule.features.keys())
         self.parse_node = parse_node
         self.type = rule.type
         self.rule = rule
@@ -285,10 +285,10 @@ class SemanticTreeBuilder(ParseTreeVisitor):
             return node.text
 
 class SemanticRule:
-    def __init__(self, type_name, rule):
+    def __init__(self, type_name, rule, features={}):
         self.type = type_name
         self.rule = rule
-        self.features = {}
+        self.features = features
         
     def feature_for_state(self, state):
         for n, f in self.features.items():
@@ -298,7 +298,7 @@ class SemanticRule:
         return None
     
     def __call__(self, **kwargs):
-        return SemanticNode(list(self.features.keys()), self, **kwargs)        
+        return SemanticNode(self, **kwargs)        
 
 class SemanticASTBuilder(ParseTreeVisitor):
     def __init__(self, ast):

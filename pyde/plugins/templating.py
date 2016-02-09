@@ -10,22 +10,6 @@ from pyde.ddi import diinit, Dependency
 
 class FuncArgContentAssist(QObject):
     language = None
-    
-    def complete(self, acceptor):
-        pass
-
-class Template(object):
-   
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-        
-    def apply(self, editor):
-        app.globals.templ.insert(self, editor)
-        
-    def param_val(self, key):
-        return key
-#         self.params[key]
 
 class TemplFunc:
     @diinit
@@ -77,13 +61,7 @@ class TemplParam(object):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-
-class ExampleTemplate(Template):
-    text = 'Proba {p0} tremplate {p1}'
-    params = {'p0':TemplParam(vtype=str), 'p1':TemplParam(vtype=str)}
-        
-
-class TemplPosition(object):
+class TemplPosition:
     def __init__(self, re_match=None):
         if re_match is not None:
             self.text = re_match.group()[1:-1]
@@ -163,6 +141,7 @@ class TemplActuator:
     def resolve(self):
         self.tmpl = None
         self.tmpl_ctx = None
+        self.editor.clearAllIndicators(self.indicators[self.editor])
     
     def move(self, pos_name):
         indicator = self.indicators[self.editor]

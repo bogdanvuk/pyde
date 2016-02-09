@@ -20,6 +20,7 @@ class PydeFrame(QtGui.QSplitter):
             self.widget.add_view(view, location)
         else:
             self.widget(loc).insertWidget(0, view)
+            self.widget(loc).setCurrentWidget(view)
 
 # class Desktop(object):
 #     

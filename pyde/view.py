@@ -13,6 +13,10 @@ class View(DependencyScope):
         self.parent.provide(widget.name, self)
 #         self.parent[widget.name] = self
 
+    def set_focus(self):
+        self.widget.parent().setCurrentWidget(self.widget)
+        self.widget.setFocus()
+
     def delete(self):
         self.parent.unprovide(self.widget.name)
         

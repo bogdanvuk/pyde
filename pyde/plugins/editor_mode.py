@@ -1,4 +1,5 @@
 from pyde.ddi import Dependency
+import os
 
 class EditorMode:
     def __init__(self, editor):
@@ -7,7 +8,15 @@ class EditorMode:
 #             editor.modes = []
 #         
 #         editor.modes.append(self)
-        
+
+def EditorModeExtensionFactory(mode_name, extensions):
+    class EditorMode:
+        name = mode_name
+        def __init__(self, editor : Dependency('view/', lambda e: os.path.splitext(e.name)[1] in extensions)):
+            self.editor = editor
+
+    return EditorMode
+
 class PythonMode(EditorMode):
     name = 'python'
     

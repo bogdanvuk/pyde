@@ -63,23 +63,24 @@ def dflt_view_condition_factory(func_name):
 
 class LinpathContentAssist(FuncArgContentAssist):
     language = 'linpath'
-    
-#     def __init__(self, 
-#                  ca : Dependency('content_assist'),
-#                  win : Dependency('win')):
-#         super().__init__()
-#         self.ca = ca
-#         self.win = win
-#         self.ca.complete.connect(self.complete)
+
     @property
     def init_value(self):
         return "'" + os.getcwd() + "/'" 
     
     def pos(self, text):
         return len(text) - 1
+
+class ViewListContentAssist(FuncArgContentAssist):
+    language = 'view_list'
+
+    @property
+    def init_value(self):
+        return "''" 
     
-    def complete(self, acceptor):
-        pass
+    def pos(self, text):
+        return len(text) - 1
+
 
 @diinit
 def execute_action(win : Dependency('win'), active_view = None):
@@ -87,17 +88,35 @@ def execute_action(win : Dependency('win'), active_view = None):
     interpret.execute_view_action(win.active_view())
 
 @diinit
+def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
+    if view_name in win.view:
+        active_view = win.active_view()
+        win.place_view(win.view[view_name].widget, 
+                       active_view.widget.last_location)
+
+        win.view[view_name].set_focus()
+
+@diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
     
-    new_view = ddic['cls/editor_generic'](os.path.basename(path), parent_view=win)
-    win.place_view(new_view, 
+    new_editor = ddic['cls/editor_generic'](os.path.basename(path), parent_view=win)
+    win.place_view(new_editor, 
                    active_view.widget.last_location)
 
 #     new_view.
-    active_view.widget.setText(open(path).read())
+    new_editor.setText(open(path).read())
+    new_editor.setFocus()
+    
 
-# def switch_view(view: ):
+def execute_action_template_shortcut(func):
+    @diinit
+    def wrapper(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
+        interpret = win.view['interpret'].widget
+        execute_action.action(win, active_view)
+        TemplFunc(func).apply(interpret)
+        
+    return wrapper
 
 @diinit
 def file_open_kbd(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
