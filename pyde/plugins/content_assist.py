@@ -167,22 +167,18 @@ class ContentAssistWidget(QtCore.QObject):
     def close_selected(self, selected, param):
         print('close_selected')
         self.close()
-#         self.editor.SCN_AUTOCSELECTION.disconnect(self.close)
-#         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
-#         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
-        
+       
         cur_pos = self.editor.pos
         
         ca_selected = self.items[selected.decode()]
-        self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, ca_selected.start_pos, cur_pos)
+        self.editor.SendScintilla(QsciScintilla.SCI_DELETERANGE, ca_selected.start_pos, cur_pos - ca_selected.start_pos)
+        self.editor.pos = ca_selected.start_pos
         template = ca_selected.template
         if hasattr(template, 'apply'):
             template.apply(self.editor)
         else:
             self.editor.insert(str(ca_selected.template))
             self.editor.pos += len(str(ca_selected.template))
-        
-        
         
     def close_char_deleted(self):
         print('close_char_deleted')
@@ -199,7 +195,7 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SCN_AUTOCSELECTION.disconnect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.disconnect(self.close_canceled)
         self.editor.SCN_AUTOCCHARDELETED.disconnect(self.close_char_deleted)
-        self.editor.SCN_CHARADDED.connect(self.show)
+        self.editor.SCN_CHARADDED.disconnect(self.show)
 #         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         
