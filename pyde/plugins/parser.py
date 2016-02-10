@@ -285,9 +285,12 @@ class SemanticTreeBuilder(ParseTreeVisitor):
             return node.text
 
 class SemanticRule:
-    def __init__(self, type_name, rule, features={}):
+    def __init__(self, type_name, rule, features=None):
         self.type = type_name
         self.rule = rule
+        if features is None:
+            features = {}
+            
         self.features = features
         
     def feature_for_state(self, state):

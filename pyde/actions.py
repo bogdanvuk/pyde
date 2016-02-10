@@ -111,18 +111,20 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
 
 def execute_action_template_shortcut(func):
     @diinit
-    def wrapper(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
+    def wrapper(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
         interpret = win.view['interpret'].widget
         execute_action.action(win, active_view)
         TemplFunc(func).apply(interpret)
+        ca.activate(interpret.view)
         
     return wrapper
 
 @diinit
-def file_open_kbd(win : Dependency('win'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
+def file_open_kbd(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
     interpret = win.view['interpret'].widget
     execute_action.action(win, active_view)
     TemplFunc(file_open).apply(interpret)
+    
 
 # file_open()
 

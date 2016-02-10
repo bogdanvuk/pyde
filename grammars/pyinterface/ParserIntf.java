@@ -79,9 +79,9 @@ public class ParserIntf {
 		requestStream = new  FileInputStream(fifoIn);
 	    responseStream = new FileOutputStream(fifoOut);
 
-		FileHandler fh = new FileHandler("/home/bvukobratovic/projects/pyde/parser_intf.log",true);
-		fh.setFormatter(new SimpleFormatter());
-        logger.addHandler(fh);
+//		FileHandler fh = new FileHandler("/home/bvukobratovic/projects/pyde/parser_intf.log",true);
+//		fh.setFormatter(new SimpleFormatter());
+//        logger.addHandler(fh);
 		String lexerName = grammarName+"Lexer";
 		ClassLoader cl = Thread.currentThread().getContextClassLoader();
 		Class<? extends Lexer> lexerClass = null;
