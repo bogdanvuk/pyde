@@ -21,6 +21,7 @@ from pyde.plugins.lexer import Lexer
 from pyde.editor import PydeEditor
 from pyde.plugins.interpret_arg_island_lang import IslandLanguageParserFactory
 from pyde.plugins.view_list_parser import ViewListParser
+from pyde.actions import provide_action_args
 
 # ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
@@ -89,11 +90,7 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/beginning_of_vi
                                     'modifier': Qt.AltModifier,
                                     'condition': actions.dflt_view_condition_factory('beginning_of_view')})
 
-ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/end_of_view',
-                       inst_kwargs={'action': actions.dflt_view_action_factory('end_of_view'),
-                                    'key': Qt.Key_N,
-                                    'modifier': Qt.AltModifier + Qt.ShiftModifier,
-                                    'condition': actions.dflt_view_condition_factory('end_of_view')})
+ddic.provide_on_demand(**provide_action_args('end_of_view', Qt.Key_N, Qt.AltModifier + Qt.ShiftModifier))
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/previous_line',
                        inst_kwargs={'action': actions.dflt_view_action_factory('previous_line'),
@@ -104,6 +101,8 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/backward_char',
                        inst_kwargs={'action': actions.dflt_view_action_factory('backward_char'),
                                     'key': Qt.Key_J,
                                     'modifier': Qt.AltModifier})
+ddic.provide_on_demand(**provide_action_args('end_of_line', Qt.Key_H, Qt.AltModifier + Qt.ShiftModifier))
+ddic.provide_on_demand(**provide_action_args('beginning_of_line', Qt.Key_H, Qt.AltModifier))
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/content_assist_fill_query', 
                        inst_kwargs={'action': actions.content_assist_fill_query,

@@ -54,7 +54,6 @@ def IslandLanguageParserFactory(language):
                     suggestions.extend(self.parser.completion_suggestions(text, [island[1].slice.start, carret_index]))
     #     @pyqtSlot(object)
         def python_ast_changed(self, tree):
-            print('python_ast_changed')
             v = ArglistVisitor(self.editor, self.language)
             v.visit(tree)
             self.islands = []

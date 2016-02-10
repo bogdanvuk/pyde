@@ -10,7 +10,7 @@ Module implementing a compatability interface class to QsciScintilla.
 # from __future__ import unicode_literals
 
 from PyQt4.QtCore import pyqtSignal, Qt
-from PyQt4.QtGui import QPalette, QColor
+from PyQt4.QtGui import QPalette, QColor, QFocusEvent
 from PyQt4.QtGui import QApplication
 from PyQt4.Qsci import QsciScintillaBase, QsciScintilla, \
     QSCINTILLA_VERSION as QSCIQSCINTILLA_VERSION
@@ -40,6 +40,7 @@ class QsciScintillaCompat(QsciScintilla):
     @signal zoomValueChanged(int) emitted to signal a change of the zoom value
     """
     zoomValueChanged = pyqtSignal(int)
+    SCN_FOCUSOUT = pyqtSignal()
     
     ArrowFoldStyle = QsciScintilla.BoxedTreeFoldStyle + 1
     ArrowTreeFoldStyle = ArrowFoldStyle + 1
@@ -1228,29 +1229,32 @@ class QsciScintillaCompat(QsciScintilla):
     ## specialized event handlers
     ###########################################################################
     
-    def focusOutEvent(self, event):
-        """
-        Protected method called when the editor loses focus.
-        
-        @param event event object (QFocusEvent)
-        """
-        if self.isListActive():
-            if event.reason() == Qt.ActiveWindowFocusReason:
-                aw = QApplication.activeWindow()
-                if aw is None or aw.parent() is not self:
-                    self.cancelList()
-            else:
-                self.cancelList()
-        
-        if self.isCallTipActive():
-            if event.reason() == Qt.ActiveWindowFocusReason:
-                aw = QApplication.activeWindow()
-                if aw is None or aw.parent() is not self:
-                    self.SendScintilla(QsciScintilla.SCI_CALLTIPCANCEL)
-            else:
-                self.SendScintilla(QsciScintilla.SCI_CALLTIPCANCEL)
-        
-        super(QsciScintillaCompat, self).focusOutEvent(event)
+#     def focusOutEvent(self, event):
+#         print('focus_out')
+#         self.SCN_FOCUSOUT.emit()
+#         return QsciScintillaBase.focusOutEvent(self, event)
+#         """
+#         Protected method called when the editor loses focus.
+#         
+#         @param event event object (QFocusEvent)
+#         """
+#         if self.isListActive():
+#             if event.reason() == Qt.ActiveWindowFocusReason:
+#                 aw = QApplication.activeWindow()
+#                 if aw is None or aw.parent() is not self:
+#                     self.cancelList()
+#             else:
+#                 self.cancelList()
+#         
+#         if self.isCallTipActive():
+#             if event.reason() == Qt.ActiveWindowFocusReason:
+#                 aw = QApplication.activeWindow()
+#                 if aw is None or aw.parent() is not self:
+#                     self.SendScintilla(QsciScintilla.SCI_CALLTIPCANCEL)
+#             else:
+#                 self.SendScintilla(QsciScintilla.SCI_CALLTIPCANCEL)
+#         
+#         super(QsciScintillaCompat, self).focusOutEvent(event)
     
     def event(self, evt):
         """
@@ -1262,7 +1266,12 @@ class QsciScintillaCompat(QsciScintilla):
         @param evt event object to handle (QEvent)
         @return result of the event handling (boolean)
         """
-        return QsciScintillaBase.event(self, evt)
+        #return QsciScintillaBase.event(self, evt)
+        if isinstance(evt, QFocusEvent):
+            if evt.lostFocus():
+                self.SCN_FOCUSOUT.emit()
+#             print(evt, evt.reason(), evt.gotFocus(), evt.lostFocus())
+        return super().event(evt)
     
     if "inputMethodEvent" in QsciScintillaBase.__dict__ and \
             QSCINTILLA_VERSION() < 0x020801:

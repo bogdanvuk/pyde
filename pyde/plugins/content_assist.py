@@ -89,12 +89,14 @@ class ContentAssistWidget(QtCore.QObject):
 #         ddic['content_assist'].activate()
 #         self.ca_start = editor.widget.pos
         self.editor.SCN_AUTOCSELECTION.connect(self.close_selected)
-        self.editor.SCN_AUTOCCANCELLED.connect(self.close_canceled)
+        self.editor.SCN_AUTOCCANCELLED.connect(self.close)
         self.editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
         self.editor.SCN_CHARADDED.connect(self.show)
+        self.editor.SCN_FOCUSOUT.connect(self.close)
+#        self.editor.SCN_CHARADDED.connect(self.show)
 #         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETAUTOHIDE, False)
-        self.editor.SendScintilla(QsciScintilla.SCI_SETMODEVENTMASK, (QsciScintilla.SC_MOD_INSERTTEXT | QsciScintilla.SC_MOD_DELETETEXT))
+#        self.editor.SendScintilla(QsciScintilla.SCI_SETMODEVENTMASK, (QsciScintilla.SC_MOD_INSERTTEXT | QsciScintilla.SC_MOD_DELETETEXT))
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETCANCELATSTART, False)
         self.ca_start_cmd = GetCaStartCmd()
 
@@ -146,11 +148,11 @@ class ContentAssistWidget(QtCore.QObject):
             self.close_canceled()
 #         for name in self.ca_list:
 
-#     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
-#                    foldPrev, token, annotationLinesAdded):
-#         
-#         print("Event: ", '%02x'%mtype)
-#         print("Text: ", text)
+    def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
+                   foldPrev, token, annotationLinesAdded):
+         
+        print("Event: ", '%02x'%mtype)
+        print("Text: ", text)
 #         if ((mtype & QsciScintilla.SC_MOD_CHANGESTYLE) != 0):
 #             if self.modified:
 #                 self.show()
@@ -184,18 +186,12 @@ class ContentAssistWidget(QtCore.QObject):
         print('close_char_deleted')
         self.show()
         
-    def close_canceled(self):
-#        pass
-        print('canceled')
-
-#         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
-        self.close()
-        
     def close(self):
         self.editor.SCN_AUTOCSELECTION.disconnect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.disconnect(self.close_canceled)
         self.editor.SCN_AUTOCCHARDELETED.disconnect(self.close_char_deleted)
         self.editor.SCN_CHARADDED.disconnect(self.show)
+        self.editor.SCN_FOCUSOUT.disconnect(self.close)
 #         self.editor.SCN_MODIFIED.disconnect(self.text_modified)
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         

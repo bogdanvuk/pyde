@@ -227,7 +227,6 @@ class ParserRuleContext(list):
         if hasattr(self, 'type'):
             text = self.type
             if len(self) > 1:
-#                 print(super(ParserRuleContext, self).__repr__())
                 text += ': ' + super(ParserRuleContext, self).__repr__()
             return text
         else:
@@ -466,11 +465,10 @@ class Antlr4GenericParser:
 #                               self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
 #         parse_out = json.loads(p.decode())
         ret = self.parser_io.communicate(active_text)
-        print(ret)
         parse_out = json.loads(ret)
         self.tokens = TokenSequence(parse_out['tokens'], text_range[0])
         dict_tree = parse_out['tree']
-#             print(json.dumps(dict_tree, sort_keys=True, indent=4, separators=(',', ': ')))
+
         common_fields = {'ast': self.ast, 'token': self.tokens}
         parse_builder = ParseTreeBuilder(self.tokens, common_fields)
         self.parse_tree = parse_builder.visit(dict_tree)
@@ -513,7 +511,6 @@ class Antlr4GenericParser:
     #         p = subprocess.Popen(['java', 'pyinterface.CompletionSuggestions', 
     #                           self.language, self.start_rule, active_text], stdout=subprocess.PIPE).communicate()[0]
             ret = self.suggestion_io.communicate(active_text)
-            print(ret)
     #         ret = '[{"state_stack":[153],"type":"org.antlr.v4.runtime.NoViableAltException","token":0}]'
             suggestions_js = json.loads(ret)
             #     carret_token_start_index = start_of_carret_token(parser.tokens, carret_index)

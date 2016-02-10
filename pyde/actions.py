@@ -3,10 +3,10 @@ import string
 import os
 from pyde.ddi import ddic, diinit, Dependency
 from pyde.keyaction import KeyActionDfltCondition
-from PyQt4.QtCore import QObject
 from functools import wraps, partial
 from inspect import getfullargspec, getargspec, signature
 from pyde.plugins.templating import TemplFunc, FuncArgContentAssist
+from PyQt4.QtCore import Qt
 
 def all2kwargs(func, *args, **kwargs):
     arg_names, _, defaults, _, _, _, _ = getfullargspec(func)
@@ -51,6 +51,17 @@ def template2interpet(func):
     w = wraps(wrapper)(partial(func,**no_default))
     
     return w
+
+def provide_action_args(action_name, key, modifier):
+    return {
+            'feature' : 'cls/keyaction',
+            'inst_feature' : 'keyactions/' + action_name,
+            'inst_kwargs' : {
+                            'action': dflt_view_action_factory(action_name),
+                            'key': key,
+                            'modifier': modifier,
+                            'condition': dflt_view_condition_factory(action_name)}
+            }
 
 def dflt_view_condition_factory(func_name):
     def dflt_view_condition(key_action, active_view, event):

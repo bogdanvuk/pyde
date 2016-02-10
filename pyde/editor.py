@@ -77,6 +77,12 @@ class PydeEditor(QsciScintillaCompat):
 
     def end_of_view(self):
         self.SendScintilla(QsciScintilla.SCI_DOCUMENTEND)
+
+    def beginning_of_line(self):
+        self.SendScintilla(QsciScintilla.SCI_HOME)
+
+    def end_of_line(self):
+        self.SendScintilla(QsciScintilla.SCI_LINEEND)
         
     def content_assist(self):
         self.autoCompleteFromAll()

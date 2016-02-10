@@ -43,10 +43,8 @@ class EditorAstManager(QtCore.QObject):
             self.dirty = True
 
     def read_only(self, cmd):
-        print('begin ast.read_only')
         self.parse()
         cmd(self.editor, self.parser)
-        print('end ast.read_only')
 
     def parse(self):
         if self.dirty:
@@ -85,7 +83,6 @@ class IPythonEditorAstManager(EditorAstManager):
             self.suggestions = self.parser.completion_suggestions(self.editor.text(), (cmd_range[0], carret_pos))
             self.suggestions_created.emit(self.suggestions, self.editor.text(), (cmd_range[0], carret_pos))
             for s in self.suggestions:
-                print(s)
                 if s.feature:
                     method_name = '_'.join(['complete', s.type, s.feature[0]])
                 else:
