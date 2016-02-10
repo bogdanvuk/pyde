@@ -46,11 +46,6 @@ class ContentAssist(QObject):
         if ca_items:
             self.ca_widget = ContentAssistWidget(editor, ca_items)
             
-    def select(self):
-        print('selected')
-        selected = self.editor.SendScintilla(QsciScintilla.SCI_AUTOCGETCURRENT)
-        self.close_selected(selected, None)
-    
 class GetCaStartCmd:
     def __call__(self, editor, ast):
 #        cv = ContextVisitor(ast)
@@ -166,6 +161,10 @@ class ContentAssistWidget(QtCore.QObject):
 #         elif ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
 #             self.show()
 
+    def select(self):
+        index = self.editor.SendScintilla(QsciScintilla.SCI_AUTOCGETCURRENT)
+        self.close_selected(self.ca_list[index].encode(), None)
+
     def close_selected(self, selected, param):
         print('close_selected')
         self.close()
@@ -188,7 +187,7 @@ class ContentAssistWidget(QtCore.QObject):
         
     def close(self):
         self.editor.SCN_AUTOCSELECTION.disconnect(self.close_selected)
-        self.editor.SCN_AUTOCCANCELLED.disconnect(self.close_canceled)
+        self.editor.SCN_AUTOCCANCELLED.disconnect(self.close)
         self.editor.SCN_AUTOCCHARDELETED.disconnect(self.close_char_deleted)
         self.editor.SCN_CHARADDED.disconnect(self.show)
         self.editor.SCN_FOCUSOUT.disconnect(self.close)

@@ -212,8 +212,11 @@ def content_assist(win : Dependency('win'), ca : Dependency('content_assist'), a
 #    raise KeyPressNotConsumed
 #     app.active_widget().content_assist()
 #     
-def evaluate():
-    ddic['win'].active_view().evaluate()
+def evaluate(active_view = None):
+    if 'content_assist' in active_view:
+        active_view['content_assist'].widget.select()
+
+    active_view.widget.evaluate()
 # 
 # class Path(object):
 #     def __init__(self, path=None):
