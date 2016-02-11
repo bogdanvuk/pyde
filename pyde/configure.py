@@ -23,10 +23,12 @@ from pyde.plugins.interpret_arg_island_lang import IslandLanguageParserFactory
 from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
 from pyde.plugins.statusbar import StatusBar
+from pyde.plugins.dump_config import DumpConfig
 
 # ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
 ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
+ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
 ddic.provide('cls/editor_generic', PydeEditor)
 ddic.provide('cls/ipython', PyInerpretEditor)
 
@@ -128,8 +130,9 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/evaluate',
                                     'condition': actions.dflt_view_condition_factory('evaluate'), #EvaluateKeyActionCondition 
                                     })
 
-wspace_path = '/data/projects/pyde/'    
-sys.path.append(wspace_path)
+ddic.provide('config/wspace/path', '/data/projects/pyde/')
+
+sys.path.append('/data/projects/pyde/')
 
 import wspace.configure  # @UnresolvedImport
 

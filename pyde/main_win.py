@@ -10,27 +10,28 @@ class MainWindow(QtGui.QMainWindow):
     uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, layout: Dependency(feature='init_layout')):
+    def __init__(self, layout: Dependency(feature='main_win_layout')):
         QtGui.QMainWindow.__init__(self)
 #         self.view = View(self)
         self.name = 'view'
         self.view = View(self, ddic)
         self.setWindowTitle("Writer")
-        self.resize(800, 600)
+#         self.resize(800, 600)
 
         centralwidget = QtGui.QWidget(self)
         centralwidget.setObjectName("centralwidget")
+        
         gridLayout = QtGui.QGridLayout(centralwidget)
         gridLayout.setObjectName("gridLayout")
+        self.centralLayout = gridLayout
         
         self.setCentralWidget(centralwidget)
+        self.centralLayout.addWidget(layout, 0, 0, 1, 1)
+        self.centralWidget = layout
         
 #         self.view = view_scope
         
         QtCore.QMetaObject.connectSlotsByName(self)
-        self.centralLayout = gridLayout
-        self.centralLayout.addWidget(layout, 0, 0, 1, 1)
-        self.centralWidget = layout
         self.views = {}
     
     def place_view(self, view, location=[0]):
@@ -50,6 +51,11 @@ class MainWindow(QtGui.QMainWindow):
     def active_view(self):
         return QApplication.focusWidget().view.active_view()
 
+
+    def dump_config(self, var_name):
+        conf = ''
+        
+        pass
 
 #     def keyPressEvent(self, event):
 # #         print("key_press")

@@ -1,7 +1,7 @@
 
 import sys
 from pyde.ddi import ddic
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 import ast
 # from pyde.application import app
 # from pyde.main_win import MainWindow
