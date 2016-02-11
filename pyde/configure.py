@@ -22,9 +22,11 @@ from pyde.editor import PydeEditor
 from pyde.plugins.interpret_arg_island_lang import IslandLanguageParserFactory
 from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
+from pyde.plugins.statusbar import StatusBar
 
 # ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
+ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
 ddic.provide('cls/editor_generic', PydeEditor)
 ddic.provide('cls/ipython', PyInerpretEditor)
 

@@ -25,9 +25,6 @@ class MainWindow(QtGui.QMainWindow):
         
         self.setCentralWidget(centralwidget)
         
-        statusbar = QtGui.QStatusBar(self)
-        statusbar.setObjectName("statusbar")
-        self.setStatusBar(statusbar)
 #         self.view = view_scope
         
         QtCore.QMetaObject.connectSlotsByName(self)

@@ -13,6 +13,7 @@ import ast
 if __name__ == "__main__":
 #     t = ast.parse('f(a,b,c,d)')
     app = QtGui.QApplication(sys.argv)
+    ddic.provide('app', app)
     import pyde.configure
     
 #     wspace_path = '/data/projects/pyde/wspace'    
