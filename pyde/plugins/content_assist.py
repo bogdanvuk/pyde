@@ -268,22 +268,36 @@ class ContentAssistWidget(QtCore.QObject):
             if (not ca_text) or (ca_text in name):
                 yield name
     
-    def sieve_starting_with(self):
-        text = self.editor.text() #[self.ca_start:self.editor.pos]
+    def sieve_starting_with(self, ignore_case = True):
+        text = self.editor.text()
+        if ignore_case:
+            text = text.lower()
+            
         cur_pos = self.editor.pos
-#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
+
         for name, ca_item in self.items.items():
             ca_text = text[ca_item.start_pos:cur_pos]
-            if (not ca_text) or (name.startswith(ca_text)):
+            
+            if ignore_case:
+                name_adapt = name.lower()
+            
+            if (not ca_text) or (name_adapt.startswith(ca_text)):
                 yield name
 
-    def sieve_anywhere(self):
-        text = self.editor.text() #[self.ca_start:self.editor.pos]
+    def sieve_anywhere(self, ignore_case = True):
+        text = self.editor.text()
+        if ignore_case:
+            text = text.lower()
+
         cur_pos = self.editor.pos
-#         for k in difflib.get_close_matches(text, self.items.keys(), n=100, cutoff=0.6):  
+
         for name, ca_item in self.items.items():
             ca_text = text[ca_item.start_pos:cur_pos]
-            if (ca_text in name) and (not name.startswith(ca_text)):
+
+            if ignore_case:
+                name_adapt = name.lower()
+            
+            if (ca_text in name_adapt) and (not name_adapt.startswith(ca_text)):
                 yield name
 
 
