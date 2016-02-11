@@ -111,14 +111,9 @@ def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
     
-    new_editor = ddic['cls/editor_generic'](os.path.basename(path), parent_view=win)
+    new_editor = ddic['cls/editor_generic'](path, parent_view=win)
     win.place_view(new_editor, 
                    active_view.widget.last_location)
-
-#     new_view.
-    new_editor.setText(open(path).read())
-    new_editor.setFocus()
-    
 
 def execute_action_template_shortcut(func):
     @diinit

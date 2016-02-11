@@ -5,34 +5,28 @@ from pyde.ddi import Dependency, diinit
 from pyde.plugins.context import ViewContext, BoundedSlice
 from collections import OrderedDict
 from pyde.view import View
+import os
+from PyQt4.QtCore import Qt
 
 class PydeEditor(QsciScintillaCompat):
     
     @diinit
-    def __init__(self, name, parent_view, parent=None):
-#         PydeWidget.__init__(self)
-#         self.name = name
-#         self.context = context
-#         self.context.update_context([name], ViewContext(self))
+    def __init__(self, fn, parent_view, parent=None):
         super(PydeEditor, self).__init__(parent)
-        self.name = name
+        self.setAttribute(Qt.WA_KeyCompression)
+        self.file_name = fn
+        self.name = os.path.basename(fn)
         self.view = View(self, parent_view.view)
 #         View.__init__(self, name, parent_view)
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
-    
-#     def focusInEvent(self, event):
-#         self.parent_view.active_view()
-#         self.context.set_active_path([BoundedSlice(None, self.name), 
-#                                          BoundedSlice(self,self.pos)])
-#         super().focusInEvent(event)
+        self.read_file(self.file_name)
     
     def __getitem__(self, item):
         return self.text().__getitem__(item)
     
     def active_view(self):
         return self.view.active_view()
-    
 
     @property
     def line(self):
@@ -59,6 +53,16 @@ class PydeEditor(QsciScintillaCompat):
         pass
 #         print(pos, hex(mtype), text, length, linesAdded, line, foldNow,
 #                    foldPrev, token, annotationLinesAdded)
+
+    def read_file(self, fn):
+        if os.path.exists(fn):
+            with open(fn, 'r') as f:
+                self.setText(f.read())
+        else:
+            with open(fn, "w"):
+                pass
+            
+            self.setText('')
 
     def previous_line(self):
         self.SendScintilla(QsciScintilla.SCI_GOTOLINE, self.line - 1)

@@ -140,7 +140,7 @@ class ContentAssistWidget(QtCore.QObject):
 #         elif len(self.ca_list) == 1:
 #             self.close_selected(self.ca_list[0].encode(), None)
         else:
-            self.close_canceled()
+            self.close()
 #         for name in self.ca_list:
 
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
