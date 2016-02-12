@@ -24,9 +24,11 @@ from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
 from pyde.plugins.statusbar import StatusBar
 from pyde.plugins.dump_config import DumpConfig
+from pyde.pyde_frame import PydeFrame
 
 # ddic.create_scope('view')
 ddic.provide_on_demand('cls/win', MainWindow, 'win')
+ddic.provide('main_win_layout', PydeFrame())
 ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
 ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
 ddic.provide('cls/editor_generic', PydeEditor)
@@ -130,10 +132,25 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/evaluate',
                                     'condition': actions.dflt_view_condition_factory('evaluate'), #EvaluateKeyActionCondition 
                                     })
 
-ddic.provide('config/wspace/path', '/data/projects/pyde/')
+ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 
-sys.path.append('/data/projects/pyde/')
+sys.path.append('/data/projects/pyde/wspace')
 
-import wspace.configure  # @UnresolvedImport
+# from wspace import configure  # @UnusedImport
+from wspace import config
+import inspect
+
+def is_mod_function(mod, func):
+    return inspect.isfunction(func) and inspect.getmodule(func) == mod
+
+def module_functions(mod):
+    for _, func in mod.__dict__.items():
+        if is_mod_function(mod, func):
+            yield func
+
+for f in module_functions(config):
+    ddic.provide_on_demand('config/wspace/' + f.__name__, f)
+    
+# import wspace.configure  # @UnresolvedImport
 
 

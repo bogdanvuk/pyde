@@ -65,6 +65,7 @@ class PydeFrame(QtGui.QSplitter):
     def dump_config(self, var_name):
         config = []
         config.append('from PyQt4.QtCore import Qt')
+        config.append('from pyde.pyde_frame import ChildLayout, Layout')
         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
         return '\n'.join(config)
 

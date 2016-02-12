@@ -33,7 +33,7 @@ class Demander:
         self.dir_dependencies = []
         self.simple_dependencies = []
         self.dependencies_by_feature = {}
-        self.satisfied = WeakValueDictionary()
+        self.satisfied = set() #WeakValueDictionary()
         self.provider = None
         self.extract_dependencies()
 #             for name, d in self.dependencies.items():
@@ -82,7 +82,7 @@ class Demander:
             if (not feature in self.satisfied) and (feature in ddic):
                 provider = ddic[feature]
                 if self.dependencies_by_feature[feature].assertion(provider):
-                    self.satisfied[feature] = provider
+                    self.satisfied.add(feature) #] = provider
                     newly_satisfied = True
                     
         return newly_satisfied
@@ -252,7 +252,8 @@ class DependencyContainer(DependencyScope):
     def inst_demander(self, demander, recurrent_feature=None):
         dependencies = {}
         for d in demander.simple_dependencies:
-            dependencies[d] = demander.satisfied[demander.dependencies[d].feature]
+            dependencies[d] = self[demander.dependencies[d].feature]
+#             dependencies[d] = demander.satisfied[demander.dependencies[d].feature]
             
         if recurrent_feature is not None:
             for d in demander.dir_dependencies:
@@ -267,11 +268,11 @@ class DependencyContainer(DependencyScope):
             demander_inst._dependents = {}
             demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
 
-            for _, dep_provider in dependencies.items():
-                if not hasattr(dep_provider, '_dependents'):
-                    dep_provider._dependents = {}
-                    
-                dep_provider._dependents[demander_inst_feature] = demander_inst
+#             for _, dep_provider in dependencies.items():
+#                 if not hasattr(dep_provider, '_dependents'):
+#                     dep_provider._dependents = {}
+#                     
+#                 dep_provider._dependents[demander_inst_feature] = demander_inst
 
     def check_and_inst_demander(self, d, feature, provider = None, already_inst = set()):
         if not d.all_satisfied():
@@ -360,6 +361,7 @@ class DependencyContainer(DependencyScope):
         
         demander = Demander(feature, inst_feature, list(inst_args), dict(inst_kwargs), deps)
         self.demanders.append(demander)
+        
         if demander.all_satisfied():
             self.inst_demander(demander)
         elif len(demander.dir_dependencies) == 1:
@@ -368,6 +370,8 @@ class DependencyContainer(DependencyScope):
             if dir_feature in self:
                 for f in self[dir_feature]:
                     self.check_and_inst_demander(demander, dir_dep + f)
+        else:
+            self.check_and_inst_demander(demander, feature)
     
     def unprovide(self, feature):
         provider = self[feature]
