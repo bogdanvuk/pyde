@@ -24,23 +24,27 @@ from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
 from pyde.plugins.statusbar import StatusBar
 from pyde.plugins.dump_config import DumpConfig
-from pyde.pyde_frame import PydeFrame
+from pyde.pyde_frame import PydeFrame, ChildLayout, Layout
+from pyde.view import View
+from PyQt4 import QtCore
+import os
 
 # ddic.create_scope('view')
-ddic.provide_on_demand('cls/win', MainWindow, 'win')
-ddic.provide('main_win_layout', PydeFrame())
+
+ddic.provide('cls/layout', PydeFrame)
 ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
 ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
-ddic.provide('cls/editor_generic', PydeEditor)
-ddic.provide('cls/ipython', PyInerpretEditor)
-
+ddic.provide_on_demand('cls/win', MainWindow, 'widget/')
+# ddic.provide_on_demand('cls/editor_generic', PydeEditor, 'widget/')
+# ddic.provide_on_demand('cls/ipython', PyInerpretEditor, 'widget/')
+ddic.provide('cls/view', View)
 
 ddic.provide_on_demand('cls/lexer', Lexer, 'lexer/inst/')
 ddic.provide_on_demand('cls/templ_actuator', TemplActuator, 'templ_actuator/inst/')
 ddic.provide_on_demand('cls/context', ContextProvider, 'context')
 ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
 
-ddic.provide_on_demand('mode/cls/python', PythonMode, 'mode/inst/')
+ddic.provide_on_demand('mode/cls/python', EditorModeExtensionFactory('python', ['.py']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/ipython', IPythonMode, 'mode/inst/')
 ddic.provide_on_demand('mode/cls/bash', EditorModeExtensionFactory('bash', ['.sh']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/java', EditorModeExtensionFactory('java', ['.java']), 'mode/inst/')
@@ -136,20 +140,28 @@ ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 
 sys.path.append('/data/projects/pyde/wspace')
 
+ddic.provide('win', ddic['cls/view']('win'))
+ddic.provide('win_layout', ddic['cls/layout'](Layout(QtCore.Qt.Vertical, [ChildLayout(5, None), ChildLayout(1, None)])))
+s = ddic['win'].provide(ddic['cls/view']('scratch.py', file_name=os.path.join(ddic['config/wspace/path'], 'scratch.py')))
+#i = ddic['cls/ipython']('interpret', parent_view=win)
+#win.place_view(s, [0])
+ddic['win'].place(s, [0])
+# win.place_view(i, [1])
+    
 # from wspace import configure  # @UnusedImport
-from wspace import config
-import inspect
-
-def is_mod_function(mod, func):
-    return inspect.isfunction(func) and inspect.getmodule(func) == mod
-
-def module_functions(mod):
-    for _, func in mod.__dict__.items():
-        if is_mod_function(mod, func):
-            yield func
-
-for f in module_functions(config):
-    ddic.provide_on_demand('config/wspace/' + f.__name__, f)
+# from wspace import config
+# import inspect
+# 
+# def is_mod_function(mod, func):
+#     return inspect.isfunction(func) and inspect.getmodule(func) == mod
+# 
+# def module_functions(mod):
+#     for _, func in mod.__dict__.items():
+#         if is_mod_function(mod, func):
+#             yield func
+# 
+# for f in module_functions(config):
+#     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
     
 # import wspace.configure  # @UnresolvedImport
 

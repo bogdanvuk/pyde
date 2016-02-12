@@ -12,10 +12,10 @@ class KeyDispatcher(QObject):
         self.win = win
         self.context = context
 
-        for v in win.view:
-            self.view_added(win.view, v)
+        for v in win:
+            self.view_added(win, v)
              
-        win.view.provided.connect(self.view_added)
+        win.provided.connect(self.view_added)
         
 #         ddic.provide_on_demand('cls/key_dispatcher_view_add', self.add_view)
         self.actions = []

@@ -10,11 +10,12 @@ class MainWindow(QtGui.QMainWindow):
     uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, layout: Dependency(feature='main_win_layout')):
+    def __init__(self, view: Dependency('winview'), layout: Dependency('win_layout')):
         QtGui.QMainWindow.__init__(self)
 #         self.view = View(self)
-        self.name = 'view'
-        self.view = View(self, ddic)
+        self.name = 'winview'
+        view.widget = self
+#         self.view = View(self, ddic)
         self.setWindowTitle("Writer")
 #         self.resize(800, 600)
 

@@ -12,7 +12,7 @@ class EditorMode:
 def EditorModeExtensionFactory(mode_name, extensions):
     class EditorMode:
         name = mode_name
-        def __init__(self, editor : Dependency('view/', lambda e: os.path.splitext(e.name)[1] in extensions)):
+        def __init__(self, editor : Dependency('winview/', lambda e: os.path.splitext(getattr(e, 'file_name', ''))[1] in extensions)):
             self.editor = editor
 
     return EditorMode
@@ -20,11 +20,11 @@ def EditorModeExtensionFactory(mode_name, extensions):
 class PythonMode(EditorMode):
     name = 'python'
     
-    def __init__(self, editor : Dependency('view/', lambda e: e.name.endswith('.py'))):
+    def __init__(self, editor : Dependency('winview/', lambda e: e.name.endswith('.py'))):
         super().__init__(editor)
         
 class IPythonMode(EditorMode):
     name = 'ipython'
     
-    def __init__(self, editor : Dependency('view/', lambda e: e.name in ['interpret'])):
+    def __init__(self, editor : Dependency('winview/', lambda e: e.name in ['interpret'])):
         super().__init__(editor)

@@ -5,16 +5,12 @@ from weakref import WeakValueDictionary
 class View(DependencyScope):
 #     child_added = QtCore.pyqtSignal(QtCore.QObject)
     
-    def __init__(self, ?, **kwargs):
-    
-    def __init__(self, widget, parent):
-        super().__init__(widget.name, parent)
-        self.widget = widget
-#         self.children = {}
-#         self.parent = parent
-        self.parent.provide(widget.name, self)
-#         self.parent[widget.name] = self
-
+    def __init__(self, name, parent=None, **kwargs):
+        super().__init__(name, parent)
+        
+        for k,v in kwargs:
+            setattr(self, k, v)
+        
     def set_focus(self):
         self.widget.parent().setCurrentWidget(self.widget)
         self.widget.setFocus()
