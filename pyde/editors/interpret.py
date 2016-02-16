@@ -11,7 +11,7 @@ import sys
 from PyQt4.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
 from PyQt4.QtGui import QFont, QFontMetrics, QColor
-from pyde.ddi import ddic
+from pyde.ddi import ddic, Amendment
 
 # class ContextVisitor(NodeVisitor):
 # 
@@ -132,8 +132,8 @@ from pyde.ddi import ddic
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, name, parent_view, parent=None):
-        super().__init__(name, parent_view, parent)
+    def __init__(self, view: Amendment('win/', lambda v: hasattr(v, 'mode') and (not hasattr(v, 'widget')))):
+        super().__init__(view)
 
         # Set the default font
         font = QFont()

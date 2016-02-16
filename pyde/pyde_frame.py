@@ -8,6 +8,20 @@ orientation=QtCore.Qt.Vertical
 ChildLayout = namedtuple('ChildLayout', 'stretch layout')
 Layout = namedtuple('Layout', 'orientation children')
 
+class PydeFrameVisitor:
+    
+    def visit(self, node, index=None):
+        if hasattr(node, 'frames'):
+            method = 'visit_node'
+            getattr(self, method, self.generic_visit)(node, index)
+        else:
+            if hasattr(self, 'visit_leaf'):
+                self.visit_leaf(node, index)
+    
+    def generic_visit(self, node, index=None):
+        for i,c in enumerate(node.frames):
+            self.visit(node.children()[i], i)
+
 class PydeFrame(QtGui.QSplitter):
     
     def __init__(self, layout=None, parent=None):
@@ -25,12 +39,15 @@ class PydeFrame(QtGui.QSplitter):
         self.remove_layout()
         self.setOrientation(layout.orientation)
         self.layout = layout
-
+        self.frames = [None]*len(layout.children)
+        self.assigned_views = [None]*len(layout.children)
         for i,c in enumerate(layout.children):
             if hasattr(c.layout, 'children'):
-                self.addWidget(PydeFrame(c, self))
+                child_frame = PydeFrame(c, self)
+                self.addWidget(child_frame)
+                self.frames[i] = child_frame
             else:
-                self.addWidget(QtGui.QStackedWidget())
+                self.addWidget(QtGui.QStackedWidget(self))
                 
             self.setStretchFactor(i,c.stretch)
                 
@@ -44,8 +61,9 @@ class PydeFrame(QtGui.QSplitter):
         if location:
             self.widget.add_view(view, location)
         else:
-            self.widget(loc).insertWidget(0, view)
-            self.widget(loc).setCurrentWidget(view)
+            self.assigned_views[loc] = view
+            self.widget(loc).insertWidget(0, view.widget)
+            self.widget(loc).setCurrentWidget(view.widget)
     
     
     def _dump_config_rec(self, layout):

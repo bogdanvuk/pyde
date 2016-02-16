@@ -4,6 +4,7 @@ from inspect import getfullargspec, signature
 from weakref import WeakValueDictionary
 from PyQt4 import QtCore
 from functools import wraps, partial
+from itertools import islice
 
 def update_args(func, args, kwargs, update):
     ret = (
@@ -23,18 +24,18 @@ def update_args(func, args, kwargs, update):
 
 class Demander:
     
-    def __init__(self, feature, inst_feature, args = (), kwargs = {}, deps={}):
-        self.feature = feature
+    def __init__(self, provider, inst_feature, args = (), kwargs = {}, deps={}):
+        self.provider = provider
         self.inst_feature = inst_feature
         self.args = args
         self.kwargs = kwargs
         self.deps = deps
         self.dependencies = {}
-        self.dir_dependencies = []
-        self.simple_dependencies = []
+        self.amendments = set()
+        self.recurrent_dep = []
+        self.simple_dep = []
         self.dependencies_by_feature = {}
         self.satisfied = set() #WeakValueDictionary()
-        self.provider = None
         self.extract_dependencies()
 #             for name, d in self.dependencies.items():
 #                 if d.feature in ddic:
@@ -46,53 +47,101 @@ class Demander:
     def extract_dependencies(self):
         if self.dependencies:
             return True
-        elif self.feature not in ddic:
-            return False
         else:
-            self.provider = ddic[self.feature]
-
             self.dependencies = {}            
-            for name, d in self.deps.items():
-                self.dependencies[name] = d
-                self.dependencies_by_feature[d.feature] = d
+            for arg_name, d in self.deps.items():
+                self.dependencies[arg_name] = d
+                if d.amendment:
+                    self.amendments.add(arg_name)
             
             _, _, _, _, _, _, annotations = getfullargspec(self.provider)
                 
-            for name, a in annotations.items():
+            for arg_name, a in annotations.items():
                 if isinstance(a, Dependency):
-                    if name not in self.dependencies:
-                        self.dependencies[name] = a
-                        self.dependencies_by_feature[a.feature] = a
+                    if arg_name not in self.dependencies:
+                        self.dependencies[arg_name] = a
 
-            for dep_name, a in self.dependencies.items():
+            for arg_name, a in self.dependencies.items():
                 if anonymous(a.feature):
-                    self.dir_dependencies.append(dep_name)
+                    self.recurrent_dep.append(arg_name)
                 else:
-                    self.simple_dependencies.append(dep_name)
+                    self.simple_dep.append(arg_name)
+                    
+                if a.amendment:
+                    self.amendments.add(arg_name)
 
             return True
 
     def all_simple_satisfied(self):
-        return len(self.satisfied) == len(self.simple_dependencies)
+        return len(self.satisfied) == len(self.simple_dep)
 
-    def check_unsatisfied_simple_dependencies(self):
-        newly_satisfied = False
-        for dependency in self.simple_dependencies:
-            feature = self.dependencies[dependency].feature
-            if (not feature in self.satisfied) and (feature in ddic):
-                provider = ddic[feature]
-                if self.dependencies_by_feature[feature].assertion(provider):
-                    self.satisfied.add(feature) #] = provider
-                    newly_satisfied = True
-                    
-        return newly_satisfied
-
-    def satisfied_on_recurrent_feature_provided(self, feature):
-        if (feature_scope(feature) + '/') in self.dependencies_by_feature:
+    def simple_dep_satisfied(self, feature, dep_name):
+        dep = self.dependencies[dep_name]
+        if (feature == dep.feature) and \
+            (dep_name not in self.satisfied) and \
+            (feature in ddic):
             provider = ddic[feature]
-            if self.dependencies_by_feature[feature_scope(feature) + '/'].assertion(provider):
-#                 self.satisfied[feature_scope(feature) + '/'] = provider
-                return self.all_simple_satisfied()
+            if (dep.assertion(provider)):
+                return True
+            
+        return False
+
+    def recurrent_dep_satisfied(self, feature, dep_name):
+        dep = self.dependencies[dep_name]
+        if ((feature_scope(feature) + '/') == dep.feature) and \
+            (feature in ddic):
+            provider = ddic[feature]
+            if (dep.assertion(provider)):
+                return True
+
+        return False
+
+    def feature_provided_for_simple_dep(self, feature, amend=False):
+        if self.all_simple_satisfied():
+            return None
+        
+        for dep_name in self.simple_dep:
+            dep = self.dependencies[dep_name]
+            if dep.amendment == amend:
+                if self.simple_dep_satisfied(feature, dep_name):
+                    self.satisfied.add(dep_name)
+                    return dep_name
+            
+        return None
+                
+    def feature_provided_for_recurrent_dep(self, feature, amend=False):
+        for dep_name in self.recurrent_dep:
+            dep = self.dependencies[dep_name]
+            if dep.amendment == amend:
+                if self.recurrent_dep_satisfied(feature, dep_name):
+                    return dep_name
+            
+        return None
+
+    def check_unsatisfied_simple_dep(self):
+        for dep_name in self.simple_dep:
+            dep = self.dependencies[dep_name]
+            if self.simple_dep_satisfied(dep.feature, dep_name):
+                self.satisfied.add(dep_name)
+                
+#         newly_satisfied = False
+#         for feature in self.simple_dep:
+#             if (not feature in self.satisfied) and (feature in ddic):
+#                 provider = ddic[feature]
+#                 if self.dependencies_by_feature[feature].assertion(provider):
+#                     self.satisfied.add(feature) #] = provider
+#                     newly_satisfied = True
+#                     
+#         return newly_satisfied
+
+    def satisfied_on_recurrent_features(self, features, amend=False):
+        recurrent_dep_satisfied = {}
+        for f in features:
+            dep_name = self.feature_provided_for_recurrent_dep(f, amend)
+            if dep_name is not None:
+                recurrent_dep_satisfied[dep_name] = f
+
+        return recurrent_dep_satisfied
 
 #     def satisfied_on_feature_provided(self, feature, provider):
 #         if self.extract_dependencies():
@@ -131,7 +180,7 @@ class DependencyScope(QtCore.QObject):
         if self.parent:
             uri = self.parent.uri + [self.name]
         else:
-            uri = []
+            uri = [self.name]
             
         return uri
 
@@ -177,7 +226,7 @@ class DependencyScope(QtCore.QObject):
         self.parent.provide(sep.join([self.name, feature]), provider)
     
     def __setitem__(self, feature, provider):
-        self.provide(feature, provider)
+        self._provide_intern(feature, provider)
 
     def __delitem__(self, feature):
         scope, base = split_feature(feature)
@@ -243,30 +292,32 @@ class DependencyContainer(DependencyScope):
         self.demanders = []
         self.allowReplace = allowReplace
 
-    def create_scope(self, feature):
-        scope = super().create_scope(feature)
-#         scope = DependencyScope(name=feature, parent=self)
-#         self[feature] = scope
-        self.check_demands(feature, scope)
+#     def create_scope(self, feature):
+#         super().create_scope(feature)
+#         self._provided_together.append(feature)
+#         self._register_simple_dep(feature)
+#        self.check_demands(feature, scope)
 
-    def inst_demander(self, demander, recurrent_feature=None):
+    def inst_demander(self, demander, recurrent_dep_satisfied={}, provide_intern=True):
         dependencies = {}
-        for d in demander.simple_dependencies:
-            dependencies[d] = self[demander.dependencies[d].feature]
+        for dep_name in demander.simple_dep:
+            dep = demander.dependencies[dep_name]
+            dependencies[dep_name] = self[dep.feature]
 #             dependencies[d] = demander.satisfied[demander.dependencies[d].feature]
-            
-        if recurrent_feature is not None:
-            for d in demander.dir_dependencies:
-                if (feature_scope(recurrent_feature) + '/') == demander.dependencies[d].feature:
-                    provider = ddic[recurrent_feature]
-                    if demander.dependencies_by_feature[feature_scope(recurrent_feature) + '/'].assertion(provider):
-                        dependencies[d] = provider
+        
+        for d, f in recurrent_dep_satisfied.items():
+            dependencies[d] = self[f]
 
         args, kwargs = update_args(demander.provider, demander.args, demander.kwargs, dependencies)
         demander_inst = demander.provider(*args, **kwargs)
         if demander.inst_feature:
             demander_inst._dependents = {}
-            demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
+            if provide_intern:
+                demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
+            else:
+                demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
+
+#         return demander_inst, demander_inst_feature 
 
 #             for _, dep_provider in dependencies.items():
 #                 if not hasattr(dep_provider, '_dependents'):
@@ -276,68 +327,62 @@ class DependencyContainer(DependencyScope):
 
     def check_and_inst_demander(self, d, feature, provider = None, already_inst = set()):
         if not d.all_satisfied():
-            if d.check_unsatisfied_simple_dependencies():
+            if d.check_unsatisfied_simple_dep():
                 if d.all_satisfied():
                     self.inst_demander(d)
                     return
 
             if d.all_simple_satisfied() and (not d.all_satisfied()):
-#                 if len(d.dir_dependencies) == 1:
-#                     dir_dep = d.dir_dependencies[0]
-#                     dir_feature = feature_scope(dir_dep) 
-#                     if dir_feature in self:
-#                         for f in self[dir_feature]:
-#                             self.inst_demander(d, dir_dep + f)
-                            
                 if d.satisfied_on_recurrent_feature_provided(feature):
                     self.inst_demander(d, feature)
 
-#         if not provider:
-#             provider = self[feature]
-#             
-#         if demander.satisfied_on_feature_provided(feature, provider):
-#             if not demander.inst_feature or (demander.inst_feature not in already_inst):
-#                 already_inst.add(demander.inst_feature)
-#                 self.inst_demander(demander)
-#                 return True
-#             
-#         return False
-
-
-    def check_demands(self, feature, provider = None):
-#         inst_on_demand = set()
+    def _register_simple_dep(self, feature, amend=False):
         for d in reversed(self.demanders):
-            if d.feature == 'mode/cls/python' and feature == 'view/QsciScintillaCompat.py':
-                pass
-            self.check_and_inst_demander(d, feature)
-#             if not d.all_satisfied():
-#                 if d.check_unsatisfied_simple_dependencies():
-#                     if len(d.dir_dependencies) == 1:
-#                         dir_dep = d.dir_dependencies[0]
-#                         dir_feature = feature_scope(dir_dep) 
-#                         if dir_feature in self:
-#                             for f in self[dir_feature]:
-#                                 self.inst_demander(d, dir_dep + f)
-# #                                 self.check_and_inst_demander(d, dir_dep + f)
-#                 if d.all_simple_satisfied() and (not d.all_satisfied()):
-#                     if d.satisfied_on_recurrent_feature_provided(feature):
-#                         self.inst_demander(d, feature)
-                    
-#             if not self.check_and_inst_demander(d, feature, provider, inst_on_demand):
-#                 if len(d.dir_dependencies) == 1:
-#                     dir_dep = d.dir_dependencies[0]
-#                     dir_feature = feature_scope(dir_dep) 
-#                     if dir_feature in self:
-#                         for f in self[dir_feature]:
-#                             self.check_and_inst_demander(d, dir_dep + f)
-            
-    def provide(self, feature, provider):
-        if feature == 'init_layout':
-            pass
-        
-        if not self.allowReplace:
-            assert not (feature in self.providers), "Duplicate feature: %r" % feature
+            if not d.all_satisfied():
+                d.feature_provided_for_simple_dep(feature, amend)
+                
+                if d.all_satisfied():
+                    self.inst_demander(d)
 
+    def check_demands(self, amend = False):
+        for i, d in reversed(list(enumerate(self.demanders))):
+            if i not in self._recurrent_demanders_fired:
+                if d.all_simple_satisfied() and (not d.all_satisfied()):
+                    recurrent_dep_satisfied = d.satisfied_on_recurrent_features(self._provided_together, amend)
+                    if len(recurrent_dep_satisfied) == len(d.recurrent_dep):
+                        self._recurrent_demanders_fired.append(i)
+                        self.inst_demander(d, recurrent_dep_satisfied)
+
+#             self.check_and_inst_demander(d)
+
+    def _provide_loop(self, feature, provider):
+        self._provided_together = []
+        self._check_all_deps = []
+        self._recurrent_demanders_fired = []
+        provided_cnt = 0
+        feature_ext = self._provide_intern(feature, provider)
+        self._check_all_deps = list(self._provided_together) 
+        
+        while (provided_cnt < len(self._provided_together)):
+            provided_cnt_old = provided_cnt
+            provided_cnt = len(self._provided_together)
+            
+#             for feature in islice(self._provided_together, provided_cnt_old, provided_cnt):
+#                 self._register_simple_dep(feature, amend=True)
+
+            for feature in islice(self._provided_together, 0, provided_cnt):
+                self._register_simple_dep(feature, amend=True)
+                
+            self.check_demands(amend=True)
+            self._check_all_deps.extend(self._provided_together[provided_cnt:])
+            while (self._check_all_deps and len(self._provided_together) == provided_cnt):
+                self._register_simple_dep(self._check_all_deps.pop(), amend=False)
+                self.check_demands(amend=False)
+    
+        return feature_ext
+    
+    def _provide_intern(self, feature, provider):
+        #feature_ext = self._adjust_feature_and_provide(self, feature, provider)
         feature_ext = feature
 
         if anonymous(feature):
@@ -346,32 +391,54 @@ class DependencyContainer(DependencyScope):
         if feature_ext[0] == sep:
             feature_ext = feature_ext[1:]
 
-#         self[feature_ext] = provider
         self._provide(feature_ext, provider)
-        
-        self.check_demands(feature_ext, provider)
+        self._provided_together.append(feature_ext)        
         
         return feature_ext
     
+    def provide(self, feature, provider):
+        
+        if not self.allowReplace:
+            assert not (feature in self.providers), "Duplicate feature: %r" % feature
+        
+        return self._provide_loop(feature, provider)
+        
+#         return feature_ext
+    
     def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}):
 #         assert inst_feature is not None, "Have to provide feature to be instantiated!"
+
+        provider_supplied = True if provider is not None else False
         
-        if provider is not None:
-            self.provide(feature, provider)
-        
-        demander = Demander(feature, inst_feature, list(inst_args), dict(inst_kwargs), deps)
+        if not provider_supplied:
+            provider = ddic[feature]
+            
+        demander = Demander(provider, inst_feature, list(inst_args), dict(inst_kwargs), deps)
+        demander.check_unsatisfied_simple_dep()
+
         self.demanders.append(demander)
         
+#         for a in demander.amendments:
+#             dep = demander.dependencies[a]
+#             self.amendments[dep.feature]
+        
+        if provider_supplied:
+            self.provide(feature, provider)
+
         if demander.all_satisfied():
-            self.inst_demander(demander)
-        elif len(demander.dir_dependencies) == 1:
-            dir_dep = demander.dir_dependencies[0]
-            dir_feature = feature_scope(dir_dep) 
-            if dir_feature in self:
-                for f in self[dir_feature]:
-                    self.check_and_inst_demander(demander, dir_dep + f)
-        else:
-            self.check_and_inst_demander(demander, feature)
+            self.inst_demander(demander, provide_intern=False)
+        
+#         
+#         if demander.all_satisfied():
+#             self.inst_demander(demander)
+#         elif len(demander.dir_dependencies) == 1:
+#             dir_dep = demander.dir_dependencies[0]
+#             dir_feature = feature_scope(dir_dep) 
+#             if dir_feature in self:
+#                 for f in self[dir_feature]:
+#                     self.check_and_inst_demander(demander, dir_dep + f)
+#         else:
+#             self.check_and_inst_demander(demander, feature)
     
     def unprovide(self, feature):
         provider = self[feature]
@@ -423,8 +490,11 @@ class CreationFeature(object):
                  % (obj, self.feature)
         return obj
 
-Dependency = namedtuple('Dependency', ['feature', 'assertion'])
-Dependency.__new__.__defaults__ = (None, NoAssertion)
+Dependency = namedtuple('Dependency', ['feature', 'assertion', 'amendment'])
+Dependency.__new__.__defaults__ = (None, NoAssertion, False)
+
+def Amendment(feature, assertion=NoAssertion):
+    return Dependency(feature, assertion, True)
 
 def diinit(func):
     _, _, _, _, _, _, annotations = getfullargspec(func)

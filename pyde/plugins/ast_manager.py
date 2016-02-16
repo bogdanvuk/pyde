@@ -24,7 +24,7 @@ class EditorAstManager(QtCore.QObject):
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
         self.qthread.start()
-        self.editor = mode.editor.widget
+        self.editor = mode.view.widget
         self.editor.ast = self
         self.mode = mode
         self.language = language

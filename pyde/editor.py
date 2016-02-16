@@ -1,7 +1,7 @@
 from pyde.pyde_widget import PydeWidget
 from PyQt4.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
-from pyde.ddi import Dependency, diinit
+from pyde.ddi import Dependency, diinit, Amendment
 from pyde.plugins.context import ViewContext, BoundedSlice
 from collections import OrderedDict
 from pyde.view import View
@@ -10,17 +10,21 @@ from PyQt4.QtCore import Qt
 
 class PydeEditor(QsciScintillaCompat):
     
-    @diinit
-    def __init__(self, fn, parent_view, parent=None):
-        super(PydeEditor, self).__init__(parent)
+#     @diinit
+    def __init__(self, view: Amendment('win/', lambda v: hasattr(v, 'mode') and (not hasattr(v, 'widget')))):
+        super(PydeEditor, self).__init__(view.parent.widget)
+        view.widget = self
         self.setAttribute(Qt.WA_KeyCompression)
-        self.file_name = fn
-        self.name = os.path.basename(fn)
-        self.view = View(self, parent_view.view)
-#         View.__init__(self, name, parent_view)
+        
+        if hasattr(view, 'file_name'):
+            self.file_name = view.file_name
+            self.read_file(self.file_name)
+        else:
+            self.file_name = None
+            
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
-        self.read_file(self.file_name)
+
     
     def __getitem__(self, item):
         return self.text().__getitem__(item)

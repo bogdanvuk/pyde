@@ -1,30 +1,25 @@
-from pyde.ddi import Dependency
+from pyde.ddi import Dependency, Amendment
 import os
 
-class EditorMode:
-    def __init__(self, editor):
-        self.editor = editor
+class ViewMode:
+    def __init__(self, view):
+        self.view = view
+        self.view.mode = self
 #         if not hasattr(editor, 'modes'):
 #             editor.modes = []
 #         
 #         editor.modes.append(self)
 
-def EditorModeExtensionFactory(mode_name, extensions):
-    class EditorMode:
+def ViewModeExtensionFactory(mode_name, extensions):
+    class CustomViewMode(ViewMode):
         name = mode_name
-        def __init__(self, editor : Dependency('winview/', lambda e: os.path.splitext(getattr(e, 'file_name', ''))[1] in extensions)):
-            self.editor = editor
+        def __init__(self, view : Amendment('win/', lambda e: os.path.splitext(getattr(e, 'file_name', ''))[1] in extensions)):
+            super().__init__(view)
 
-    return EditorMode
+    return CustomViewMode
 
-class PythonMode(EditorMode):
-    name = 'python'
-    
-    def __init__(self, editor : Dependency('winview/', lambda e: e.name.endswith('.py'))):
-        super().__init__(editor)
-        
-class IPythonMode(EditorMode):
+class IPythonMode(ViewMode):
     name = 'ipython'
     
-    def __init__(self, editor : Dependency('winview/', lambda e: e.name in ['interpret'])):
-        super().__init__(editor)
+    def __init__(self, view : Amendment('win/', lambda v: v.name == 'interpret')):
+        super().__init__(view)

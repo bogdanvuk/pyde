@@ -1,19 +1,20 @@
 from pyde.pyde_widget import PydeWidget
 from PyQt4 import QtGui, QtCore
-from pyde.ddi import Dependency, ddic
+from pyde.ddi import Dependency, ddic, Amendment
 from PyQt4.QtGui import QApplication
 from collections import OrderedDict
 from pyde.view import View
+from pyde.pyde_frame import PydeFrameVisitor
 
 class MainWindow(QtGui.QMainWindow):
 
     uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, view: Dependency('winview'), layout: Dependency('win_layout')):
+    def __init__(self, view: Amendment('win'), layout: Dependency('win_layout')):
         QtGui.QMainWindow.__init__(self)
 #         self.view = View(self)
-        self.name = 'winview'
+#         self.name = 'winview'
         view.widget = self
 #         self.view = View(self, ddic)
         self.setWindowTitle("Writer")
@@ -35,7 +36,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(self)
         self.views = {}
     
-    def place_view(self, view, location=[0]):
+    def place(self, view, location=[0]):
         view.last_location = location
         self.centralWidget.add_view(view, location)
        
@@ -54,15 +55,30 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def dump_config(self, var_name):
-        config = []
-        config.append('from PyQt4.QtCore import Qt')
-        config.append('from pyde.pyde_frame import ChildLayout, Layout')
-        for v in self.view:
-            config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
-        return '\n'.join(config)
+        class LayoutVisitor(PydeFrameVisitor):
+            def __init__(self, config=[]):
+                self.loc = []
+                self.config = config
+                
+            def visit_node(self, node, index=None):
+                if index:
+                    self.loc.append(index)
 
+                self.generic_visit(node, index)
+                
+                if self.loc:
+                    self.loc.pop()
+                
+            def visit_leaf(self, node, index=None):
+                self.loc.append(index)
+                view = node.parent().assigned_views[index]
+                self.config.append("ddic['win'].widget.place(ddic['{}'], {})".format('/'.join(view.uri), self.loc))
+                self.loc.pop()
         
-        pass
+        v = LayoutVisitor()
+        v.visit(self.centralWidget)
+        
+        return '\n'.join(v.config)
 
 #     def keyPressEvent(self, event):
 # #         print("key_press")

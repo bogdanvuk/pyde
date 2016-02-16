@@ -30,5 +30,5 @@ if __name__ == "__main__":
 #     reload_desktop()
 # 
 #     app.win.show()
-    ddic['winview'].widget.show()
+    ddic['win'].widget.show()
     sys.exit(app.exec_())
