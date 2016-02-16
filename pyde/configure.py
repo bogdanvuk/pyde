@@ -12,7 +12,7 @@ from pyde.plugins.editor_mode import IPythonMode,\
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
 from PyQt4.QtCore import Qt
-from pyde.plugins.content_assist import ContentAssist
+from pyde.plugins.content_assist import ContentAssist, ContentAssistWidget
 from pyde.plugins.ca_interpreter import PyInterpretContentAssist
 from pyde.plugins.keydispatcher import KeyDispatcher
 from pyde.plugins.templating import TemplActuator
@@ -28,9 +28,9 @@ from pyde.pyde_frame import PydeFrame, ChildLayout, Layout
 from pyde.view import View
 from PyQt4 import QtCore
 import os
+import time
 
 # ddic.create_scope('view')
-
 ddic.provide('cls/layout', PydeFrame)
 ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
 ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
@@ -57,11 +57,12 @@ ddic.provide('parser/cls/view_list', ViewListParser)
 ddic.provide_on_demand('parser/cls/interpret_path_parser', IslandLanguageParserFactory('linpath'), 'parser/interpret_path_parser/inst')
 ddic.provide_on_demand('parser/cls/interpret_view_list_parser', IslandLanguageParserFactory('view_list'), 'parser/interpret_view_list_parser/inst')
 #ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name != "ipython")})
-ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name == "ipython")})
+ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'view': Dependency('win/', lambda e: e.mode.name == "ipython")})
 #ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 # ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 
 ddic.provide_on_demand('cls/content_assist', ContentAssist, 'content_assist')
+ddic.provide_on_demand('cls/content_assist_widget', ContentAssistWidget, 'ca_widget/')
 ddic.provide_on_demand('cls/ca_interpreter', PyInterpretContentAssist, 'ca_interpreter')
 
 ddic.provide('cls/keyaction', KeyAction)
@@ -141,8 +142,6 @@ ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 sys.path.append('/data/projects/pyde/wspace')
 
 # ddic.provide('win_layout', ddic['cls/layout'](Layout(QtCore.Qt.Vertical, [ChildLayout(5, None), ChildLayout(1, None)])))
-ddic.provide('win_layout', ddic['cls/layout']())
-ddic.provide('win', ddic['cls/view']('win'))
 # 
 # view = ddic['cls/view']('scratch.py', ddic['win'], file_name=os.path.join(ddic['config/wspace/path'], 'scratch.py'))
 # ddic.provide('win/scratch.py', view)
@@ -167,4 +166,8 @@ def module_functions(mod):
  
 for f in module_functions(config):
     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
-    
+
+ddic.provide('win_layout', ddic['cls/layout']())
+ddic.provide('win', ddic['cls/view']('win', ddic))
+
+pass

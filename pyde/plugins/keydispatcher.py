@@ -6,22 +6,13 @@ import fnmatch
 from pyde.plugins.context import uri2str
 
 class KeyDispatcher(QObject):
-#     def __init__(self, view, action, key, modifier=QtCore.Qt.NoModifier, args=(), kwargs={}):
-    def __init__(self, win : Dependency('win'), context : Dependency('context')):
+    def __init__(self):
         super().__init__()
-        self.win = win
-        self.context = context
-
-        for v in win:
-            self.view_added(win, v)
-             
-        win.provided.connect(self.view_added)
-        
-#         ddic.provide_on_demand('cls/key_dispatcher_view_add', self.add_view)
+        ddic.provide_on_demand(provider=self.view_added)
         self.actions = []
         
-    def view_added(self, view, child_name):
-        view[child_name].widget.installEventFilter(self)
+    def view_added(self, view : Dependency('win/')):
+        view.widget.installEventFilter(self)
     
     def register_keyaction(self, action, uri_filter='*'):
         uri_split = uri_filter.split('/')
@@ -36,9 +27,11 @@ class KeyDispatcher(QObject):
     def eventFilter(self, source, event):
 #         resp = False
         if (event.type() == QtCore.QEvent.KeyPress):
-#             if event.key() == QtCore.Qt.Key_Tab:
-#                 pass
+            if event.key() == 75:
+                pass
+            print(event.key())
             active_view = source.active_view()
+#             active_view = source.view
             while active_view.parent is not None:
                 for actions in reversed(self.actions):
                     for a in actions:

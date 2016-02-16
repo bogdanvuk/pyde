@@ -95,7 +95,7 @@ class ViewListContentAssist(FuncArgContentAssist):
 
 @diinit
 def execute_action(win : Dependency('win'), active_view = None):
-    interpret = win.view['interpret'].widget
+    interpret = win['interpret'].widget
     interpret.execute_view_action(win.active_view())
 
 @diinit

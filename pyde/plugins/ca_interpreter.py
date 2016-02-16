@@ -124,62 +124,6 @@ class CompleteCommand:
             self.acceptor[d] = Completion(d, start)
         
         pass
-    #     def __call__(self, editor, ast):
-#         cv = ContextVisitor(ast)
-#         cur_ctx = cv.context_at(editor.pos-1)
-#         
-#         if cur_ctx.type in cur_ctx.keywords:
-#             cur_ctx = cv.context_at(editor.pos)
-#             
-#             if cur_ctx.type in cur_ctx.keywords:
-#                 return
-# 
-#         if cur_ctx is None:
-#             self.accept_global(editor)
-#         else:
-#             v = ContentAssistVisitor(editor, self.acceptor)
-#             v.visit(cur_ctx)
-#             print('else')
-#             cur_parent = cur_ctx.parent
-#             cur_feature = cur_ctx.get_feature_in_parent()
-#             
-#             rel_path_ctx = get_ctx_parent_of_type(cur_ctx, 'rel_path')
-#             if rel_path_ctx is not None:
-#                 
-#                 part_ctx = get_ctx_parent_of_type(cur_ctx, 'part')
-#                 
-#                 part_feature = part_ctx.get_feature_in_parent()
-#                 last_segment = part_feature[1]
-#                 if cur_ctx.type == 'PATHSEP':
-#                     last_segment += 1
-#                 
-#                 path = []
-#                 for i in range(last_segment):
-#                     path.append(get_ctx_text(rel_path_ctx['part'][i], editor))
-#                 
-#                 path = '/' + ''.join(path)
-#                 print(path)
-#                 for f in os.listdir(path):
-#                     if os.path.isdir(os.path.join(path,f)):
-#                         f = f + '/'
-#                         
-#                     self.acceptor[f] = f
-#             elif cur_ctx.type == 'NAME' and cur_parent.type == 'expr' and cur_feature[0] == 'value':
-#                 self.accept_global(editor)
-#             elif cur_ctx.type == 'argument':
-#                 expr = get_ctx_parent_of_type(cur_ctx, 'expr')
-#                 obj = get_obj_for_ctx(expr['calee'], editor)
-#                 pass
-#             elif cur_feature[0] == 'attr':
-#                 print('attr')
-#                 calee_ctx = cur_parent['calee']
-#                 calee_text = editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
-#                 obj = eval(calee_text, editor.globals, editor.locals)
-#                 for d in dir(obj):
-#                     self.acceptor[d] = d
-#             else:
-#                 print('else')
-#                 pass
 
 class PyInterpretContentAssist(QObject):
     
@@ -187,13 +131,13 @@ class PyInterpretContentAssist(QObject):
     complete_sig = QtCore.pyqtSignal(object)
     
     def __init__(self, 
-                 editor : Dependency('view/', lambda e: isinstance(e.widget, ddic['cls/ipython'])),
+                 view : Dependency('win/', lambda e: e.mode.name == "ipython"),
                  ca : Dependency('content_assist'),
                  win : Dependency('win')):
         super().__init__()
         self.ca = ca
         self.win = win
-        self.editor = editor
+        self.view = view
         self.complete_cmd = CompleteCommand()
         if self.ca.thread() != self.thread():
             connection_type=QtCore.Qt.BlockingQueuedConnection
@@ -203,14 +147,14 @@ class PyInterpretContentAssist(QObject):
         self.ca.complete.connect(self.complete, type=connection_type)
      
     def complete(self, acceptor):
-        view = self.win.active_view()
-        editor = view.widget
+#         view = self.win.active_view()
+        editor = self.view.widget
         self.complete_cmd.acceptor = acceptor
         
 #         self.read_ast.connect(editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
 #         self.read_ast.emit(self.complete_cmd)
 #         self.read_ast.disconnect()
-        self.complete_sig.connect(editor.ast.completion_suggestions, type=QtCore.Qt.BlockingQueuedConnection)
+        self.complete_sig.connect(self.view.ast.completion_suggestions, type=QtCore.Qt.BlockingQueuedConnection)
         self.complete_sig.emit(self.complete_cmd)
         self.complete_sig.disconnect()
 

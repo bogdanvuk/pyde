@@ -11,7 +11,7 @@ from PyQt4.QtCore import Qt
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('win/', lambda v: hasattr(v, 'mode') and (not hasattr(v, 'widget')))):
+    def __init__(self, view: Amendment('win/', lambda v: hasattr(v, 'mode') and (v.widget is None))):
         super(PydeEditor, self).__init__(view.parent.widget)
         view.widget = self
         self.setAttribute(Qt.WA_KeyCompression)

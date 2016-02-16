@@ -8,9 +8,19 @@ class View(DependencyScope):
     def __init__(self, name, parent=None, **kwargs):
         super().__init__(name, parent)
         self.config = kwargs
+        self._widget = None
         for k,v in kwargs.items():
             setattr(self, k, v)
-        
+    
+    @property
+    def widget(self):
+        return self._widget
+    
+    @widget.setter
+    def widget(self, value):
+        self._widget = value
+        value.view = self
+    
     def set_focus(self):
         self.widget.parent().setCurrentWidget(self.widget)
         self.widget.setFocus()
@@ -19,18 +29,21 @@ class View(DependencyScope):
         self.parent.unprovide(self.widget.name)
         
     def dump_config(self, var_name):
-        if self.parent:
-            parent_ref = "ddic['{}']".format('/'.join(self.parent.uri))
-        else:
-            parent_ref = 'None'
+        if var_name != "ddic['win']":
+            if self.parent:
+                parent_ref = "ddic['{}']".format('/'.join(self.parent.uri))
+            else:
+                parent_ref = 'None'
+                
+            config_dump = []
+            for name, c in self.config.items():
+                config_dump.append("{}='{}'".format(name, str(c)))
             
-        config_dump = []
-        for name, c in self.config.items():
-            config_dump.append("{}='{}'".format(name, str(c)))
-        
-        view_config = ','.join(["'" + self.name + "'", parent_ref] + config_dump)
-        view_inst = ["ddic.provide('{}', ddic['cls/view']({}))".format('/'.join(self.uri), view_config)]
-        
+            view_config = ','.join(["'" + self.name + "'", parent_ref] + config_dump)
+            view_inst = ["ddic.provide('{}', ddic['cls/view']({}))".format('/'.join(self.uri), view_config)]
+        else:
+            view_inst = []
+            
         for _, v in self.providers.items():
             view_inst.append(v.dump_config(''))
         

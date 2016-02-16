@@ -108,13 +108,14 @@ class Demander:
                     return dep_name
             
         return None
-                
-    def feature_provided_for_recurrent_dep(self, feature, amend=False):
+
+    def feature_provided_for_recurrent_dep(self, feature, forbidden=[], amend=False):
         for dep_name in self.recurrent_dep:
             dep = self.dependencies[dep_name]
             if dep.amendment == amend:
-                if self.recurrent_dep_satisfied(feature, dep_name):
-                    return dep_name
+                if (feature,dep_name) not in forbidden:
+                    if self.recurrent_dep_satisfied(feature, dep_name):
+                        return dep_name
             
         return None
 
@@ -134,10 +135,10 @@ class Demander:
 #                     
 #         return newly_satisfied
 
-    def satisfied_on_recurrent_features(self, features, amend=False):
+    def satisfied_on_recurrent_features(self, features, forbidden = [], amend=False):
         recurrent_dep_satisfied = {}
         for f in features:
-            dep_name = self.feature_provided_for_recurrent_dep(f, amend)
+            dep_name = self.feature_provided_for_recurrent_dep(f, forbidden, amend)
             if dep_name is not None:
                 recurrent_dep_satisfied[dep_name] = f
 
@@ -226,7 +227,8 @@ class DependencyScope(QtCore.QObject):
         self.parent.provide(sep.join([self.name, feature]), provider)
     
     def __setitem__(self, feature, provider):
-        self._provide_intern(feature, provider)
+#         self._provide_intern(feature, provider)
+        self.provide(feature, provider)
 
     def __delitem__(self, feature):
         scope, base = split_feature(feature)
@@ -289,8 +291,12 @@ class DependencyContainer(DependencyScope):
     
     def __init__(self, allowReplace=False):
         DependencyScope.__init__(self, name=None, parent=None)
+        self._provided_together = []
+        self._inst_level = 0
         self.demanders = []
+        self._demanders_to_inst = []
         self.allowReplace = allowReplace
+        self.provide_loop_mutex = False
 
 #     def create_scope(self, feature):
 #         super().create_scope(feature)
@@ -312,10 +318,10 @@ class DependencyContainer(DependencyScope):
         demander_inst = demander.provider(*args, **kwargs)
         if demander.inst_feature:
             demander_inst._dependents = {}
-            if provide_intern:
-                demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
-            else:
-                demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
+#             if provide_intern:
+#                 demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
+#             else:
+            demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
 
 #         return demander_inst, demander_inst_feature 
 
@@ -337,21 +343,33 @@ class DependencyContainer(DependencyScope):
                     self.inst_demander(d, feature)
 
     def _register_simple_dep(self, feature, amend=False):
+        self._demanders_to_inst = []
         for d in reversed(self.demanders):
             if not d.all_satisfied():
                 d.feature_provided_for_simple_dep(feature, amend)
                 
                 if d.all_satisfied():
-                    self.inst_demander(d)
+                    self._demanders_to_inst.append(d)
+#                     self.inst_demander(d)
 
     def check_demands(self, amend = False):
+        
         for i, d in reversed(list(enumerate(self.demanders))):
-            if i not in self._recurrent_demanders_fired:
-                if d.all_simple_satisfied() and (not d.all_satisfied()):
-                    recurrent_dep_satisfied = d.satisfied_on_recurrent_features(self._provided_together, amend)
-                    if len(recurrent_dep_satisfied) == len(d.recurrent_dep):
-                        self._recurrent_demanders_fired.append(i)
-                        self.inst_demander(d, recurrent_dep_satisfied)
+            if d.inst_feature == 'ca_interpreter':
+                pass
+#             if i not in self._recurrent_demanders_fired:
+            if d.all_simple_satisfied() and (not d.all_satisfied()):
+                if i not in self.forbidden:
+                    self.forbidden[i] = []
+
+                recurrent_dep_satisfied = d.satisfied_on_recurrent_features(self._provided_together, self.forbidden[i], amend)
+                if len(recurrent_dep_satisfied) == len(d.recurrent_dep):
+#                     self._recurrent_demanders_fired.append(i)
+                    
+                    for k, v in recurrent_dep_satisfied.items(): 
+                        self.forbidden[i].append((v, k))
+                    
+                    self.inst_demander(d, recurrent_dep_satisfied)
 
 #             self.check_and_inst_demander(d)
 
@@ -400,15 +418,60 @@ class DependencyContainer(DependencyScope):
         
         if not self.allowReplace:
             assert not (feature in self.providers), "Duplicate feature: %r" % feature
+
+        feature_ext = feature
+
+        if anonymous(feature):
+            feature_ext += str(id(provider))
+            
+        if feature_ext[0] == sep:
+            feature_ext = feature_ext[1:]
+
+        self._provide(feature_ext, provider)
         
-        return self._provide_loop(feature, provider)
+        if self._inst_level == 0:
+            self._provided_together = []
+            self.forbidden = {}
         
-#         return feature_ext
+        self._provided_together.append(feature_ext)        
+
+        self._inst_level += 1
+        self._register_simple_dep(feature_ext, amend=True)
+        for d in self._demanders_to_inst:
+            self.inst_demander(d)
+            
+        self._demanders_to_inst.clear()
+            
+        self.check_demands(amend=True)
+        
+        self._register_simple_dep(feature_ext, amend=False)
+        for d in self._demanders_to_inst:
+            self.inst_demander(d)
+        self._demanders_to_inst.clear()
+        self.check_demands(amend=False)
+
+        self._inst_level -= 1
+        
+        if self._inst_level == 0:
+            self._provided_together.clear()
+            self.forbidden.clear()
+        
+        return feature_ext
+
+#         if not self.provide_loop_mutex:
+#             self.provide_loop_mutex = True
+#             ret = self._provide_loop(feature, provider)
+#             self.provide_loop_mutex = False
+#             return ret
+#         else:
+#             return self._provide_intern(feature, provider)
+
     
-    def provide_on_demand(self, feature, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}):
+    def provide_on_demand(self, feature=None, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}):
 #         assert inst_feature is not None, "Have to provide feature to be instantiated!"
 
         provider_supplied = True if provider is not None else False
+        feature_supplied = True if feature is not None else False
         
         if not provider_supplied:
             provider = ddic[feature]
@@ -422,7 +485,7 @@ class DependencyContainer(DependencyScope):
 #             dep = demander.dependencies[a]
 #             self.amendments[dep.feature]
         
-        if provider_supplied:
+        if provider_supplied and feature_supplied:
             self.provide(feature, provider)
 
         if demander.all_satisfied():

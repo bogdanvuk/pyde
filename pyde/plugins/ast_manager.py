@@ -1,6 +1,6 @@
 from PyQt4.Qsci import QsciScintilla
 from PyQt4 import QtCore, QtGui
-from pyde.ddi import Dependency
+from pyde.ddi import Dependency, Amendment
 from pyde.plugins.parser import Antlr4GenericParser
 
 class EditorAstManager(QtCore.QObject):
@@ -8,15 +8,15 @@ class EditorAstManager(QtCore.QObject):
     tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
     suggestions_created = QtCore.pyqtSignal(object, object, object) #['QWidget'])
     
-    def __init__(self, mode : Dependency('mode/inst/')):
+    def __init__(self, view : Amendment('win/')):
         super().__init__()
         self.qthread = QtCore.QThread()
         self.moveToThread(self.qthread)
-        if mode.name in ['python', 'ipython']:
+        if view.mode.name in ['python', 'ipython']:
             language = 'python3'
             start_rule = 'file_input'
         else:
-            language = mode.name
+            language = view.mode.name
             start_rule = 'main'
             
         self.parser = Antlr4GenericParser(language, start_rule)
@@ -24,9 +24,10 @@ class EditorAstManager(QtCore.QObject):
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
         self.qthread.start()
-        self.editor = mode.view.widget
-        self.editor.ast = self
-        self.mode = mode
+        self.editor = view.widget
+        self.view = view
+        view.ast = self
+        self.mode = view.mode
         self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.dirty = True

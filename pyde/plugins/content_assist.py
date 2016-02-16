@@ -1,42 +1,26 @@
 from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
 from difflib import SequenceMatcher
-from pyde.ddi import Dependency, diinit
-from pyde.plugins.context import Context, ViewContext
+from pyde.ddi import Dependency, diinit, Amendment
 from pyde.view import View
 from PyQt4 import QtCore
-import sys
-import gc
-#from pyde.plugins.parser import ContextVisitor
-
-class ContentAssistContext(ViewContext):
-    @property
-    def slice(self):
-        return self.parent.slice
-
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)
         
-    def __init__(self, win : Dependency('win'), context : Dependency('context')):
+    def __init__(self, win : Dependency('win'), cls_view: Dependency('cls/view')):
         super().__init__()
         self.editor = None
         self.ca_start = 0
         self.active = False
         self.win = win
-        self.context = context
-#         app.view_added.connect(self.new_view)
-    
-#     @pyqtSlot(QWidget)
-#     def new_view(self, obj):
-#         obj.textChanged.connect(self.text_changed)
-    
+        self.cls_view = cls_view
     
     def deactivate(self):
         self.ca_widget = None
         pass
 
-    def activate(self, editor):
+    def activate(self, view):
         print('activated')
         
         ca_items = {}
@@ -44,7 +28,7 @@ class ContentAssist(QObject):
         self.complete.emit(ca_items)
         
         if ca_items:
-            self.ca_widget = ContentAssistWidget(editor, ca_items)
+            self.ca_view = view.provide('ca_view', self.cls_view('ca_view', view, items=ca_items))
             
 class GetCaStartCmd:
     def __call__(self, editor, ast):
@@ -71,18 +55,14 @@ class ContentAssistWidget(QtCore.QObject):
     
     read_ast = QtCore.pyqtSignal(object)
     
-    @diinit
-    def __init__(self, editor, items, ca : Dependency('content_assist')):
+#     @diinit
+    def __init__(self, view: Amendment('win/', lambda v: (v.name == 'ca_view') and (v.widget is None))):
         super().__init__()
-        self.editor = editor.widget
-        self.items = items
+        self.editor = view.parent.widget
+        self.items = view.items
         self.name = 'content_assist'
-        self.view = View(self, editor)
-        self.ca = ca
-#         if view.widget.hasSelectedText():
-#         editor.pos = editor.SendScintilla(QsciScintilla.SCI_GETSELECTIONEND)
-#         ddic['content_assist'].activate()
-#         self.ca_start = editor.widget.pos
+        self.view = view
+        view.widget = self
         self.editor.SCN_AUTOCSELECTION.connect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.connect(self.close)
         self.editor.SCN_AUTOCCHARDELETED.connect(self.close_char_deleted)
@@ -94,21 +74,6 @@ class ContentAssistWidget(QtCore.QObject):
 #        self.editor.SendScintilla(QsciScintilla.SCI_SETMODEVENTMASK, (QsciScintilla.SC_MOD_INSERTTEXT | QsciScintilla.SC_MOD_DELETETEXT))
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSETCANCELATSTART, False)
         self.ca_start_cmd = GetCaStartCmd()
-
-#         self.read_ast.connect(self.editor.ast.read_only, type=QtCore.Qt.BlockingQueuedConnection)
-#         self.read_ast.emit(self.ca_start_cmd)
-#         self.read_ast.disconnect()
-#         
-#         self.ca_start = self.ca_start_cmd.ca_start
-# #         print()
-# #         
-# #         if self.cur_ctx_cmd.cur_ctx is None:
-# #             self.ca_start = self.editor.anchor
-# #         elif self.cur_ctx_cmd.cur_ctx.type == 'NAME':
-# #             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.start
-# #         else:
-# #             self.ca_start = self.cur_ctx_cmd.cur_ctx.slice.stop
-#             
         self.show()
 
     def previous_line(self):
