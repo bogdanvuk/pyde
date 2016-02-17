@@ -84,7 +84,7 @@ class CompleteCommand:
         else:
             start = editor.anchor
                 
-        for k in editor.view.parent:
+        for k in editor.view.parent.child:
             if k in self.acceptor:
                 pass
             else:
@@ -131,7 +131,7 @@ class PyInterpretContentAssist(QObject):
     complete_sig = QtCore.pyqtSignal(object)
     
     def __init__(self, 
-                 view : Dependency('win/', lambda e: e.mode.name == "ipython"),
+                 view : Dependency('view/', lambda e: e.mode.name == "ipython"),
                  ca : Dependency('content_assist'),
                  win : Dependency('win')):
         super().__init__()

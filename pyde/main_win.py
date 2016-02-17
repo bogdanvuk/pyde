@@ -55,6 +55,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def dump_config(self, var_name):
+        config = []
+        
+        config.append('{}.resize({}, {})'.format(var_name, self.width(), self.height()))
+        
         class LayoutVisitor(PydeFrameVisitor):
             def __init__(self, config=[]):
                 self.loc = []
@@ -72,13 +76,14 @@ class MainWindow(QtGui.QMainWindow):
             def visit_leaf(self, node, index=None):
                 self.loc.append(index)
                 view = node.parent().assigned_views[index]
-                self.config.append("ddic['win'].widget.place(ddic['{}'], {})".format('/'.join(view.uri), self.loc))
+                self.config.append("ddic['win'].widget.place(ddic['view/{}'], {})".format(view.name, self.loc))
                 self.loc.pop()
         
         v = LayoutVisitor()
         v.visit(self.centralWidget)
+        config.extend(v.config)
         
-        return '\n'.join(v.config)
+        return '\n'.join(config)
 
 #     def keyPressEvent(self, event):
 # #         print("key_press")

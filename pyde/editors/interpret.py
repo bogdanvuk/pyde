@@ -132,7 +132,7 @@ from pyde.ddi import ddic, Amendment
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, view: Amendment('win/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'ipython') and (v.widget is None))):
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'ipython') and (v.widget is None))):
         super().__init__(view)
 
         # Set the default font

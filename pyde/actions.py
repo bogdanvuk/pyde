@@ -95,7 +95,7 @@ class ViewListContentAssist(FuncArgContentAssist):
 
 @diinit
 def execute_action(win : Dependency('win'), active_view = None):
-    interpret = win['interpret'].widget
+    interpret = win.child['interpret'].widget
     interpret.execute_view_action(win.active_view())
 
 @diinit
@@ -110,15 +110,15 @@ def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
-    
-    new_editor = ddic['cls/editor_generic'](path, parent_view=win)
-    win.place_view(new_editor, 
-                   active_view.widget.last_location)
+    view = ddic['cls/view'](os.path.basename(path), win, file_name=path)
+    ddic.provide('view/' + view.name, view) 
+    win.widget.place(view, [0])
+    win.place_view(view, active_view.widget.last_location)
 
 def execute_action_template_shortcut(func):
     @diinit
     def wrapper(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
-        interpret = win.view['interpret'].widget
+        interpret = win.child['interpret'].widget
         execute_action.action(win, active_view)
         TemplFunc(func).apply(interpret)
         ca.activate(interpret.view)
@@ -208,8 +208,8 @@ def content_assist(win : Dependency('win'), ca : Dependency('content_assist'), a
 #     app.active_widget().content_assist()
 #     
 def evaluate(active_view = None):
-    if 'content_assist' in active_view:
-        active_view['content_assist'].widget.select()
+    if 'ca_view' in active_view.child:
+        active_view.child['ca_view'].widget.select()
 
     active_view.widget.evaluate()
 # 

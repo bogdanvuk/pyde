@@ -27,6 +27,6 @@ class Lexer:
         
             lexer = lexer_cls(mode.view.widget)
             lexer.setDefaultFont(font)
-            mode.editor.widget.setLexer(lexer)
+            view.widget.setLexer(lexer)
 
         

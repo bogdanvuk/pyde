@@ -105,7 +105,7 @@ class TemplContext(object):
 class TemplActuator:
     indic_val_offset = 10
     
-    def __init__(self, view : Dependency('win/')):
+    def __init__(self, view : Dependency('view/')):
         self.indicators = {}
         self.view = view
         self.editor = view.widget

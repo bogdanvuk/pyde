@@ -8,7 +8,7 @@ class EditorAstManager(QtCore.QObject):
     tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
     suggestions_created = QtCore.pyqtSignal(object, object, object) #['QWidget'])
     
-    def __init__(self, view : Amendment('win/')):
+    def __init__(self, view : Amendment('view/')):
         super().__init__()
         self.qthread = QtCore.QThread()
         self.moveToThread(self.qthread)

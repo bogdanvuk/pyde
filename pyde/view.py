@@ -2,15 +2,29 @@ from PyQt4 import QtCore
 from pyde.ddi import DependencyScope
 from weakref import WeakValueDictionary
 
-class View(DependencyScope):
+class View: #(DependencyScope):
 #     child_added = QtCore.pyqtSignal(QtCore.QObject)
     
     def __init__(self, name, parent=None, **kwargs):
-        super().__init__(name, parent)
+#         super().__init__(name, parent)
+        self.child = {}
+        self.name = name
         self.config = kwargs
+        if parent:
+            parent.child[name] = self
+        self.parent = parent
         self._widget = None
         for k,v in kwargs.items():
             setattr(self, k, v)
+
+    @property
+    def uri(self):
+        if self.parent:
+            uri = self.parent.uri + [self.name]
+        else:
+            uri = [self.name]
+            
+        return uri
     
     @property
     def widget(self):
@@ -26,31 +40,41 @@ class View(DependencyScope):
         self.widget.setFocus()
 
     def delete(self):
-        self.parent.unprovide(self.widget.name)
+        del self.parent.child[self.name]
         
     def dump_config(self, var_name):
-        if var_name != "ddic['win']":
-            if self.parent:
-                parent_ref = "ddic['{}']".format('/'.join(self.parent.uri))
-            else:
-                parent_ref = 'None'
-                
+        config = []
+        for _, child in self.child.items():
             config_dump = []
-            for name, c in self.config.items():
+            for name, c in child.config.items():
                 config_dump.append("{}='{}'".format(name, str(c)))
-            
-            view_config = ','.join(["'" + self.name + "'", parent_ref] + config_dump)
-            view_inst = ["ddic.provide('{}', ddic['cls/view']({}))".format('/'.join(self.uri), view_config)]
-        else:
-            view_inst = []
-            
-        for _, v in self.providers.items():
-            view_inst.append(v.dump_config(''))
+
+            view_config = ','.join(["'" + child.name + "'", var_name] + config_dump)
+            config.append("ddic.provide('view/{0}', ddic['cls/view']({1}))".format(child.name, view_config))
+        
+        
+#         if var_name != "ddic['win']":
+#             if self.parent:
+#                 parent_ref = "ddic['{}']".format('/'.join(self.parent.uri))
+#             else:
+#                 parent_ref = 'None'
+#                 
+#             config_dump = []
+#             for name, c in self.config.items():
+#                 config_dump.append("{}='{}'".format(name, str(c)))
+#             
+#             view_config = ','.join(["'" + self.name + "'", parent_ref] + config_dump)
+#             view_inst = ["ddic.provide('{}', ddic['cls/view']({}))".format('/'.join(self.uri), view_config)]
+#         else:
+#             view_inst = []
+#             
+#         for _, v in self.providers.items():
+#             view_inst.append(v.dump_config(''))
         
         if hasattr(self.widget, 'dump_config'):
-            view_inst.append(self.widget.dump_config('.'.join([var_name, 'widget'])))
+            config.append(self.widget.dump_config('.'.join([var_name, 'widget'])))
         
-        return '\n'.join(view_inst)
+        return '\n'.join(config)
 #         config = []
 # #         config.append('from PyQt4.QtCore import Qt')
 # #         config.append('from pyde.pyde_frame import ChildLayout, Layout')
@@ -82,8 +106,8 @@ class View(DependencyScope):
 #     
     
     def active_view(self):
-        if self.providers:
-            child = next(self.providers.__iter__())
-            return self.providers[child].active_view()
+        if self.child:
+            child = next(self.child.__iter__())
+            return self.child[child].active_view()
         else:
             return self

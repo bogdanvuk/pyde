@@ -1,7 +1,7 @@
 from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.Qsci import QsciScintilla
 from difflib import SequenceMatcher
-from pyde.ddi import Dependency, diinit, Amendment
+from pyde.ddi import Dependency, diinit, Amendment, ddic
 from pyde.view import View
 from PyQt4 import QtCore
 
@@ -17,7 +17,8 @@ class ContentAssist(QObject):
         self.cls_view = cls_view
     
     def deactivate(self):
-        self.ca_widget = None
+        ddic['ca_view'].delete()
+        ddic.unprovide('ca_view')
         pass
 
     def activate(self, view):
@@ -28,7 +29,7 @@ class ContentAssist(QObject):
         self.complete.emit(ca_items)
         
         if ca_items:
-            self.ca_view = view.provide('ca_view', self.cls_view('ca_view', view, items=ca_items))
+            ddic.provide('ca_view', self.cls_view('ca_view', view, items=ca_items))
             
 class GetCaStartCmd:
     def __call__(self, editor, ast):
@@ -56,8 +57,9 @@ class ContentAssistWidget(QtCore.QObject):
     read_ast = QtCore.pyqtSignal(object)
     
 #     @diinit
-    def __init__(self, view: Amendment('win/', lambda v: (v.name == 'ca_view') and (v.widget is None))):
+    def __init__(self, view: Amendment('ca_view'), ca: Dependency('content_assist')):
         super().__init__()
+        self.ca = ca
         self.editor = view.parent.widget
         self.items = view.items
         self.name = 'content_assist'
@@ -160,7 +162,6 @@ class ContentAssistWidget(QtCore.QObject):
         self.editor.SendScintilla(QsciScintilla.SCI_AUTOCCANCEL)
         
         self.ca.deactivate()
-        self.view.delete()
 
     def find_longest_common_sequence(self, l, anywhere=False):
         common_text = ""

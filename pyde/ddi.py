@@ -34,6 +34,7 @@ class Demander:
         self.amendments = set()
         self.recurrent_dep = []
         self.simple_dep = []
+        self.instances = {}
         self.dependencies_by_feature = {}
         self.satisfied = set() #WeakValueDictionary()
         self.extract_dependencies()
@@ -108,7 +109,13 @@ class Demander:
                     return dep_name
             
         return None
-
+    
+    def feature_unprovided_for_simple_dep(self, feature):
+        for dep_name in self.simple_dep:
+            dep = self.dependencies[dep_name]
+            if dep.feature == feature:
+                self.satisfied.remove(dep_name)
+            
     def feature_provided_for_recurrent_dep(self, feature, forbidden=[], amend=False):
         for dep_name in self.recurrent_dep:
             dep = self.dependencies[dep_name]
@@ -317,12 +324,13 @@ class DependencyContainer(DependencyScope):
         args, kwargs = update_args(demander.provider, demander.args, demander.kwargs, dependencies)
         demander_inst = demander.provider(*args, **kwargs)
         if demander.inst_feature:
-            demander_inst._dependents = {}
+            
+#             demander_inst._dependents = {}
 #             if provide_intern:
 #                 demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
 #             else:
             demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
-
+            demander.instances[demander_inst_feature] = list(recurrent_dep_satisfied.values()) + [demander.dependencies[d].feature for d in demander.simple_dep]
 #         return demander_inst, demander_inst_feature 
 
 #             for _, dep_provider in dependencies.items():
@@ -341,6 +349,20 @@ class DependencyContainer(DependencyScope):
             if d.all_simple_satisfied() and (not d.all_satisfied()):
                 if d.satisfied_on_recurrent_feature_provided(feature):
                     self.inst_demander(d, feature)
+
+    def _unregister_dep(self, feature):
+        for_removal = []
+        for d in reversed(self.demanders):
+            d.feature_unprovided_for_simple_dep(feature)
+
+            for name, deps in d.instances.items():
+                if feature in deps:
+                    for_removal.append((d, name))
+
+        for d, name in for_removal:
+            del d.instances[name]
+        for d, name in for_removal:
+            self.unprovide(name)
 
     def _register_simple_dep(self, feature, amend=False):
         self._demanders_to_inst = []
@@ -504,12 +526,13 @@ class DependencyContainer(DependencyScope):
 #             self.check_and_inst_demander(demander, feature)
     
     def unprovide(self, feature):
-        provider = self[feature]
-        if hasattr(provider, '_dependents'):
-            for d in provider._dependents:
-                self.unprovide(d)
+#         provider = self[feature]
+#         if hasattr(provider, '_dependents'):
+#             for d in provider._dependents:
+#                 self.unprovide(d)
                 
         del self[feature]
+        self._unregister_dep(feature)
     
 #     def create_on_demand(self, feature, inst_feature=None, args=(), kwargs={}):
 #         self.demanders.append(Demander(feature, inst_feature, list(args), dict(kwargs)))

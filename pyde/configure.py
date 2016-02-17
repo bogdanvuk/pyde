@@ -41,7 +41,6 @@ ddic.provide('cls/view', View)
 
 ddic.provide_on_demand('cls/lexer', Lexer, 'lexer/inst/')
 ddic.provide_on_demand('cls/templ_actuator', TemplActuator, 'templ_actuator/inst/')
-ddic.provide_on_demand('cls/context', ContextProvider, 'context')
 ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
 
 ddic.provide_on_demand('mode/cls/python', ViewModeExtensionFactory('python', ['.py']), 'mode/inst/')
@@ -57,7 +56,7 @@ ddic.provide('parser/cls/view_list', ViewListParser)
 ddic.provide_on_demand('parser/cls/interpret_path_parser', IslandLanguageParserFactory('linpath'), 'parser/interpret_path_parser/inst')
 ddic.provide_on_demand('parser/cls/interpret_view_list_parser', IslandLanguageParserFactory('view_list'), 'parser/interpret_view_list_parser/inst')
 #ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name != "ipython")})
-ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'view': Dependency('win/', lambda e: e.mode.name == "ipython")})
+ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'view': Dependency('view/', lambda e: e.mode.name == "ipython")})
 #ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 # ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 
@@ -168,6 +167,6 @@ for f in module_functions(config):
     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
 
 ddic.provide('win_layout', ddic['cls/layout']())
-ddic.provide('win', ddic['cls/view']('win', ddic))
+ddic.provide('win', ddic['cls/view']('win'))
 
 pass
