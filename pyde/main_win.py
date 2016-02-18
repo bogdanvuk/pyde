@@ -58,6 +58,8 @@ class MainWindow(QtGui.QMainWindow):
         config = []
         
         config.append('{}.resize({}, {})'.format(var_name, self.width(), self.height()))
+        if self.isMaximized():
+            config.append('{}.showMaximized()'.format(var_name))
         
         class LayoutVisitor(PydeFrameVisitor):
             def __init__(self, config=[]):
@@ -77,6 +79,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.loc.append(index)
                 view = node.parent().assigned_views[index]
                 self.config.append("ddic['win'].widget.place(ddic['view/{}'], {})".format(view.name, self.loc))
+                self.config.append(view.dump_config("ddic['view/{}']".format(view.name)))
                 self.loc.pop()
         
         v = LayoutVisitor()

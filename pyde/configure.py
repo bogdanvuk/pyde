@@ -78,6 +78,12 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/switch_view',
                                     'key': Qt.Key_E,
                                     'modifier': Qt.ControlModifier})
 
+ddic.provide('actions/switch_view', actions.close_view)
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/close_view', 
+                       inst_kwargs={'action': actions.close_view,
+                                    'key': Qt.Key_W,
+                                    'modifier': Qt.ControlModifier})
+
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/execute_action', 
                        inst_kwargs={'action': actions.execute_action,
                                     'key': Qt.Key_A,
@@ -141,31 +147,32 @@ ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 sys.path.append('/data/projects/pyde/wspace')
 
 # ddic.provide('win_layout', ddic['cls/layout'](Layout(QtCore.Qt.Vertical, [ChildLayout(5, None), ChildLayout(1, None)])))
-# 
+# ddic.provide('win', ddic['cls/view']('win'))
+#  
 # view = ddic['cls/view']('scratch.py', ddic['win'], file_name=os.path.join(ddic['config/wspace/path'], 'scratch.py'))
-# ddic.provide('win/scratch.py', view)
+# ddic.provide('view/scratch.py', view)
 # ddic['win'].widget.place(view, [0])
-# 
+#  
 # view = ddic['cls/view']('interpret', ddic['win'])
-# ddic.provide('win/interpret', view)
+# ddic.provide('view/interpret', view)
 # ddic['win'].widget.place(view, [1])
 
 
     
 from wspace import config
 import inspect
- 
+  
 def is_mod_function(mod, func):
     return inspect.isfunction(func) and inspect.getmodule(func) == mod
- 
+  
 def module_functions(mod):
     for _, func in mod.__dict__.items():
         if is_mod_function(mod, func):
             yield func
- 
+  
 for f in module_functions(config):
     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
-
+ 
 ddic.provide('win_layout', ddic['cls/layout']())
 ddic.provide('win', ddic['cls/view']('win'))
 

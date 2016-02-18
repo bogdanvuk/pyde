@@ -97,6 +97,12 @@ class PydeEditor(QsciScintillaCompat):
         
     def active_range(self):
         return (0, len(self.text()))
+    
+    def dump_config(self, var_name):
+        config = []
+        config.append('{}.pos = {}'.format(var_name, self.pos))
+        config.append('{}.anchor = {}'.format(var_name, self.anchor))
+        return '\n'.join(config)
         
 #     def pos_changed(self, line, pos):
         

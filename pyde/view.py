@@ -36,7 +36,8 @@ class View: #(DependencyScope):
         value.view = self
     
     def set_focus(self):
-        self.widget.parent().setCurrentWidget(self.widget)
+        self.parent.widget.place(self, self.last_location)
+#         self.widget.parent().setCurrentWidget(self.widget)
         self.widget.setFocus()
 
     def delete(self):
@@ -51,25 +52,6 @@ class View: #(DependencyScope):
 
             view_config = ','.join(["'" + child.name + "'", var_name] + config_dump)
             config.append("ddic.provide('view/{0}', ddic['cls/view']({1}))".format(child.name, view_config))
-        
-        
-#         if var_name != "ddic['win']":
-#             if self.parent:
-#                 parent_ref = "ddic['{}']".format('/'.join(self.parent.uri))
-#             else:
-#                 parent_ref = 'None'
-#                 
-#             config_dump = []
-#             for name, c in self.config.items():
-#                 config_dump.append("{}='{}'".format(name, str(c)))
-#             
-#             view_config = ','.join(["'" + self.name + "'", parent_ref] + config_dump)
-#             view_inst = ["ddic.provide('{}', ddic['cls/view']({}))".format('/'.join(self.uri), view_config)]
-#         else:
-#             view_inst = []
-#             
-#         for _, v in self.providers.items():
-#             view_inst.append(v.dump_config(''))
         
         if hasattr(self.widget, 'dump_config'):
             config.append(self.widget.dump_config('.'.join([var_name, 'widget'])))

@@ -60,7 +60,7 @@ class PydeFrame(QtGui.QSplitter):
         location = location[1:]
         if location:
             self.widget.add_view(view, location)
-        else:
+        elif self.assigned_views[loc] != view:
             self.assigned_views[loc] = view
             self.widget(loc).insertWidget(0, view.widget)
             self.widget(loc).setCurrentWidget(view.widget)

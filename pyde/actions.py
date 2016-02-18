@@ -99,21 +99,27 @@ def execute_action(win : Dependency('win'), active_view = None):
     interpret.execute_view_action(win.active_view())
 
 @diinit
-def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
-    if view_name in win.view:
-        active_view = win.active_view()
-        win.place_view(win.view[view_name].widget, 
-                       active_view.widget.last_location)
+def close_view(win : Dependency('win'), active_view = None):
+    active_view.delete()
+    ddic.unprovide('view/{}'.format(active_view.name))
 
-        win.view[view_name].set_focus()
+@diinit
+def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
+    if view_name in win.child:
+        active_view = win.active_view()
+        win.widget.place(win.child[view_name], active_view.last_location)
+#         win.widget.place(win.child[view_name].widget, 
+#                        active_view.last_location)
+# 
+#         win.child[view_name].set_focus()
 
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
     view = ddic['cls/view'](os.path.basename(path), win, file_name=path)
     ddic.provide('view/' + view.name, view) 
-    win.widget.place(view, [0])
-    win.place_view(view, active_view.widget.last_location)
+    win.widget.place(view, active_view.last_location)
+#     win.place_view(view, active_view.widget.last_location)
 
 def execute_action_template_shortcut(func):
     @diinit
@@ -178,7 +184,7 @@ def backward_char(view=None):
 #     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEUP)
 # 
 #
-# @diinit
+@diinit
 def content_assist_fill_query(active_view):
     active_view.widget.fill_query()
     
@@ -186,16 +192,19 @@ def content_assist_fill_query(active_view):
 def content_assist(win : Dependency('win'), ca : Dependency('content_assist'), active_view = None):
     if active_view is None:
         active_view = win.active_view()
-        
-    text = active_view.widget.text()
-    if text:
-        last_char = text[active_view.widget.pos-1] 
-        if (last_char not in string.whitespace) or (last_char == '\n'):
+    
+    if active_view.name == 'ca_view':
+        active_view.widget.fill_query()
+    else:
+        text = active_view.widget.text()
+        if text:
+            last_char = text[active_view.widget.pos-1] 
+            if (last_char not in string.whitespace) or (last_char == '\n'):
+                ca.activate(active_view)
+                return True
+        else:
             ca.activate(active_view)
             return True
-    else:
-        ca.activate(active_view)
-        return True
 
     return False
 
