@@ -7,11 +7,11 @@ class View: #(DependencyScope):
     
     def __init__(self, name, parent=None, **kwargs):
 #         super().__init__(name, parent)
-        self.child = {}
+        self.child = []
         self.name = name
         self.config = kwargs
         if parent:
-            parent.child[name] = self
+            parent.child.append(self)
         self.parent = parent
         self._widget = None
         for k,v in kwargs.items():
@@ -40,6 +40,13 @@ class View: #(DependencyScope):
 #         self.widget.parent().setCurrentWidget(self.widget)
         self.widget.setFocus()
 
+    def add(self, view):
+        self.child.append(view)
+        view.parent = self
+
+    def show(self, location):
+        self.parent.place(self, location)
+
     def delete(self):
         del self.parent.child[self.name]
         
@@ -57,35 +64,6 @@ class View: #(DependencyScope):
             config.append(self.widget.dump_config('.'.join([var_name, 'widget'])))
         
         return '\n'.join(config)
-#         config = []
-# #         config.append('from PyQt4.QtCore import Qt')
-# #         config.append('from pyde.pyde_frame import ChildLayout, Layout')
-#         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
-#         return '\n'.join(config)
-# 
-#         for v in self.providers:
-#             
-#         view = ddic['cls/view']('scratch.py', ddic['win'], file_name=os.path.join(ddic['config/wspace/path'], 'scratch.py'))
-#         ddic.provide('win/', view)
-#         ddic['win'].widget.place(view, [0])
-# 
-#         view = ddic['cls/view']('interpret', ddic['win'])
-#         ddic.provide('win/', view)
-#         ddic['win'].widget.place(view, [1])
-
-#     def __del__(self):
-#         self.parent.unprovide(self.widget.name)
-#     @property
-#     def name(self):
-#         if hasattr(self.widget, 'name'):
-#             return self.widget.name
-#         else:
-#             return ''
-#     
-#     def add(self, view):
-#         self.children[view.name] = view
-#         self.child_added.emit(view)
-#     
     
     def active_view(self):
         if self.child:
@@ -93,3 +71,13 @@ class View: #(DependencyScope):
             return self.child[child].active_view()
         else:
             return self
+
+class WindowView(View):
+    def add(self, view, location=None):
+        super().add(view)
+        if location:
+            view.show(location)
+
+    def show(self, view, location):
+        self.child[view.name] = view
+

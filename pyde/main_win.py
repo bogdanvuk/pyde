@@ -11,7 +11,7 @@ class MainWindow(QtGui.QMainWindow):
     uri = []    
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
-    def __init__(self, view: Amendment('win'), layout: Dependency('win_layout')):
+    def __init__(self, view: Amendment('win')): #, layout: Dependency('win_layout')):
         QtGui.QMainWindow.__init__(self)
 #         self.view = View(self)
 #         self.name = 'winview'
@@ -20,25 +20,26 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle("Writer")
 #         self.resize(800, 600)
 
-        centralwidget = QtGui.QWidget(self)
-        centralwidget.setObjectName("centralwidget")
-        
-        gridLayout = QtGui.QGridLayout(centralwidget)
-        gridLayout.setObjectName("gridLayout")
-        self.centralLayout = gridLayout
-        
-        self.setCentralWidget(centralwidget)
-        self.centralLayout.addWidget(layout, 0, 0, 1, 1)
-        self.centralWidget = layout
+#         centralwidget = QtGui.QWidget(self)
+#         centralwidget.setObjectName("centralwidget")
+#         
+#         gridLayout = QtGui.QGridLayout(centralwidget)
+#         gridLayout.setObjectName("gridLayout")
+#         self.centralLayout = gridLayout
+#         
+#         self.setCentralWidget(centralwidget)
+#         self.centralLayout.addWidget(layout, 0, 0, 1, 1)
+#         self.centralWidget = layout
         
 #         self.view = view_scope
         
         QtCore.QMetaObject.connectSlotsByName(self)
         self.views = {}
     
-    def place(self, view, location=[0]):
-        view.last_location = location
-        self.centralWidget.add_view(view, location)
+#     def place(self, view, location=[0]):
+#         self
+#         view.last_location = location
+#         self.centralWidget.add_view(view, location)
        
 #     def add_view(self, view, location=[0]):
 #         self.context.update_context(self, ['/', view.name], view)

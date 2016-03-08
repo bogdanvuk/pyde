@@ -24,14 +24,16 @@ from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
 from pyde.plugins.statusbar import StatusBar
 from pyde.plugins.dump_config import DumpConfig
-from pyde.pyde_frame import PydeFrame, ChildLayout, Layout
+from pyde.pyde_frame import PydeFrame, ChildLayout
+from pyde.layout import Layout
 from pyde.view import View
 from PyQt4 import QtCore
 import os
 import time
 
 # ddic.create_scope('view')
-ddic.provide('cls/layout', PydeFrame)
+#ddic.provide('cls/layout', PydeFrame)
+ddic.provide_on_demand('cls/win_layout', Layout, 'win_layout')
 ddic.provide_on_demand('cls/statusbar', StatusBar, 'statusbar')
 ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
 ddic.provide_on_demand('cls/win', MainWindow, 'widget/')
@@ -173,7 +175,7 @@ def module_functions(mod):
 for f in module_functions(config):
     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
  
-ddic.provide('win_layout', ddic['cls/layout']())
+# ddic.provide('win_layout', ddic['cls/layout']())
 ddic.provide('win', ddic['cls/view']('win'))
 
 pass

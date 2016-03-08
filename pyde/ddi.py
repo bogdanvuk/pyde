@@ -365,13 +365,15 @@ class DependencyContainer(DependencyScope):
             self.unprovide(name)
 
     def _register_simple_dep(self, feature, amend=False):
-        self._demanders_to_inst = []
+        _demanders_to_inst = []
         for d in reversed(self.demanders):
             if not d.all_satisfied():
                 d.feature_provided_for_simple_dep(feature, amend)
                 
                 if d.all_satisfied():
-                    self._demanders_to_inst.append(d)
+                    _demanders_to_inst.append(d)
+                    
+        return _demanders_to_inst
 #                     self.inst_demander(d)
 
     def check_demands(self, amend = False):
@@ -436,6 +438,16 @@ class DependencyContainer(DependencyScope):
         
         return feature_ext
     
+    def inst_demanders_on_simple_dep(self, feature_ext, amend):
+        demander_instantiated = True
+        while (demander_instantiated):
+            demanders_to_inst = self._register_simple_dep(feature_ext, amend=amend)
+            
+            for d in demanders_to_inst:
+                self.inst_demander(d)
+            
+            demander_instantiated = (len(demanders_to_inst) > 0)    
+    
     def provide(self, feature, provider):
         
         if not self.allowReplace:
@@ -458,18 +470,10 @@ class DependencyContainer(DependencyScope):
         self._provided_together.append(feature_ext)        
 
         self._inst_level += 1
-        self._register_simple_dep(feature_ext, amend=True)
-        for d in self._demanders_to_inst:
-            self.inst_demander(d)
-            
-        self._demanders_to_inst.clear()
-            
+        self.inst_demanders_on_simple_dep(feature_ext, True)
         self.check_demands(amend=True)
-        
-        self._register_simple_dep(feature_ext, amend=False)
-        for d in self._demanders_to_inst:
-            self.inst_demander(d)
-        self._demanders_to_inst.clear()
+
+        self.inst_demanders_on_simple_dep(feature_ext, False)
         self.check_demands(amend=False)
 
         self._inst_level -= 1
