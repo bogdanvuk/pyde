@@ -11,21 +11,27 @@ from PyQt4.QtCore import Qt
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.widget is None))):
-        super(PydeEditor, self).__init__(view.parent.widget)
-        view.widget = self
-        self.setAttribute(Qt.WA_KeyCompression)
-        self.hide()
-        if hasattr(view, 'file_name'):
-            self.file_name = view.file_name
-            self.read_file(self.file_name)
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.widget is None)), orig_editor=None):
+        if orig_editor:
+            super(PydeEditor, self).__init__()
+            self.setDocument(orig_editor.document())
         else:
-            self.file_name = None
-            
+            super(PydeEditor, self).__init__(view.parent.widget)
+            view.widget = self
+            self.setAttribute(Qt.WA_KeyCompression)
+            self.hide()
+            if hasattr(view, 'file_name'):
+                self.file_name = view.file_name
+                self.read_file(self.file_name)
+            else:
+                self.file_name = None
+                
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
 
-    
+    def clone(self):
+        return self.__class__(view=None, orig_editor = self)
+
     def __getitem__(self, item):
         return self.text().__getitem__(item)
     

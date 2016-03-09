@@ -1,6 +1,5 @@
 from pyde.ddi import Dependency, ddic
 
-
 def reload_config_for_win_layout(win_layout: Dependency('win_layout')):
     from PyQt4.QtCore import Qt
 #     from pyde.pyde_frame import ChildLayout, Layout
@@ -18,4 +17,9 @@ def reload_config_for_win(win: Dependency('win')):
     ddic['win'].layout.place(ddic['view/interpret'], [1])
     ddic['view/interpret'].widget.pos = 0
     ddic['view/interpret'].widget.anchor = 0
+    
+    from PyQt4.QtCore import Qt
+    win.layout.split([0], Qt.Horizontal)
+    win.layout.split([0, 1], Qt.Vertical)
+    win.layout.split([0, 1, 0], Qt.Horizontal)
 

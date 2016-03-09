@@ -22,11 +22,22 @@ class Layout(QObject):
         self.gridLayout.addWidget(self.widget, 0, 0, 1, 1)
         
         self.recent = []
-        self.layout = None
+        self.layout = []
         self.win = win
                 
     def setup(self, layout):
         pass
+    
+    def _get_layout_rec(self, layout, loc):
+        cur = loc[0]
+        rest = loc[1:]
+        if rest:
+            return self._get_layout_rec(layout[cur], rest)
+        else:
+            return layout[cur]
+    
+    def get_layout(self, loc):
+        return self._get_layout_rec(self.layout, loc)
     
     def get_widget(self, loc):
         w = self.widget
@@ -36,23 +47,37 @@ class Layout(QObject):
         return w
 
     def place(self, view, loc=[0]):
-        w = self.get_widget(loc[1:])
+        w = self.get_widget(loc[:-1])
+        place_layout = self.get_layout(loc)
         view.last_location = loc
+        place_layout.clear()
+        place_layout.append(view)
         w.widget(loc[-1]).insertWidget(0, view.widget)
         w.widget(loc[-1]).setCurrentWidget(view.widget)
     
     def split(self, loc, orientation=Qt.Vertical, ratio=(1,1)):
         if loc:
-            parent_splitter = self.get_widget(loc[1:])
+            parent_splitter = self.get_widget(loc[:-1])
             stacked = parent_splitter.widget(loc[-1])
-            child_splitter = QtGui.QSplitter(Qt.Horizontal)
+            child_splitter = QtGui.QSplitter(orientation)
             parent_splitter.insertWidget(loc[-1], child_splitter)
             child_splitter.addWidget(stacked)
+            child_splitter.addWidget(QtGui.QStackedWidget())
+            
+            split_layout = self.get_layout(loc)
+            split_view = split_layout[0]
+            split_layout.clear()
+            split_layout.extend([[split_view], []])
+            
+            clone = split_view.clone()
+            self.place(clone, loc + [1])
+            
         else:
             child_splitter = self.widget
             child_splitter.setOrientation(orientation)
-
-        child_splitter.addWidget(QtGui.QStackedWidget())
+            child_splitter.addWidget(QtGui.QStackedWidget())
+            self.layout = [[], []]
+            
         for i in range(2):
             child_splitter.setStretchFactor(i, ratio[i])
         

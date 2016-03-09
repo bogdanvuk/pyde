@@ -1,11 +1,11 @@
 from PyQt4 import QtCore
-from pyde.ddi import DependencyScope
+from pyde.ddi import DependencyScope, ddic
 from weakref import WeakValueDictionary
 
 class View: #(DependencyScope):
 #     child_added = QtCore.pyqtSignal(QtCore.QObject)
     
-    def __init__(self, name, parent=None, **kwargs):
+    def __init__(self, name, parent=None, widget=None, **kwargs):
 #         super().__init__(name, parent)
         self.child = []
         self.name = name
@@ -13,10 +13,19 @@ class View: #(DependencyScope):
         if parent:
             parent.child.append(self)
         self.parent = parent
-        self._widget = None
+        self.clones = []
+        self._widget = widget
         for k,v in kwargs.items():
             setattr(self, k, v)
 
+    def clone(self, **kwargs):
+        kwargs.update(self.config)
+        clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
+        self.clones.append(clone)
+        clone.widget = self.widget.clone()
+        ddic.provide('view/', clone)
+        return clone
+            
     @property
     def uri(self):
         if self.parent:
