@@ -4,7 +4,6 @@ from pyde.application import App
 import sys
 from pyde.editors.python import PythonEdit
 from pyde.editors.interpret import PyInerpretEditor
-from pyde.plugins.context import ContextProvider
 from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
 from pyde.plugins.ast_manager import EditorAstManager, IPythonEditorAstManager
 from pyde.plugins.editor_mode import IPythonMode,\
@@ -80,7 +79,7 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/switch_view',
                                     'key': Qt.Key_E,
                                     'modifier': Qt.ControlModifier})
 
-ddic.provide('actions/switch_view', actions.close_view)
+ddic.provide('actions/close_view', actions.close_view)
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/close_view', 
                        inst_kwargs={'action': actions.close_view,
                                     'key': Qt.Key_W,

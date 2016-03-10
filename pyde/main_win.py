@@ -54,7 +54,6 @@ class MainWindow(QtGui.QMainWindow):
     def active_view(self):
         return QApplication.focusWidget().view.active_view()
 
-
     def dump_config(self, var_name):
         config = []
         

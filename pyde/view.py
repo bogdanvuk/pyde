@@ -18,6 +18,13 @@ class View: #(DependencyScope):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
+    def child_by_name(self, name):
+        for c in self.child:
+            if c.name == name:
+                return c
+            
+        return None
+
     def clone(self, **kwargs):
         kwargs.update(self.config)
         clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
@@ -44,20 +51,29 @@ class View: #(DependencyScope):
         self._widget = value
         value.view = self
     
-    def set_focus(self):
-        self.parent.widget.place(self, self.last_location)
-#         self.widget.parent().setCurrentWidget(self.widget)
-        self.widget.setFocus()
+    def set_focus(self, view=None):
+        if view is None:
+            self.parent.set_focus(self)
+        else:
+            self.layout.place(view, view.last_location)
+            view.widget.setFocus()
 
     def add(self, view):
         self.child.append(view)
         view.parent = self
+        
+    def remove(self, view):
+        for i, c in enumerate(self.child):
+            if c == view:
+                del self.child[i]
+                return
 
     def show(self, location):
         self.parent.place(self, location)
 
     def delete(self):
-        del self.parent.child[self.name]
+        self.parent.remove(self)
+#         del self.parent.child[self.name]
         
     def dump_config(self, var_name):
         config = []
@@ -75,11 +91,20 @@ class View: #(DependencyScope):
         return '\n'.join(config)
     
     def active_view(self):
-        if self.child:
-            child = next(self.child.__iter__())
-            return self.child[child].active_view()
+        for c in self.child:
+            view = c.active_view()
+            if view is not None:
+                return view
         else:
-            return self
+            if self.widget.hasFocus():
+                return self
+            else:
+                return None
+#         if self.child:
+#             child = next(self.child.__iter__())
+#             return self.child[child].active_view()
+#         else:
+#             return self
 
 class WindowView(View):
     def add(self, view, location=None):

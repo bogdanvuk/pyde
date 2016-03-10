@@ -46,29 +46,43 @@ class Layout(QObject):
             
         return w
 
+    
+
     def place(self, view, loc=[0]):
-        w = self.get_widget(loc[:-1])
+        
         place_layout = self.get_layout(loc)
         view.last_location = loc
         place_layout.clear()
         place_layout.append(view)
-        w.widget(loc[-1]).insertWidget(0, view.widget)
-        w.widget(loc[-1]).setCurrentWidget(view.widget)
-    
+        
+        splitter = self.get_widget(loc[:-1])
+        stack = splitter.widget(loc[-1])
+        cur_widget = stack.currentWidget()
+        if cur_widget:
+            stack.removeWidget(cur_widget)
+            
+        stack.insertWidget(0, view.widget)
+        stack.setCurrentWidget(view.widget)
+        
     def split(self, loc, orientation=Qt.Vertical, ratio=(1,1)):
         if loc:
+#             parent_splitter.getStretchFactor
             parent_splitter = self.get_widget(loc[:-1])
             stacked = parent_splitter.widget(loc[-1])
+            child_size = stacked.size()
+
             child_splitter = QtGui.QSplitter(orientation)
             parent_splitter.insertWidget(loc[-1], child_splitter)
+
             child_splitter.addWidget(stacked)
             child_splitter.addWidget(QtGui.QStackedWidget())
+            child_splitter.resize(child_size)
             
             split_layout = self.get_layout(loc)
             split_view = split_layout[0]
             split_layout.clear()
             split_layout.extend([[split_view], []])
-            
+
             clone = split_view.clone()
             self.place(clone, loc + [1])
             

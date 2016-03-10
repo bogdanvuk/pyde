@@ -18,8 +18,8 @@ def reload_config_for_win(win: Dependency('win')):
     ddic['view/interpret'].widget.pos = 0
     ddic['view/interpret'].widget.anchor = 0
     
-    from PyQt4.QtCore import Qt
-    win.layout.split([0], Qt.Horizontal)
-    win.layout.split([0, 1], Qt.Vertical)
-    win.layout.split([0, 1, 0], Qt.Horizontal)
+#     from PyQt4.QtCore import Qt
+#     win.layout.split([0], Qt.Horizontal)
+#     win.layout.split([0, 1], Qt.Vertical)
+#     win.layout.split([0, 1, 0], Qt.Horizontal)
 

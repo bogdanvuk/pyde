@@ -84,6 +84,9 @@ class ContentAssistWidget(QtCore.QObject):
     def next_line(self):
         self.editor.SendScintilla(QsciScintilla.SCI_LINEDOWN)
 
+    def hasFocus(self):
+        return True
+
     def show(self):
 #         print('show: ' + self.editor.text()[self.ca_start:self.editor.pos])
 #         print('show list: ', ' '.join(sorted(self.sieve())))

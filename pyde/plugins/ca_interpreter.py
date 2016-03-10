@@ -88,7 +88,7 @@ class CompleteCommand:
             if k in self.acceptor:
                 pass
             else:
-                self.acceptor[k] = Completion(k, start)
+                self.acceptor[k.name] = Completion(k.name, start)
     
     def complete_path_part(self, editor, node, feature, parse_node):
         parts = [p.parse_node.text for p in node.part][:feature[1]]

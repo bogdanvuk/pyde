@@ -3,7 +3,7 @@ from pyde.ddi import Dependency, ddic
 from PyQt4.QtGui import QWidget
 from PyQt4 import QtCore, QtGui
 import fnmatch
-from pyde.plugins.context import uri2str
+from pyde.plugins.parser import uri2str
 
 class KeyDispatcher(QObject):
     def __init__(self):

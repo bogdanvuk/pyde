@@ -7,7 +7,7 @@ class DumpConfig(QObject):
     
     def __init__(self, app: Dependency('app'), wspace_path: Dependency('config/wspace/path')):
         super().__init__(app)
-        app.aboutToQuit.connect(self.dump)
+#         app.aboutToQuit.connect(self.dump)
         self.wspace_path = wspace_path
 
     def dump_config_for(self, feature):
@@ -25,5 +25,3 @@ class DumpConfig(QObject):
             f.write(self.dump_config_for('win_layout'))
             f.write(self.dump_config_for('win'))
             f.write('\n\n')
-
-# 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 1718 19 20 21 22 23 24 25 26

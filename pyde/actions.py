@@ -95,8 +95,8 @@ class ViewListContentAssist(FuncArgContentAssist):
 
 @diinit
 def execute_action(win : Dependency('win'), active_view = None):
-    interpret = win.child['interpret'].widget
-    interpret.execute_view_action(win.active_view())
+    interpret = win.child_by_name('interpret').widget
+    interpret.execute_view_action(active_view)
 
 @diinit
 def close_view(win : Dependency('win'), active_view = None):
@@ -105,9 +105,11 @@ def close_view(win : Dependency('win'), active_view = None):
 
 @diinit
 def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
-    if view_name in win.child:
+    view = win.child_by_name(view_name)
+    if view:
         active_view = win.active_view()
-        win.widget.place(win.child[view_name], active_view.last_location)
+        win.layout.place(view, active_view.last_location)
+        view.set_focus()
 #         win.widget.place(win.child[view_name].widget, 
 #                        active_view.last_location)
 # 
@@ -124,7 +126,7 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
 def execute_action_template_shortcut(func):
     @diinit
     def wrapper(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
-        interpret = win.child['interpret'].widget
+        interpret = win.child_by_name('interpret').widget
         execute_action.action(win, active_view)
         TemplFunc(func).apply(interpret)
         ca.activate(interpret.view)
@@ -217,8 +219,9 @@ def content_assist(win : Dependency('win'), ca : Dependency('content_assist'), a
 #     app.active_widget().content_assist()
 #     
 def evaluate(active_view = None):
-    if 'ca_view' in active_view.child:
-        active_view.child['ca_view'].widget.select()
+    ca_view = active_view.child_by_name('ca_view')
+    if ca_view:
+        ca_view.widget.select()
 
     active_view.widget.evaluate()
 # 

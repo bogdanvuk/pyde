@@ -1,8 +1,5 @@
 from PyQt4 import QtCore
 from pyde.ddi import Dependency
-from pyde.plugins.context import uri2str
-import fnmatch
-from inspect import signature
 
 def KeyActionDfltCondition(key_action, active_view, event):
 #     return (fnmatch.fnmatch(uri2str(active_view.uri), key_action.view_uri) and
