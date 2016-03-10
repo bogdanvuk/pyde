@@ -29,12 +29,15 @@ class Layout(QObject):
         pass
     
     def _get_layout_rec(self, layout, loc):
-        cur = loc[0]
-        rest = loc[1:]
-        if rest:
-            return self._get_layout_rec(layout[cur], rest)
+        if loc:
+            cur = loc[0]
+            rest = loc[1:]
+            if rest:
+                return self._get_layout_rec(layout[cur], rest)
+            else:
+                return layout[cur]
         else:
-            return layout[cur]
+            return layout
     
     def get_layout(self, loc):
         return self._get_layout_rec(self.layout, loc)
@@ -46,12 +49,22 @@ class Layout(QObject):
             
         return w
 
-    
+    def _search_locs_rec(self, layout, loc):
+        if len(layout) == 2:
+            for i in range(2):
+                yield from self._search_locs_rec(layout[i], loc + [i])
+        elif len(layout) == 1:
+            yield (loc, layout[0])
+            
+
+    def search_locs(self, loc=[]):
+        layout = self.get_layout(loc)
+        yield from self._search_locs_rec(layout, loc)
 
     def place(self, view, loc=[0]):
         
         place_layout = self.get_layout(loc)
-        view.last_location = loc
+#         view.last_location = loc
         place_layout.clear()
         place_layout.append(view)
         

@@ -212,20 +212,14 @@ class PyInerpretEditor(PydeEditor):
     def execute_view_action(self, view):
         self.focus_view = view
         self.view.set_focus()
-
-    def focusOutEvent(self, event):
-        self.focus_view = None
+#         ddic['actions/switch_view'](self.view, self.view.last_location)
 
     def evaluate(self):
         if self.focus_view is not None:
-            self.focus_view.set_focus()
-#         if self.SendScintilla(QsciScintilla.SCI_AUTOCACTIVE):
-#             self.SendScintilla(QsciScintilla.SCI_AUTOCCOMPLETE)
-#         else:
+            ddic['actions/switch_view'](self.focus_view, self.focus_view.last_location)
+            self.focus_view = None
+
         cmd = self.cmd_text()
-        
-#             buffer = StringIO()
-#             sys.stdout = buffer
         
         self.pos = self.length()
         

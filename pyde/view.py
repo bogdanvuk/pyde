@@ -63,16 +63,15 @@ class View: #(DependencyScope):
         view.parent = self
         
     def remove(self, view):
-        for i, c in enumerate(self.child):
-            if c == view:
-                del self.child[i]
-                return
+        del self.child[self.child.index(view)]
 
     def show(self, location):
         self.parent.place(self, location)
 
     def delete(self):
         self.parent.remove(self)
+        self.widget.hide()
+        self.widget.parent = None
 #         del self.parent.child[self.name]
         
     def dump_config(self, var_name):

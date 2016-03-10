@@ -7,6 +7,7 @@ from functools import wraps, partial
 from inspect import getfullargspec, getargspec, signature
 from pyde.plugins.templating import TemplFunc, FuncArgContentAssist
 from PyQt4.QtCore import Qt
+import gc
 
 def all2kwargs(func, *args, **kwargs):
     arg_names, _, defaults, _, _, _, _ = getfullargspec(func)
@@ -98,29 +99,64 @@ def execute_action(win : Dependency('win'), active_view = None):
     interpret = win.child_by_name('interpret').widget
     interpret.execute_view_action(active_view)
 
-@diinit
-def close_view(win : Dependency('win'), active_view = None):
-    active_view.delete()
-    ddic.unprovide('view/{}'.format(active_view.name))
+view_history_stack = []
 
 @diinit
-def switch_view(view_name : ViewListContentAssist, win : Dependency('win')):
-    view = win.child_by_name(view_name)
+def close_view(win : Dependency('win'), active_view = None):
+    switch_view(view_history_stack[-2], active_view.last_location)
+    active_view.delete()
+    ddic.unprovide('view/{}'.format(active_view.name))
+    del view_history_stack[view_history_stack.index(active_view)]
+
+@diinit
+def cycle_frame(win : Dependency('win'), active_view = None):
+    all_locs = [l for l in win.layout.search_locs()]
+    for i, loc in enumerate(all_locs):
+        if loc[0] == active_view.last_location:
+            cur_ind = i
+    
+    next_ind = cur_ind + 1
+    if next_ind == len(all_locs):
+        next_ind = 0
+    
+    all_locs[next_ind][1].set_focus()
+
+@diinit
+def split_frame_horizontal(win : Dependency('win'), active_view = None):
+    win.layout.split(active_view.last_location, orientation=Qt.Vertical)
+
+@diinit
+def split_frame_vertical(win : Dependency('win'), active_view = None):
+    win.layout.split(active_view.last_location, orientation=Qt.Horizontal)
+    
+@diinit
+def switch_view(view : ViewListContentAssist, location=None, win : Dependency('win')  = None):
+    if isinstance(view,str):
+        view = win.child_by_name(view)
+        
     if view:
-        active_view = win.active_view()
-        win.layout.place(view, active_view.last_location)
-        view.set_focus()
-#         win.widget.place(win.child[view_name].widget, 
-#                        active_view.last_location)
-# 
-#         win.child[view_name].set_focus()
+        if location is None:
+            active_view = win.active_view()
+            location = active_view.last_location
+            
+        win.layout.place(view, location)
+        
+        try:
+            del view_history_stack[view_history_stack.index(view)]  
+        except ValueError:
+            pass
+        
+        view_history_stack.append(view)
+        view.last_location = location
+        view.widget.setFocus()
+#         view.set_focus()
 
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
     active_view = win.active_view()
     view = ddic['cls/view'](os.path.basename(path), win, file_name=path)
     ddic.provide('view/' + view.name, view) 
-    win.widget.place(view, active_view.last_location)
+    switch_view(view, active_view.last_location)
 #     win.place_view(view, active_view.widget.last_location)
 
 def execute_action_template_shortcut(func):

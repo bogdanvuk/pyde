@@ -7,6 +7,7 @@ from PyQt4.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
 from pyde.ddi import diinit, Dependency
+import inspect
 
 class FuncArgContentAssist(QObject):
     language = None
@@ -19,7 +20,8 @@ class TemplFunc:
         self.actuator = actuator
         params = []
         for _,p in self.sig.parameters.items():
-            params.append('{' + p.name + '}')
+            params.append('{' + str(p).split(':')[0] + '}')
+#             params.append(str(p).split(':')[0])
         
         self.text = self.func.__name__ + '(' + ','.join(params) + ')'        
         
@@ -33,8 +35,10 @@ class TemplFunc:
         p = self.sig.parameters[key]
         if issubclass(p.annotation, FuncArgContentAssist):
             return p.annotation().init_value
-        else:
+        elif p.default is inspect._empty:
             return key
+        else:
+            return str(p.default)
         
     def param_pos(self, key, text):
 #         p = self.sig.parameters[key]
@@ -65,7 +69,13 @@ class TemplPosition:
     def __init__(self, re_match=None):
         if re_match is not None:
             self.text = re_match.group()[1:-1]
-            self.name = self.text
+            elems = self.text.split('=')
+            if len(elems) == 1:
+                self.name = self.text
+                self.def_val = None
+            else:
+                self.name, self.def_val = elems
+
             self.pos = re_match.span()[0] + 1
     
     def __len__(self):
@@ -79,8 +89,10 @@ class TemplPosition:
         
 
 class TemplContext(object):
-    PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{\w+?(?:\.\w+?)*}|'
-                      r'{\w+?(?:\.\w+?)*:[^}]+?})')
+#     PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{\w+?(?:\.\w+?)*}|'
+#                       r'{\w+?(?:\.\w+?)*:[^}]+?})')
+    PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{[\w=]+?(?:\.[\w=]+?)*}|'
+                      r'{[\w=]+?(?:\.\[\w=]?)*:[^}]+?})')
     
     def __init__(self, templ, insert_pos):
         self.templ = templ

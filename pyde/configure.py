@@ -85,6 +85,21 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/close_view',
                                     'key': Qt.Key_W,
                                     'modifier': Qt.ControlModifier})
 
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/cycle_frame', 
+                       inst_kwargs={'action': actions.cycle_frame,
+                                    'key': Qt.Key_S,
+                                    'modifier': Qt.AltModifier})
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/split_frame_vertical', 
+                       inst_kwargs={'action': actions.split_frame_vertical,
+                                    'key': Qt.Key_4,
+                                    'modifier': Qt.AltModifier})
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/split_frame_horizontal', 
+                       inst_kwargs={'action': actions.split_frame_horizontal,
+                                    'key': Qt.Key_4,
+                                    'modifier': Qt.AltModifier + Qt.ShiftModifier})
+
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/execute_action', 
                        inst_kwargs={'action': actions.execute_action,
                                     'key': Qt.Key_A,
@@ -147,19 +162,6 @@ ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 
 sys.path.append('/data/projects/pyde/wspace')
 
-# ddic.provide('win_layout', ddic['cls/layout'](Layout(QtCore.Qt.Vertical, [ChildLayout(5, None), ChildLayout(1, None)])))
-# ddic.provide('win', ddic['cls/view']('win'))
-#  
-# view = ddic['cls/view']('scratch.py', ddic['win'], file_name=os.path.join(ddic['config/wspace/path'], 'scratch.py'))
-# ddic.provide('view/scratch.py', view)
-# ddic['win'].widget.place(view, [0])
-#  
-# view = ddic['cls/view']('interpret', ddic['win'])
-# ddic.provide('view/interpret', view)
-# ddic['win'].widget.place(view, [1])
-
-
-    
 from wspace import config
 import inspect
   

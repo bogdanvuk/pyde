@@ -26,10 +26,8 @@ class KeyDispatcher(QObject):
     
     def eventFilter(self, source, event):
 #         resp = False
+#         active_view = None
         if (event.type() == QtCore.QEvent.KeyPress):
-            if event.key() == 75:
-                pass
-            print(event.key())
             active_view = source.active_view()
 #             active_view = source.view
             while active_view.parent is not None:
@@ -38,14 +36,15 @@ class KeyDispatcher(QObject):
                         if fnmatch.fnmatch(uri2str(active_view.uri), a[0]):
                             ret = a[1].event(active_view, event)
                             if ret:
+#                                 import gc
+#                                 ref = gc.get_referrers(active_view)
+#                                 refw = gc.get_referrers(active_view.widget)
+
                                 return True
             
                 active_view = active_view.parent
-
         
-#         if resp:
-#             return True
-#         else:
+
         return QtGui.QWidget.eventFilter(self, source, event)
 
     

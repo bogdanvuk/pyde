@@ -154,7 +154,10 @@ class ContentAssistWidget(QtCore.QObject):
     def close_char_deleted(self):
         print('close_char_deleted')
         self.show()
-        
+    
+    def hide(self):
+        pass
+    
     def close(self):
         self.editor.SCN_AUTOCSELECTION.disconnect(self.close_selected)
         self.editor.SCN_AUTOCCANCELLED.disconnect(self.close)
