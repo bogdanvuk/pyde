@@ -216,7 +216,7 @@ class PyInerpretEditor(PydeEditor):
 
     def evaluate(self):
         if self.focus_view is not None:
-            ddic['actions/switch_view'](self.focus_view, self.focus_view.last_location)
+            ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
             self.focus_view = None
 
         cmd = self.cmd_text()

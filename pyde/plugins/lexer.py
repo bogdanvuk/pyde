@@ -6,7 +6,8 @@ class Lexer:
     mode_lexer_map = {
                       'ipython' : Qsci.QsciLexerPython
                       }
-    def __init__(self, view: Dependency('view/', lambda v: hasattr(v, 'mode'))):
+    def __init__(self, widget: Dependency('widget/', lambda v: hasattr(v.view, 'mode'))):
+        view = widget.view
         mode = view.mode
         if mode.name in self.mode_lexer_map:
             lexer_cls = self.mode_lexer_map[mode.name]
@@ -25,8 +26,8 @@ class Lexer:
             font.setFixedPitch(True)
             font.setPointSize(10)
         
-            lexer = lexer_cls(mode.view.widget)
+            lexer = lexer_cls(widget)
             lexer.setDefaultFont(font)
-            view.widget.setLexer(lexer)
+            widget.setLexer(lexer)
 
         

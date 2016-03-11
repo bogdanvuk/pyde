@@ -8,6 +8,7 @@ from inspect import getfullargspec, getargspec, signature
 from pyde.plugins.templating import TemplFunc, FuncArgContentAssist
 from PyQt4.QtCore import Qt
 import gc
+from PyQt4.QtGui import QApplication
 
 def all2kwargs(func, *args, **kwargs):
     arg_names, _, defaults, _, _, _, _ = getfullargspec(func)
@@ -112,22 +113,22 @@ def close_view(win : Dependency('win'), active_view = None):
 def cycle_frame(win : Dependency('win'), active_view = None):
     all_locs = [l for l in win.layout.search_locs()]
     for i, loc in enumerate(all_locs):
-        if loc[0] == active_view.last_location:
+        if loc[0] == QApplication.focusWidget().loc:
             cur_ind = i
     
     next_ind = cur_ind + 1
     if next_ind == len(all_locs):
         next_ind = 0
     
-    all_locs[next_ind][1].set_focus()
+    all_locs[next_ind][1].setFocus()
 
 @diinit
 def split_frame_horizontal(win : Dependency('win'), active_view = None):
-    win.layout.split(active_view.last_location, orientation=Qt.Vertical)
+    win.layout.split(active_view.widget.loc, orientation=Qt.Vertical)
 
 @diinit
 def split_frame_vertical(win : Dependency('win'), active_view = None):
-    win.layout.split(active_view.last_location, orientation=Qt.Horizontal)
+    win.layout.split(active_view.widget.loc, orientation=Qt.Horizontal)
     
 @diinit
 def switch_view(view : ViewListContentAssist, location=None, win : Dependency('win')  = None):
@@ -136,8 +137,9 @@ def switch_view(view : ViewListContentAssist, location=None, win : Dependency('w
         
     if view:
         if location is None:
-            active_view = win.active_view()
-            location = active_view.last_location
+            location = QApplication.focusWidget().loc
+#             active_view = win.active_view()
+#             location = active_view.last_location
             
         win.layout.place(view, location)
         
@@ -147,16 +149,17 @@ def switch_view(view : ViewListContentAssist, location=None, win : Dependency('w
             pass
         
         view_history_stack.append(view)
-        view.last_location = location
+#         view.last_location = location
         view.widget.setFocus()
 #         view.set_focus()
 
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):
-    active_view = win.active_view()
+#     active_view = win.active_view()
     view = ddic['cls/view'](os.path.basename(path), win, file_name=path)
-    ddic.provide('view/' + view.name, view) 
-    switch_view(view, active_view.last_location)
+    ddic.provide('view/' + view.name, view)
+    active_widget = QApplication.focusWidget()
+    switch_view(view, active_widget.loc)
 #     win.place_view(view, active_view.widget.last_location)
 
 def execute_action_template_shortcut(func):

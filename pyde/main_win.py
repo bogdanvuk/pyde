@@ -13,43 +13,12 @@ class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, view: Amendment('win')): #, layout: Dependency('win_layout')):
         QtGui.QMainWindow.__init__(self)
-#         self.view = View(self)
-#         self.name = 'winview'
-        view.widget = self
-#         self.view = View(self, ddic)
-        self.setWindowTitle("Writer")
-#         self.resize(800, 600)
 
-#         centralwidget = QtGui.QWidget(self)
-#         centralwidget.setObjectName("centralwidget")
-#         
-#         gridLayout = QtGui.QGridLayout(centralwidget)
-#         gridLayout.setObjectName("gridLayout")
-#         self.centralLayout = gridLayout
-#         
-#         self.setCentralWidget(centralwidget)
-#         self.centralLayout.addWidget(layout, 0, 0, 1, 1)
-#         self.centralWidget = layout
-        
-#         self.view = view_scope
+        view.widget = self
+        self.setWindowTitle("Writer")
         
         QtCore.QMetaObject.connectSlotsByName(self)
         self.views = {}
-    
-#     def place(self, view, location=[0]):
-#         self
-#         view.last_location = location
-#         self.centralWidget.add_view(view, location)
-       
-#     def add_view(self, view, location=[0]):
-#         self.context.update_context(self, ['/', view.name], view)
-#         self.centralWidget.add_view(view, location)
-#         self.view_added.emit(view)
-#         self.view_scope.provide(view.name, view)
-#         self.views.append(view)
-
-#     def add_view(self, view):
-#         self.views[view.name] = view
 
     def active_view(self):
         return QApplication.focusWidget().view.active_view()
@@ -87,9 +56,3 @@ class MainWindow(QtGui.QMainWindow):
         config.extend(v.config)
         
         return '\n'.join(config)
-
-#     def keyPressEvent(self, event):
-# #         print("key_press")
-#         if not app.key_press_fire_action(event, self):
-#             QtGui.QMainWindow.keyPressEvent(self, event)
-           

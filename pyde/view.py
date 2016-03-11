@@ -1,12 +1,14 @@
 from PyQt4 import QtCore
 from pyde.ddi import DependencyScope, ddic
 from weakref import WeakValueDictionary
+from PyQt4.QtCore import QObject
 
-class View: #(DependencyScope):
+class View(QObject): #(DependencyScope):
 #     child_added = QtCore.pyqtSignal(QtCore.QObject)
     
     def __init__(self, name, parent=None, widget=None, **kwargs):
 #         super().__init__(name, parent)
+        super().__init__()
         self.child = []
         self.name = name
         self.config = kwargs
@@ -14,9 +16,17 @@ class View: #(DependencyScope):
             parent.child.append(self)
         self.parent = parent
         self.clones = []
-        self._widget = widget
+        self.active_widget = None
+
+        if widget:
+            self._widget = [widget]
+        else:
+            self._widget = []
+            
         for k,v in kwargs.items():
             setattr(self, k, v)
+            
+        ddic['app'].focusChanged.connect(self.focus_changed)
 
     def child_by_name(self, name):
         for c in self.child:
@@ -25,13 +35,20 @@ class View: #(DependencyScope):
             
         return None
 
-    def clone(self, **kwargs):
-        kwargs.update(self.config)
-        clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
-        self.clones.append(clone)
-        clone.widget = self.widget.clone()
-        ddic.provide('view/', clone)
-        return clone
+    def clone_widget(self):
+        w = self.widget.clone()
+        self.widget = w
+        ddic.provide('widget/', w)
+        
+        return w
+
+#     def clone(self, **kwargs):
+#         kwargs.update(self.config)
+#         clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
+#         self.clones.append(clone)
+#         clone.widget = self.widget.clone()
+#         ddic.provide('view/', clone)
+#         return clone
             
     @property
     def uri(self):
@@ -44,18 +61,26 @@ class View: #(DependencyScope):
     
     @property
     def widget(self):
-        return self._widget
-    
+        return self.active_widget
+
     @widget.setter
     def widget(self, value):
-        self._widget = value
+        self._widget.append(value)
+
+        if self.active_widget is None:
+            self.active_widget = value
+            
         value.view = self
+    
+    def focus_changed(self, old, new):
+        if new in self._widget:
+            self.active_widget = new
     
     def set_focus(self, view=None):
         if view is None:
             self.parent.set_focus(self)
         else:
-            self.layout.place(view, view.last_location)
+            self.layout.place(view, view.widget.loc)
             view.widget.setFocus()
 
     def add(self, view):
