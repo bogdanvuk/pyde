@@ -104,7 +104,11 @@ view_history_stack = []
 
 @diinit
 def close_view(win : Dependency('win'), active_view = None):
-    switch_view(view_history_stack[-2], active_view.last_location)
+    
+#     active_view.remove_widget(active_view.widget)
+    for w in active_view._widget:
+        switch_view(view_history_stack[-2], w.last_loc)
+        
     active_view.delete()
     ddic.unprovide('view/{}'.format(active_view.name))
     del view_history_stack[view_history_stack.index(active_view)]
@@ -121,6 +125,10 @@ def cycle_frame(win : Dependency('win'), active_view = None):
         next_ind = 0
     
     all_locs[next_ind][1].setFocus()
+
+@diinit
+def merge_frame(win : Dependency('win'), active_view = None):
+    win.layout.merge(active_view.widget.loc)
 
 @diinit
 def split_frame_horizontal(win : Dependency('win'), active_view = None):
@@ -149,9 +157,6 @@ def switch_view(view : ViewListContentAssist, location=None, win : Dependency('w
             pass
         
         view_history_stack.append(view)
-#         view.last_location = location
-        view.widget.setFocus()
-#         view.set_focus()
 
 @diinit
 def file_open(path : LinpathContentAssist, win : Dependency('win')):

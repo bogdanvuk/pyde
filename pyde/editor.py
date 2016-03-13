@@ -1,9 +1,6 @@
-from pyde.pyde_widget import PydeWidget
 from PyQt4.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
-from pyde.ddi import Dependency, diinit, Amendment
-from collections import OrderedDict
-from pyde.view import View
+from pyde.ddi import Amendment
 import os
 from PyQt4.QtCore import Qt
 

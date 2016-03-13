@@ -29,6 +29,8 @@ class KeyDispatcher(QObject):
 #         active_view = None
         if (event.type() == QtCore.QEvent.KeyPress):
             active_view = source.active_view()
+#             print(hex(int(event.modifiers())))
+#             print(event.key())
 #             active_view = source.view
             while active_view.parent is not None:
                 for actions in reversed(self.actions):

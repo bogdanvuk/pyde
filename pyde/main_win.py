@@ -51,8 +51,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.config.append(view.dump_config("ddic['view/{}']".format(view.name)))
                 self.loc.pop()
         
-        v = LayoutVisitor()
-        v.visit(self.centralWidget)
-        config.extend(v.config)
+#         v = LayoutVisitor()
+#         v.visit(self.centralWidget)
+        config.append(self.view.layout.dump_config('win.layout'))
         
         return '\n'.join(config)

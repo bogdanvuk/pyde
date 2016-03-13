@@ -10,6 +10,7 @@ class StatusBar(QtGui.QStatusBar):
         app.focusChanged.connect(self.view_changed_focus)
 
     def view_changed_focus(self, old, now):
-        name = getattr(now, 'name', '')
-        self.showMessage(name)
+        if now:
+            name = getattr(now.view, 'name', '')
+            self.showMessage(name)
         

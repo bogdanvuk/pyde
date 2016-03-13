@@ -1,11 +1,9 @@
 from pyde.ddi import ddic, Dependency
 from pyde.main_win import MainWindow
-from pyde.application import App
 import sys
-from pyde.editors.python import PythonEdit
 from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
-from pyde.plugins.ast_manager import EditorAstManager, IPythonEditorAstManager
+from pyde.plugins.ast_manager import IPythonEditorAstManager
 from pyde.plugins.editor_mode import IPythonMode,\
     ViewModeExtensionFactory
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
@@ -15,7 +13,6 @@ from pyde.plugins.content_assist import ContentAssist, ContentAssistWidget
 from pyde.plugins.ca_interpreter import PyInterpretContentAssist
 from pyde.plugins.keydispatcher import KeyDispatcher
 from pyde.plugins.templating import TemplActuator
-from pyde.plugins.interpret_path_parser import InterpretPathParser
 from pyde.plugins.lexer import Lexer
 from pyde.editor import PydeEditor
 from pyde.plugins.interpret_arg_island_lang import IslandLanguageParserFactory
@@ -97,8 +94,13 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/split_frame_ver
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/split_frame_horizontal', 
                        inst_kwargs={'action': actions.split_frame_horizontal,
-                                    'key': Qt.Key_4,
+                                    'key': Qt.Key_Dollar,
                                     'modifier': Qt.AltModifier + Qt.ShiftModifier})
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/merge_frame', 
+                       inst_kwargs={'action': actions.merge_frame,
+                                    'key': Qt.Key_2,
+                                    'modifier': Qt.AltModifier})
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/execute_action', 
                        inst_kwargs={'action': actions.execute_action,

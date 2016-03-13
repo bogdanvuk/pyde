@@ -71,6 +71,18 @@ class Layout(QObject):
     def search_locs(self, loc=[]):
         widget = self.get_widget(loc)
         yield from self._search_locs_rec(widget, loc)
+        
+    def _iter_layout_rec(self, widget, loc):
+        yield (loc, widget)
+        if isinstance(widget, QtGui.QSplitter):
+            for i in range(2):
+                yield from self._iter_layout_rec(widget.widget(i), loc + [i])
+        elif isinstance(widget, QtGui.QStackedWidget):
+            yield (loc, widget.widget(0))
+            
+    def iter_layout(self, loc=[]):
+        widget = self.get_widget(loc)
+        yield from self._iter_layout_rec(widget, loc)
 
     def place(self, view, loc=[0]):
         
@@ -95,7 +107,11 @@ class Layout(QObject):
         stack.insertWidget(0, widget)
         stack.setCurrentWidget(widget)
         widget.loc = loc
-        
+        if not hasattr(widget, 'last_loc'):
+            widget.last_loc = loc
+            
+        widget.setFocus()
+    
     def split(self, loc, orientation=Qt.Vertical, ratio=(1,1)):
         if loc:
             parent_splitter = self.get_widget(loc[:-1])
@@ -105,7 +121,7 @@ class Layout(QObject):
             child_splitter = QtGui.QSplitter(orientation)
             child_splitter.setSizePolicy(stacked.sizePolicy())
             child_splitter.addWidget(stacked)
-            stacked.widget(0).loc = loc + [0]
+                
             child_splitter.addWidget(QtGui.QStackedWidget())
             
             parent_splitter.insertWidget(loc[-1], child_splitter)
@@ -114,7 +130,10 @@ class Layout(QObject):
 #             split_view = split_layout[0]
 #             split_layout.clear()
 #             split_layout.extend([[split_view], []])
-            self.place(stacked.widget(0).view, loc + [1])
+            if stacked.count():
+                stacked.widget(0).loc = loc + [0]
+                self.place(stacked.widget(0).view, loc + [1])
+                stacked.widget(0).setFocus()
             
             parent_splitter.setSizes(sizes)
             
@@ -133,7 +152,41 @@ class Layout(QObject):
 
 #         for i in range(2):
 #             child_splitter.setStretchFactor(i, ratio[i])
+    def merge(self, loc):
+        parent_splitter = self.get_widget(loc[:-2])
+        splitter = parent_splitter.widget(loc[-2])
+        stacked = splitter.widget(loc[-1])
         
+        sizes = parent_splitter.sizes()
+        
+        parent_splitter.insertWidget(loc[-2], stacked)
+        splitter.hide()
+        if loc[-2] == 0:
+            parent_splitter.insertWidget(1, parent_splitter.widget(2))
+        
+        stacked.widget(0).loc = loc[:-1]
+
+#         self.place(stacked.widget(0).view, loc + [1])
+        
+        parent_splitter.setSizes(sizes)
+        
+        stacked.widget(0).setFocus()
+    
+    def dump_config(self, var_name):
+        config = []
+        config.append('from PyQt4.QtCore import Qt')
+        for loc, widget in self.iter_layout():
+            if isinstance(widget, QtGui.QSplitter):
+                config.append('{}.split({}, {})'.format(var_name, loc, 'Qt.Vertical' if widget.orientation() == Qt.Vertical else 'Qt.Horizontal'))
+                config.append('{}.get_widget({}).setSizes({})'.format(var_name, loc, widget.sizes()))
+            elif isinstance(widget, QtGui.QStackedWidget):
+                config.append("ddic['actions/switch_view'](ddic['view/{}'], {})".format(widget.widget(0).view.name, loc))
+#         
+#         config.append('from pyde.pyde_frame import ChildLayout, Layout')
+#         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
+        return '\n'.join(config)
+
+
     
 class FrameWidget(QtGui.QSplitter):
     

@@ -42,6 +42,12 @@ class View(QObject): #(DependencyScope):
         
         return w
 
+    def remove_widget(self, w):
+        del self._widget[self._widget.index(w)]
+        ddic.unprovide('widget/{}'.format(id(w)))
+        if not self._widget:
+            self.delete()
+
 #     def clone(self, **kwargs):
 #         kwargs.update(self.config)
 #         clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
@@ -95,13 +101,15 @@ class View(QObject): #(DependencyScope):
 
     def delete(self):
         self.parent.remove(self)
-        self.widget.hide()
-        self.widget.parent = None
+        for w in self._widget:
+            w.hide()
+            w.parent = None
+            w.view = None
 #         del self.parent.child[self.name]
         
     def dump_config(self, var_name):
         config = []
-        for _, child in self.child.items():
+        for child in self.child:
             config_dump = []
             for name, c in child.config.items():
                 config_dump.append("{}='{}'".format(name, str(c)))
