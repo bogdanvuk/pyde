@@ -3,7 +3,7 @@ from pyde.main_win import MainWindow
 import sys
 from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
-from pyde.plugins.ast_manager import IPythonEditorAstManager
+from pyde.plugins.ast_manager import IPythonEditorAstManager, EditorAstManager
 from pyde.plugins.editor_mode import IPythonMode,\
     ViewModeExtensionFactory
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
@@ -55,11 +55,14 @@ ddic.provide_on_demand('filebuf/cls/def_filebuf', Filebuf, 'filebuf/inst/')
 
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
 ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))
+ddic.provide('parser/cls/vhdl', Antlr4ParserFactory('vhdl', 'design_file'))
 ddic.provide('parser/cls/view_list', ViewListParser)
 ddic.provide_on_demand('parser/cls/interpret_path_parser', IslandLanguageParserFactory('linpath'), 'parser/interpret_path_parser/inst')
 ddic.provide_on_demand('parser/cls/interpret_view_list_parser', IslandLanguageParserFactory('view_list'), 'parser/interpret_view_list_parser/inst')
 #ddic.provide_on_demand('cls/editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'mode': Dependency('mode/inst/', lambda e: e.name != "ipython")})
 ddic.provide_on_demand('cls/ipython_editor_ast_manager', IPythonEditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'view': Dependency('view/', lambda e: e.mode.name == "ipython")})
+ddic.provide_on_demand('cls/vhdl_editor_ast_manager', EditorAstManager, inst_feature='editor_ast_manager/inst/', deps={'view': Dependency('view/', lambda e: e.mode.name == "vhdl")})
+
 #ddic.provide_on_demand('parser/antlr4_generic', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 # ddic.provide_on_demand('parser/cls/', inst_feature='parser/inst/', inst_kwargs = {'language': 'python3'}, deps={'mode': Dependency('mode/python/inst/')})
 
