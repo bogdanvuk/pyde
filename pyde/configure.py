@@ -54,6 +54,8 @@ ddic.provide_on_demand('filebuf/cls/def_filebuf', Filebuf, 'filebuf/inst/')
 
 
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
+ddic.provide('parser/cls/python', Antlr4ParserFactory('python3', 'file_input'))
+ddic.provide('parser/cls/ipython', Antlr4ParserFactory('python3', 'file_input'))
 ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))
 ddic.provide('parser/cls/vhdl', Antlr4ParserFactory('vhdl', 'design_file'))
 ddic.provide('parser/cls/view_list', ViewListParser)

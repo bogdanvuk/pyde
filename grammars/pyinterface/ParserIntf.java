@@ -203,6 +203,19 @@ public class ParserIntf {
 					json.put("tree", jsTree);
 					json.put("tokens", jsTokens);
 					for (Token tok : tokens.getTokens()) {
+//						JSONArray jsTok = new JSONArray();
+//						jsTok.put(tok.getLine());
+//						jsTok.put(tok.getStartIndex());
+//						jsTok.put(tok.getStopIndex());
+//						jsTok.put(tok.getChannel());
+//						jsTok.put(tok.getTokenIndex());
+//						if (tok.getStartIndex() <= tok.getStopIndex()) {
+//							jsTok.put(tok.getText());
+//						} else {
+//							jsTok.put("");
+//						}
+//						jsTok.put(parser.getVocabulary().getSymbolicName(tok.getType()));
+//						jsTok.put(tok.getCharPositionInLine());
 						JSONObject jsTok = new JSONObject();
 						jsTok.put("line", tok.getLine());
 						jsTok.put("start", tok.getStartIndex());
@@ -243,19 +256,12 @@ public class ParserIntf {
 				String text = out.toString();
 				System.out.format("Serialize: %d\n", System.currentTimeMillis() - startTime);
 				startTime = System.currentTimeMillis();
-//				System.out.println(text);
 				logger.info("RESPONSE:");
-				//BufferedWriter log = new BufferedWriter(new OutputStreamWriter(System.out, "ASCII"), 256);
-//				server.send(text);
+
 				responseStream.write(text.getBytes());
 				responseStream.write("\n".getBytes());
 				responseStream.flush();
-//                server.send("\n");
-//                server.flush();
 
-//				log.write(text);
-//				log.write("\n");
-//				log.flush();
 				System.out.format("Send Results: %d\n", System.currentTimeMillis() - startTime);
 				System.out.println();
 			}

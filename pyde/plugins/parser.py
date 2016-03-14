@@ -259,7 +259,7 @@ class SemanticTreeBuilder(ParseTreeVisitor):
         
     def visit(self, node):
         if hasattr(node, 'features') and node.features:
-            if 'callable' in node.features:
+            if node.type == 'use_clause':
                 pass
             parent = self.cur_parent
             semantic_node = self.semantic_ast[node.type](parse_node = node, parent=parent)
@@ -278,7 +278,7 @@ class SemanticTreeBuilder(ParseTreeVisitor):
 
             self.cur_parent = parent
             return semantic_node
-        elif (isinstance(node, collections.Iterable)) and (len(node) > 0):
+        elif (isinstance(node, collections.Iterable)) and (len(node) == 1):
             return self.visit(node[0])
         elif hasattr(node, 'text'):
             return node.text
@@ -466,7 +466,19 @@ class Antlr4GenericParser:
 #                               self.language + '.' + self.language, 
 #                               self.start_rule, '-json', active_text], stdout=subprocess.PIPE).communicate()[0]
 #         parse_out = json.loads(p.decode())
+#         if self.language == 'vhdl':
+#             parser = Antlr4GenericParser('vhdl', 'design_file')
+#             import time
+#             start_time = time.time()
+#             ret = parser.parser_io.communicate(active_text)
+#         #     tree = parser.parse(text, (0, len(text)))
+#             print("--- %s seconds ---" % (time.time() - start_time))
+#             pass
         ret = self.parser_io.communicate(active_text)
+        
+#         if self.language == 'vhdl':
+#             pass
+
         parse_out = json.loads(ret)
         self.tokens = TokenSequence(parse_out['tokens'], text_range[0])
         dict_tree = parse_out['tree']

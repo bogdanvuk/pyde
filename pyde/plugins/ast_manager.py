@@ -1,6 +1,6 @@
 from PyQt4.Qsci import QsciScintilla
 from PyQt4 import QtCore, QtGui
-from pyde.ddi import Dependency, Amendment
+from pyde.ddi import Dependency, Amendment, ddic
 from pyde.plugins.parser import Antlr4GenericParser
 
 class EditorAstManager(QtCore.QObject):
@@ -12,14 +12,15 @@ class EditorAstManager(QtCore.QObject):
         super().__init__()
         self.qthread = QtCore.QThread()
         self.moveToThread(self.qthread)
-        if view.mode.name in ['python', 'ipython']:
-            language = 'python3'
-            start_rule = 'file_input'
-        else:
-            language = view.mode.name
-            start_rule = 'main'
+#         if view.mode.name in ['python', 'ipython']:
+#             language = 'python3'
+#             start_rule = 'file_input'
+#         else:
+#             language = view.mode.name
+#             start_rule = 'main'
             
-        self.parser = Antlr4GenericParser(language, start_rule)
+#         self.parser = Antlr4GenericParser(language, start_rule)
+        self.parser = ddic['parser/cls'][view.mode.name]()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)
@@ -28,7 +29,7 @@ class EditorAstManager(QtCore.QObject):
         self.view = view
         view.ast = self
         self.mode = view.mode
-        self.language = language
+#         self.language = language
         self.editor.SCN_MODIFIED.connect(self.text_modified)
         self.dirty = True
         self.ast = None
