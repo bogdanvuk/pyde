@@ -120,11 +120,24 @@ def cycle_frame(win : Dependency('win'), active_view = None):
         if loc[0] == QApplication.focusWidget().loc:
             cur_ind = i
     
-    next_ind = cur_ind + 1
-    if next_ind == len(all_locs):
-        next_ind = 0
-    
-    all_locs[next_ind][1].setFocus()
+
+    frame_cycled = False
+    next_ind = cur_ind
+    while (not frame_cycled):
+        next_ind = next_ind + 1
+        if next_ind == len(all_locs):
+            next_ind = 0
+            
+        #if we did a full circle
+        if next_ind == cur_ind:
+            break
+ 
+        widget = all_locs[next_ind][1]
+        if hasattr(widget, 'cycle_frame'):
+            frame_cycled = widget.cycle_frame(active_view)
+        else:
+            widget.setFocus()
+            frame_cycled = True
 
 @diinit
 def merge_frame(win : Dependency('win'), active_view = None):

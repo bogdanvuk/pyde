@@ -203,6 +203,9 @@ class PyInerpretEditor(PydeEditor):
 #     def active_range(self):
 #         return (self.prompt_begin, self.length())
 
+    def cycle_frame(self, old):
+        return False
+
     def cmd_range(self):
         return (self.prompt_begin, self.length())
     
