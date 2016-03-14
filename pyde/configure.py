@@ -75,6 +75,12 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_open',
                                     'key': Qt.Key_O,
                                     'modifier': Qt.ControlModifier})
 
+ddic.provide('actions/file_save', actions.file_save)
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_save', 
+                       inst_kwargs={'action': actions.file_save,
+                                    'key': Qt.Key_S,
+                                    'modifier': Qt.ControlModifier})
+
 ddic.provide('actions/switch_view', actions.switch_view)
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/switch_view', 
                        inst_kwargs={'action': actions.execute_action_template_shortcut(actions.switch_view),

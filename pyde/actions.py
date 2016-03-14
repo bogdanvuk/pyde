@@ -180,6 +180,10 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
     switch_view(view, active_widget.loc)
 #     win.place_view(view, active_view.widget.last_location)
 
+@diinit
+def file_save(win : Dependency('win'), active_view: ViewListContentAssist):
+    active_view.filebuf.save()
+
 def execute_action_template_shortcut(func):
     @diinit
     def wrapper(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
