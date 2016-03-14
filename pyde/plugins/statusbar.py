@@ -61,13 +61,14 @@ class DefStatusProvider:
         self.refresh()
     
     def refresh(self):
-        vals = []
-        formatting = ''
-        for f in self.fields:
-            formatting += f['formatting']
-            vals.append(f['val'])
-            
-        ddic['view/__statusbar__'].widget.setText(formatting.format(*vals))
+        if 'view/__statusbar__' in ddic:
+            vals = []
+            formatting = ''
+            for f in self.fields:
+                formatting += f['formatting']
+                vals.append(f['val'])
+                
+            ddic['view/__statusbar__'].widget.setText(formatting.format(*vals))
     
     def cycle_frame(self, old):
         return False

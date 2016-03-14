@@ -280,8 +280,10 @@ class SemanticTreeBuilder(ParseTreeVisitor):
             return semantic_node
         elif (isinstance(node, collections.Iterable)) and (len(node) > 0):
             return self.visit(node[0])
-        else:
+        elif hasattr(node, 'text'):
             return node.text
+        else:
+            return ''
 
 class SemanticRule:
     def __init__(self, type_name, rule, features=None):

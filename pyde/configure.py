@@ -26,6 +26,7 @@ from pyde.view import View
 from PyQt4 import QtCore
 import os
 import time
+from pyde.plugins.filebuf import Filebuf
 
 # ddic.create_scope('view')
 #ddic.provide('cls/layout', PydeFrame)
@@ -49,6 +50,8 @@ ddic.provide_on_demand('mode/cls/java', ViewModeExtensionFactory('java', ['.java
 ddic.provide_on_demand('mode/cls/cpp', ViewModeExtensionFactory('cpp', ['.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/vhdl', ViewModeExtensionFactory('vhdl', ['.vhdl', '.vhd']), 'mode/inst/')
 ddic.provide_on_demand('status_provider/cls/def_status_provider', DefStatusProvider, 'status_provider/inst/')
+ddic.provide_on_demand('filebuf/cls/def_filebuf', Filebuf, 'filebuf/inst/')
+
 
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
 ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))

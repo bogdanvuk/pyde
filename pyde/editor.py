@@ -7,7 +7,7 @@ from PyQt4.QtCore import Qt
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and (v.widget is None)), orig_editor=None):
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None)), orig_editor=None):
         if orig_editor:
             super(PydeEditor, self).__init__()
             self.setDocument(orig_editor.document())
@@ -16,14 +16,16 @@ class PydeEditor(QsciScintillaCompat):
             view.widget = self
             self.setAttribute(Qt.WA_KeyCompression)
             self.hide()
-            if hasattr(view, 'file_name'):
-                self.file_name = view.file_name
-                self.read_file(self.file_name)
-            else:
-                self.file_name = None
+            self.setText(view.filebuf.load())
+            self.setModified(False)
+#             if hasattr(view, 'file_name'):
+#                 self.file_name = view.file_name
+#                 self.read_file(self.file_name)
+#             else:
+#                 self.file_name = None
                 
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
-        self.SCN_MODIFIED.connect(self.__modified)
+#         self.SCN_MODIFIED.connect(self.__modified)
         self.cursorPositionChanged.connect(self.__cursorPositionChanged)
         self.view.status_provider.add_field('line_pos', formatting='{:>15}')
 #         self.SCN_PAINTED.connect(self.__painted)
