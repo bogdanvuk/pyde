@@ -5,6 +5,7 @@ from PyQt4.QtCore import QObject
 
 class View(QObject): #(DependencyScope):
     focus_in = QtCore.pyqtSignal(QtCore.QObject)
+    focus_out = QtCore.pyqtSignal(QtCore.QObject)
     
     def __init__(self, name, parent=None, widget=None, **kwargs):
 #         super().__init__(name, parent)
@@ -82,6 +83,8 @@ class View(QObject): #(DependencyScope):
         if new in self._widget:
             self.active_widget = new
             self.focus_in.emit(self.active_widget)
+        else:
+            self.focus_out.emit(self.active_widget)
     
     def set_focus(self, view=None):
         if view is None:

@@ -18,7 +18,7 @@ from pyde.editor import PydeEditor
 from pyde.plugins.interpret_arg_island_lang import IslandLanguageParserFactory
 from pyde.plugins.view_list_parser import ViewListParser
 from pyde.actions import provide_action_args
-from pyde.plugins.statusbar import Statusbar, StatusbarMode
+from pyde.plugins.statusbar import Statusbar, StatusbarMode, DefStatusProvider
 from pyde.plugins.dump_config import DumpConfig
 from pyde.pyde_frame import PydeFrame, ChildLayout
 from pyde.layout import Layout
@@ -48,6 +48,7 @@ ddic.provide_on_demand('mode/cls/bash', ViewModeExtensionFactory('bash', ['.sh']
 ddic.provide_on_demand('mode/cls/java', ViewModeExtensionFactory('java', ['.java']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/cpp', ViewModeExtensionFactory('cpp', ['.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/vhdl', ViewModeExtensionFactory('vhdl', ['.vhdl', '.vhd']), 'mode/inst/')
+ddic.provide_on_demand('status_provider/cls/def_status_provider', DefStatusProvider, 'status_provider/inst/')
 
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
 ddic.provide('parser/cls/linpath', Antlr4ParserFactory('linpath', 'main'))

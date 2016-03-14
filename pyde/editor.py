@@ -7,7 +7,7 @@ from PyQt4.QtCore import Qt
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.widget is None)), orig_editor=None):
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and (v.widget is None)), orig_editor=None):
         if orig_editor:
             super(PydeEditor, self).__init__()
             self.setDocument(orig_editor.document())
@@ -24,6 +24,9 @@ class PydeEditor(QsciScintillaCompat):
                 
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
         self.SCN_MODIFIED.connect(self.__modified)
+        self.cursorPositionChanged.connect(self.__cursorPositionChanged)
+        self.view.status_provider.add_field('line_pos', formatting='{:>15}')
+#         self.SCN_PAINTED.connect(self.__painted)
 
     def clone(self):
         return self.__class__(view=None, orig_editor = self)
@@ -53,6 +56,9 @@ class PydeEditor(QsciScintillaCompat):
     @pos.setter
     def pos(self, val):
         return self.SendScintilla(QsciScintilla.SCI_GOTOPOS, val)
+
+    def __cursorPositionChanged(self, line, index):
+        self.view.status_provider.set('line_pos', 'L{}:C{}:{}%'.format(line, index, round(line*100/self.lines())))
 
     def __modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
                    foldPrev, token, annotationLinesAdded):
