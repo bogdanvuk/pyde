@@ -92,7 +92,9 @@ class CompleteCommand:
     
     def complete_path_part(self, editor, node, feature, parse_node):
         parts = [p.parse_node.text for p in node.part][:feature[1]]
-        path = '/' + os.path.join(*parts)
+        path = '/'
+        if parts:
+            path += os.path.join(*parts)
 #         if feature[1] == len(node.part):
 #             path = node.parse_node.text[:-1]
 #             

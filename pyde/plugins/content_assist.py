@@ -169,6 +169,8 @@ class ContentAssistWidget(QtCore.QObject):
         
         self.ca.deactivate()
 
+    cancel = close
+
     def find_longest_common_sequence(self, l, anywhere=False):
         common_text = ""
         insert_text = ""

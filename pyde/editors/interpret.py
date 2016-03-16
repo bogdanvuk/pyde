@@ -217,6 +217,11 @@ class PyInerpretEditor(PydeEditor):
         self.view.set_focus()
 #         ddic['actions/switch_view'](self.view, self.view.last_location)
 
+    def cancel(self):
+        self.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.prompt_begin, self.length() - self.prompt_begin)
+        if self.focus_view is not None:
+            ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
+
     def evaluate(self):
         if self.focus_view is not None:
             ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)

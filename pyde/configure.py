@@ -169,7 +169,9 @@ def EvaluateKeyActionCondition(key_action, view, event):
 
     return KeyActionDfltCondition(key_action, view, event)
 
-ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/evaluate', 
+ddic.provide_on_demand(**provide_action_args('cancel', Qt.Key_G, Qt.ControlModifier))
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/cancel', 
                        inst_kwargs={'action': actions.evaluate, #dflt_view_action_factory('evaluate'),
                                     'key': Qt.Key_Return,
                                     'modifier': Qt.ControlModifier,

@@ -195,7 +195,7 @@ adding_operator
   ;
 
 aggregate
-  : LPAREN element_association ( COMMA element_association )* RPAREN
+  : LPAREN e_+=element_association ( COMMA e_+=element_association )* RPAREN
   ;
 
 alias_declaration
@@ -243,7 +243,7 @@ architecture_statement
   ;
 
 architecture_statement_part
-  : ( architecture_statement )*
+  : ( stmt_+=architecture_statement )*
   ;
 
 array_nature_definition
@@ -555,7 +555,7 @@ discrete_range
   ;
 
 element_association
-  : (  choices ARROW )? expression
+  : (  ch_=choices ARROW )? expr_=expression
   ;
 
 element_declaration
@@ -571,7 +571,7 @@ element_subtype_definition
   ;
 
 entity_aspect
-  : ENTITY name ( LPAREN identifier RPAREN )?
+  : ENTITY name_=name ( LPAREN id_=identifier RPAREN )?
   | CONFIGURATION name
   | OPEN
   ;
@@ -609,8 +609,8 @@ entity_class_entry_list
   ;
 
 entity_declaration
-  : ENTITY identifier IS entity_header
-    entity_declarative_part
+  : ENTITY name_=identifier IS head_=entity_header
+    decl_=entity_declarative_part
     ( BEGIN entity_statement_part )?
     END ( ENTITY )? ( identifier )? SEMI
   ;
@@ -639,7 +639,7 @@ entity_declarative_item
   ;
 
 entity_declarative_part
-  : ( entity_declarative_item )*
+  : ( item_=entity_declarative_item )*
   ;
 
 entity_designator
@@ -647,8 +647,8 @@ entity_designator
   ;
 
 entity_header
-  : ( generic_clause )?
-    ( port_clause )?
+  : ( gen_=generic_clause )?
+    ( port_=port_clause )?
   ;
 
 entity_name_list
@@ -692,8 +692,28 @@ exit_statement
 
 // NOTE that NAND/NOR are in (...)* now (used to be in (...)?).
 // (21.1.2004, e.f.)
+//expression
+//  : relation ( : logical_operator relation )*
+//  ;
+
 expression
-  : relation ( : logical_operator relation )*
+      : value_=atom
+      | left_=expression op_=(AND | OR | NAND | NOR | XOR | XNOR) right_=expression
+      | left_=expression op_=(EQ | NEQ | LOWERTHAN | LE | GREATERTHAN | GE) right_=expression
+      | left_=expression op_=(SLL | SRL | SLA | SRA | ROL | ROR) right_=expression
+      | callable_=expression LPAREN arglist_=aggregate? RPAREN
+      | left_=expression op_=DOUBLESTAR right_=expression
+      | op_=(ABS | NOT | PLUS | MINUS) e_=expression
+      | left_=expression op_=(MUL | DIV | MOD | REM) right_=expression
+      | left_=expression op_=(PLUS | MINUS | AMPERSAND) right_=expression
+      ;
+
+atom
+  : literal
+  | qualified_expression
+  | allocator
+  | aggregate
+  | name
   ;
 
 factor
@@ -790,10 +810,10 @@ identifier_list
   ;
 
 if_statement
-  : ( label_colon )? IF condition THEN
-    sequence_of_statements
-    ( ELSIF condition THEN sequence_of_statements )*
-    ( ELSE sequence_of_statements )?
+  : ( label_=identifier COLON )? IF ifcond_=condition THEN
+    ifblk_=sequence_of_statements
+    ( ELSIF elsifcond_+=condition THEN elsifblk+=sequence_of_statements )*
+    ( ELSE elseblk_=sequence_of_statements )?
     END IF ( identifier )? SEMI
   ;
 
@@ -849,7 +869,7 @@ interface_signal_list
   ;
 
 interface_port_list
-  : interface_port_declaration ( SEMI interface_port_declaration )*
+  : decl_+=interface_port_declaration ( SEMI decl_+=interface_port_declaration )*
   ;
 
 interface_list
@@ -862,8 +882,8 @@ interface_quantity_declaration
   ;
 
 interface_port_declaration
-  : identifier_list COLON signal_mode subtype_indication
-    ( BUS )? ( VARASGN expression )?
+  : name_+=identifier ( COMMA name_+=identifier )* COLON signal_mode type_=subtype_indication
+    ( BUS )? ( VARASGN dflt_=expression )?
   ;
 
 interface_signal_declaration
@@ -1088,7 +1108,7 @@ physical_type_definition
   ;
 
 port_clause
-  : PORT LPAREN port_list RPAREN SEMI
+  : PORT LPAREN plist_=port_list RPAREN SEMI
   ;
 
 port_list
@@ -1166,11 +1186,11 @@ process_declarative_part
   ;
 
 process_statement
-  : ( label_colon )? ( POSTPONED )? PROCESS
-    ( LPAREN sensitivity_list RPAREN )? ( IS )?
+  : ( label_=identifier COLON )? ( POSTPONED )? PROCESS
+    ( LPAREN sens_+=name ( COMMA sens_+=name )* RPAREN )? ( IS )?
     process_declarative_part
     BEGIN
-    process_statement_part
+    blk_=sequence_of_statements
     END ( POSTPONED )? PROCESS ( identifier )? SEMI
   ;
 
@@ -1279,7 +1299,7 @@ sensitivity_list
   ;
 
 sequence_of_statements
-  : ( sequential_statement )*
+  : ( stmt_+=sequential_statement )*
   ;
 
 sequential_statement
@@ -1361,7 +1381,7 @@ simultaneous_case_statement
   ;
 
 simultaneous_if_statement
-  : ( label_colon )? IF condition USE
+  : ( label_=identifier COLON )? IF ifcond_=condition USE
     simultaneous_statement_part
     ( ELSIF condition USE simultaneous_statement_part )*
     ( ELSE simultaneous_statement_part )?

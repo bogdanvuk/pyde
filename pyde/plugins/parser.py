@@ -5,6 +5,7 @@ import collections
 import json
 from collections import namedtuple
 from pyde.plugins.pipe_textio import PipeTextIO
+import weakref
 
 uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
@@ -252,15 +253,14 @@ class SemanticNode:
             return child
 
 class SemanticTreeBuilder(ParseTreeVisitor):
-    def __init__(self, semantic_ast, common_fields):
+    def __init__(self, semantic_ast, common_fields, index):
         self.cur_parent = None
         self.common_fields = common_fields
         self.semantic_ast = semantic_ast
+        self.index = index
         
     def visit(self, node):
         if hasattr(node, 'features') and node.features:
-            if node.type == 'use_clause':
-                pass
             parent = self.cur_parent
             semantic_node = self.semantic_ast[node.type](parse_node = node, parent=parent)
             node.semantic_node = semantic_node
@@ -269,9 +269,15 @@ class SemanticTreeBuilder(ParseTreeVisitor):
                 if isinstance(v, collections.Iterable):
                     setattr(semantic_node, k, [])
                     for n in v:
-                        getattr(semantic_node, k).append(self.visit(node[n]))
+                        feature = self.visit(node[n])
+                        getattr(semantic_node, k).append(feature)
+                        if k == 'name':
+                            self.index[str(feature)] = semantic_node
+
                 else:
                     setattr(semantic_node, k, self.visit(node[v]))
+                    if k == 'name':
+                        self.index[str(semantic_node.name)] = semantic_node
 
             for k,v in self.common_fields.items():
                 setattr(semantic_node, k, v)
@@ -435,6 +441,7 @@ class Antlr4GenericParser:
         self.parser_io.connect()
         self.suggestion_io = PipeTextIO('java', ['pyinterface.CompletionSuggestions', self.language, self.start_rule])
         self.suggestion_io.connect()
+        self.index = weakref.WeakValueDictionary()
 
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..', 'grammars'))
 #         grammars_path = os.path.abspath(os.path.join(os.getcwd(), '..'))
@@ -476,9 +483,6 @@ class Antlr4GenericParser:
 #             pass
         ret = self.parser_io.communicate(active_text)
         
-#         if self.language == 'vhdl':
-#             pass
-
         parse_out = json.loads(ret)
         self.tokens = TokenSequence(parse_out['tokens'], text_range[0])
         dict_tree = parse_out['tree']
@@ -488,8 +492,12 @@ class Antlr4GenericParser:
         self.parse_tree = parse_builder.visit(dict_tree)
         
         common_fields = {'ast': self.semantic_ast}
-        builder = SemanticTreeBuilder(self.semantic_ast, common_fields)
+        builder = SemanticTreeBuilder(self.semantic_ast, common_fields, self.index)
         self.semantic_tree = builder.visit(self.parse_tree)
+        if self.language == 'vhdl':
+            pass
+
+        parse_out = json.loads(ret)
         return self.semantic_tree
 
 
