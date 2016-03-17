@@ -53,21 +53,29 @@ class EditorAstManager(QtCore.QObject):
             self.dirty = False
             self.parser.parse(self.editor.text(), self.editor.active_range())
             self.tree_modified.emit(self.ast)
-            
+    
+    def get_suggestions(self, parser, text, text_range):
+        suggestions = parser.completion_suggestions(text, text_range)
+        self.suggestions_created.emit(suggestions, text, text_range)
+        return suggestions
+
+    def dispatch_suggestions(self, cmd, suggestions):
+        for s in suggestions:
+            print(s)
+            if s.feature:
+                method_name = '_'.join(['complete', s.type, s.feature[0]])
+                if hasattr(cmd, method_name):
+                    getattr(cmd, method_name)(self.editor, s.node, s.feature, s.parse_node)
+                
+            method_name = '_'.join(['complete', s.type])
+            if hasattr(cmd, method_name):
+                getattr(cmd, method_name)(self.editor, s.node, s.parse_node)
+
     def completion_suggestions(self, cmd):
         self.parse()
         carret_pos = self.editor.pos
-        self.suggestions = self.parser.completion_suggestions(self.editor.text(), (self.editor.active_range()[0], carret_pos))
-        for s in self.suggestions:
-            if s.feature:
-                method_name = '_'.join(['complete', s.type, s.feature])
-            else:
-                method_name = '_'.join(['complete', s.type])
-                
-            if hasattr(cmd, method_name):
-                getattr(cmd, method_name)(self.editor, s.node)
-#             self.tree_modified.emit(self.ast)
-
+        suggestions = self.get_suggestions(self.parser, self.editor.text(), (self.editor.active_range()[0], carret_pos))
+        self.dispatch_suggestions(cmd, suggestions)
 
 class IPythonEditorAstManager(EditorAstManager):
 

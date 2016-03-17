@@ -1,5 +1,5 @@
 from PyQt4.QtCore import QObject
-from pyde.ddi import Dependency, ddic
+from pyde.ddi import Dependency
 #from pyde.plugins.parser import ContextVisitor, NodeVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
@@ -12,45 +12,6 @@ def get_ctx_text(ctx, editor):
     
 def get_obj_for_ctx(ctx, editor):
     return eval(ctx.parse_node.text, editor.globals, editor.locals)
-
-class PathVisitor(object):
- 
-    def visit(self, node):
-        """Visit a node."""
-        if node.type:
-            method = 'visit_' + node.type
-            visitor = getattr(self, method, self.generic_visit)
-        else:
-            visitor = self.generic_visit
-
-        if node.parent is not None:
-            cur_feature = node.get_feature_in_parent()[0]
-            method = 'visit_' + node.parent.type + '_' + cur_feature
-            if hasattr(self, method):
-                getattr(self, method)(node)
-
-        ret = visitor(node)
-                 
-        return ret
-     
-    def generic_visit(self, node):
-        if node.parent is not None:
-            self.visit(node.parent)
-        
-class ContentAssistVisitor(PathVisitor):
-    def __init__(self, editor, acceptor):
-        self.editor = editor
-        self.acceptor = acceptor
-        
-    def visit_expr_attr(self, node):
-        calee_ctx = node.parent['calee']
-        calee_text = self.editor.text()[calee_ctx.slice.start:calee_ctx.slice.stop]
-        obj = eval(calee_text, self.editor.globals, self.editor.locals)
-        for d in dir(obj):
-            self.acceptor[d] = d
-
-    def visit_rel_path_path(self):
-        pass
 
 Completion = namedtuple('Completion', 'template start_pos')
 

@@ -11,11 +11,11 @@ uri_separator = '/'
 os.environ['CLASSPATH'] += ':' + os.path.dirname(grammars.__file__)
 
 def get_ctx_parent_of_type(ctx, *args):
-    while ctx.parent is not None:
-        if ctx.parent.type in args:
-            return ctx.parent
+    while ctx._parent is not None:
+        if ctx._parent.type in args:
+            return ctx._parent
     
-        ctx = ctx.parent
+        ctx = ctx._parent
         
     return None
 
@@ -34,7 +34,7 @@ def parser_node_child_by_feature(node, feature):
 
 def semantic_for_state_stack(node, state_stack):
     for state in state_stack:
-        for n, f in node.rule.features.items():
+        for n, f in node._rule.features.items():
             if state in f['states']:
                 if f['cumul']:
                     feature = (n, len(getattr(node, n)))
@@ -46,24 +46,24 @@ def semantic_for_state_stack(node, state_stack):
     return None, None
 
 def semantic_feature_in_parent(node):
-    if node.parent:
-        for f in node.parent.features:
-            if hasattr(node.parent, f):
-                child = getattr(node.parent, f)
+    if node._parent:
+        for f in node._parent._features:
+            if hasattr(node._parent, f):
+                child = getattr(node._parent, f)
                 if isinstance(child, list):
                     for i, elem in enumerate(child):
                         if elem == node:
-                            return node.parent, (f, i)
+                            return node._parent, (f, i)
                 else:
                     if child == node:
-                        return node.parent, (f, None)
+                        return node._parent, (f, None)
     return None, None
 
 def semantic_for_rule_node(rule_node):
     while((rule_node is not None) and (rule_node.parent is not None)):
         parent = rule_node.parent
         if hasattr(rule_node, 'semantic_node'):
-            return rule_node, None
+            return rule_node.semantic_node, None
         elif hasattr(parent, 'features'):
             for f, child in parent.features.items():
                 if isinstance(child, list):
@@ -86,15 +86,15 @@ class NodeVisitor:
     def visit(self, node):
         """Visit a node."""
         if isinstance(node, SemanticNode):
-            if node.type:
-                method = 'visit_' + node.type
+            if node._type:
+                method = 'visit_' + node._type
                 visitor = getattr(self, method, self.generic_visit)
             else:
                 visitor = self.generic_visit
     
             self.visit_all_enter(node)
-            if node.parent is not None:
-                method = 'visit_' + node.parent.type + '_' + self.cur_feature
+            if node._parent is not None:
+                method = 'visit_' + node._parent.type + '_' + self.cur_feature
                 if hasattr(self, method):
                     getattr(self, method)(node)
     
@@ -113,7 +113,7 @@ class NodeVisitor:
 
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
-        for c in node.features:
+        for c in node._features:
             child = getattr(node, c, None)
             if child:
                 self.cur_feature = c
@@ -239,11 +239,11 @@ class ParserRuleContext(list):
 
 class SemanticNode:
     def __init__(self, rule, parse_node = None, parent = None):
-        self.features = list(rule.features.keys())
-        self.parse_node = parse_node
-        self.type = rule.type
-        self.rule = rule
-        self.parent = parent
+        self._features = list(rule.features.keys())
+        self._parse_node = parse_node
+        self._type = rule.type
+        self._rule = rule
+        self._parent = parent
         
     def __getitem__(self, feature):
         child = getattr(self, feature[0]);
@@ -278,6 +278,8 @@ class SemanticTreeBuilder(ParseTreeVisitor):
                     setattr(semantic_node, k, self.visit(node[v]))
                     if k == 'name':
                         self.index[str(semantic_node.name)] = semantic_node
+                
+                semantic_node._features.append(k)
 
             for k,v in self.common_fields.items():
                 setattr(semantic_node, k, v)
@@ -373,7 +375,7 @@ class NextRulesVisitor(ParseTreeVisitor):
         self.rule_name_stack = []
         self.semantic_node = semantic_node
         if self.semantic_node:
-            self.parse_node = self.semantic_node.parse_node
+            self.parse_node = self.semantic_node._parse_node
         else:
             self.parse_node = None
  
@@ -491,7 +493,7 @@ class Antlr4GenericParser:
         parse_builder = ParseTreeBuilder(self.tokens, common_fields)
         self.parse_tree = parse_builder.visit(dict_tree)
         
-        common_fields = {'ast': self.semantic_ast}
+        common_fields = {'_ast': self.semantic_ast}
         builder = SemanticTreeBuilder(self.semantic_ast, common_fields, self.index)
         self.semantic_tree = builder.visit(self.parse_tree)
         if self.language == 'vhdl':
@@ -512,8 +514,9 @@ class Antlr4GenericParser:
         elif node is not None:
             node, feature = semantic_for_state_stack(node, suggestion['state_stack'])
             while (node):
-                parse_node_child = parser_node_child_by_feature(node.parse_node, feature)
-                suggestions.append(Suggestion(type=node.type, feature=feature, node=node, parse_node=parse_node_child))
+                parse_node_child = parser_node_child_by_feature(node._parse_node, feature)
+                if parse_node_child:
+                    suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node_child))
                 node, feature = semantic_feature_in_parent(node)
                                 
         return suggestions
@@ -539,8 +542,12 @@ class Antlr4GenericParser:
             carret_ctx, feature = semantic_for_rule_node(carret_token)
             node = carret_ctx
             while (node):
-                parse_node_child = parser_node_child_by_feature(node.parse_node, feature)
-                suggestions.append(Suggestion(type=node.type, feature=feature, node=node, parse_node = parse_node_child))
+                if feature:
+                    parse_node_child = parser_node_child_by_feature(node._parse_node, feature)
+                else:
+                    parse_node_child = node._parse_node
+
+                suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node = parse_node_child))
                 node, feature = semantic_feature_in_parent(node)
 
 #             if (carret_ctx is not None): 
@@ -564,6 +571,12 @@ class Antlr4GenericParser:
 #             print(s)
         
         return suggestions
+    
+    def iter_index_by_type(self, ctx_types):
+        for k,v in self.index.items():
+            if v._type in ctx_types:
+                yield k,v
+        pass
         
 def Antlr4ParserFactory(lang_name, start_rule):
     class Antlr4Parser(Antlr4GenericParser):

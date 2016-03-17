@@ -27,6 +27,7 @@ from PyQt4 import QtCore
 import os
 import time
 from pyde.plugins.filebuf import Filebuf
+from pyde.plugins.ca_vhdl import VhdlContentAssist
 
 # ddic.create_scope('view')
 #ddic.provide('cls/layout', PydeFrame)
@@ -71,6 +72,7 @@ ddic.provide_on_demand('cls/vhdl_editor_ast_manager', EditorAstManager, inst_fea
 ddic.provide_on_demand('cls/content_assist', ContentAssist, 'content_assist')
 ddic.provide_on_demand('cls/content_assist_widget', ContentAssistWidget, 'ca_widget/')
 ddic.provide_on_demand('cls/ca_interpreter', PyInterpretContentAssist, 'ca_interpreter')
+ddic.provide_on_demand('cls/ca_vhdl', VhdlContentAssist, 'ca_vhdl')
 
 ddic.provide('cls/keyaction', KeyAction)
 

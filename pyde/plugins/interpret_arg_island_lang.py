@@ -57,7 +57,7 @@ def IslandLanguageParserFactory(language):
             v = ArglistVisitor(self.editor, self.language)
             v.visit(tree)
             self.islands = []
-            tokens = tree.parse_node.token
+            tokens = tree._parse_node.token
             for n in v.ca_nodes:
                 self.parser.parse(self.editor.text(), (n.parse_node.slice.start+1, n.parse_node.slice.stop-1))
                 self.islands.append((self.parser.tokens, self.parser.parse_tree, self.parser.semantic_tree))

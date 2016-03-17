@@ -702,6 +702,9 @@ expression
       | left_=expression op_=(EQ | NEQ | LOWERTHAN | LE | GREATERTHAN | GE) right_=expression
       | left_=expression op_=(SLL | SRL | SLA | SRA | ROL | ROR) right_=expression
       | callable_=expression LPAREN arglist_=aggregate? RPAREN
+      | left_=expression COMMA right_=expression
+      | LPAREN e_=expression RPAREN
+      | left_=expression op_=ARROW right_=expression
       | left_=expression op_=DOUBLESTAR right_=expression
       | op_=(ABS | NOT | PLUS | MINUS) e_=expression
       | left_=expression op_=(MUL | DIV | MOD | REM) right_=expression
@@ -712,7 +715,7 @@ atom
   : literal
   | qualified_expression
   | allocator
-  | aggregate
+//  | aggregate
   | name
   ;
 
