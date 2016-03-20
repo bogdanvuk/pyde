@@ -369,15 +369,18 @@ class ParseTreeBuilder:
 Suggestion = namedtuple('Suggestion', 'type feature node parse_node')
 
 class NextRulesVisitor(ParseTreeVisitor):
-    def __init__(self, rules, semantic_node):
+    def __init__(self, rules, semantic_ast, semantic_node, semantic_parent, carret_token):
         self.rules = rules
+        self.semantic_ast = semantic_ast
         self.next_rules = []
         self.rule_name_stack = []
         self.semantic_node = semantic_node
-        if self.semantic_node:
-            self.parse_node = self.semantic_node._parse_node
-        else:
-            self.parse_node = None
+        self.semantic_parent = semantic_parent
+        self.carret_token = carret_token
+#         if self.semantic_node:
+#             self.parse_node = self.semantic_node._parse_node
+#         else:
+#             self.parse_node = None
  
     def visit(self, node):
         if hasattr(node, 'feature'):
@@ -385,7 +388,26 @@ class NextRulesVisitor(ParseTreeVisitor):
                 feature = (node.feature, 0)
             else:
                 feature = (node.feature, None)
-            self.next_rules.append(Suggestion(type=node.root().name, feature=feature, node=self.semantic_node, parse_node=self.parse_node))
+                
+            if self.semantic_node:
+                semantic_node = self.semantic_node
+                parse_node = self.semantic_node._parse_node
+            elif self.semantic_parent:
+                parse_node = ParserRuleContext(self.semantic_parent._parse_node)
+                parse_node.type = node.root().name
+                parse_node.start = self.carret_token.index
+                parse_node.stop = self.carret_token.index - 1
+                parse_node.text = ''
+                parse_node.features = {node.feature:0}
+                s = ContextSlice(self.carret_token.slice.start, self.carret_token.slice.start-1)
+                parse_node.append(Token(None, s))
+                semantic_node = self.semantic_ast[node.root().name](parse_node=parse_node, parent=self.semantic_parent)
+                setattr(semantic_node, node.feature, '')
+            else:
+                parse_node = None
+                semantic_node = None
+
+            self.next_rules.append(Suggestion(type=node.root().name, feature=feature, node=semantic_node, parse_node=parse_node))
         return super().visit(node)
      
     def visit_ALT(self, node):
@@ -426,7 +448,23 @@ class NextRulesVisitor(ParseTreeVisitor):
         if node.ref in self.rule_name_stack:
             return True
         else:
-            self.next_rules.append(Suggestion(type=node.ref, feature=None, node=self.semantic_node, parse_node=self.parse_node))
+            if self.semantic_node:
+                semantic_node = self.semantic_node
+                parse_node = self.semantic_node._parse_node
+            elif self.semantic_parent and (node.ref in self.semantic_ast):
+                parse_node = ParserRuleContext(self.semantic_parent._parse_node)
+                parse_node.type = node.ref
+                parse_node.start = self.carret_token.index
+                parse_node.stop = self.carret_token.index - 1
+                parse_node.text = ''
+                s = ContextSlice(self.carret_token.slice.start, self.carret_token.slice.start-1)
+                parse_node.append(Token(None, s))
+                semantic_node = self.semantic_ast[parse_node.type](parse_node=parse_node, parent=self.semantic_parent)
+            else:
+                parse_node = None
+                semantic_node = None
+                
+            self.next_rules.append(Suggestion(type=node.ref, feature=None, node=semantic_node, parse_node=parse_node))
             self.rule_name_stack.append(node.ref)
             return self.visit(self.rules[node.ref])
 #             self.rule_name_stack.pop()
@@ -503,12 +541,18 @@ class Antlr4GenericParser:
         return self.semantic_tree
 
 
-    def place_suggestion(self, suggestion, node, feature):
+    def place_suggestion(self, suggestion, node, feature, carret_token):
 #        if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
         suggestions = []
         
         if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
-            v = NextRulesVisitor(self.ast, node)
+            if suggestion['token'] >= carret_token.index:
+                parent = node
+                node = None
+            else:
+                parent = None
+                
+            v = NextRulesVisitor(self.ast, self.semantic_ast, node, parent, carret_token)
             v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
             return v.next_rules
         elif node is not None:
@@ -556,7 +600,7 @@ class Antlr4GenericParser:
                 
             
             for s in suggestions_js:
-                suggestions.extend(self.place_suggestion(s, carret_ctx, feature))
+                suggestions.extend(self.place_suggestion(s, carret_ctx, feature, carret_token))
         
 #         suggestions = []
 #         if not suggestions_js:

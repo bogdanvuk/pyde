@@ -148,7 +148,11 @@ public class GrammarASTJson implements GrammarASTVisitor {
 //				e.printStackTrace();
 //			}
 //		}
-		JSONObject rule = this.visitAll((GrammarAST) node.getFirstDescendantWithType(ANTLRParser.ALT));
+		if (node.getRuleName().equals("atom")){
+			node = node;
+		}
+//		JSONObject rule = this.visitAll((GrammarAST) node.getFirstDescendantWithType(ANTLRParser.ALT));
+		JSONObject rule = this.visitAll((GrammarAST) node.getFirstDescendantWithType(ANTLRParser.BLOCK));
 		try {
 			allRules.put(node.getRuleName(), rule);
 			rule.put("fields", new JSONObject());

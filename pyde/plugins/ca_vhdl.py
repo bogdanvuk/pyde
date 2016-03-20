@@ -2,15 +2,16 @@ from PyQt4.QtCore import QObject, pyqtSignal, Qt
 from pyde.ddi import Dependency
 from pyde.plugins.templating import TemplFunc
 from collections import namedtuple
+from pyde.plugins.parser import parser_node_child_by_feature
 
 Completion = namedtuple('Completion', 'template start_pos')
 
 class CompleteCommand:
     
     def complete_expression_value(self, editor, node, feature, parse_node):
-#         for name,_ in editor.view.ast.parser.iter_index_by_type(['interface_port_declaration']):
-#             self.acceptor[name] = Completion(name, node.value._parse_node.slice.start)
-        
+        for name,_ in editor.view.ast.parser.iter_index_by_type(['interface_port_declaration']):
+            self.acceptor[name] = Completion(name, parser_node_child_by_feature(parse_node, ('value', None)).slice.start) #node.value._parse_node.slice.start)
+#         
         pass
 
 

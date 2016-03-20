@@ -482,22 +482,22 @@ from pyde.plugins.parser import Antlr4GenericParser
 
 if __name__ == "__main__":
 #     text = 'ddic.'
-#     text = '/a/b/'
-#     carret_index = 5
+    text = 'x=1'
+    carret_index = 2
 #     parser = Antlr4GenericParser('python3', 'file_input')
 #     parser = Antlr4GenericParser('linpath', 'main')
-    with open('/home/bvukobratovic/Downloads/and.vhd') as f:
-        text = f.read()
+#     with open('/home/bvukobratovic/Downloads/and.vhd') as f:
+#         text = f.read()
         
-    parser = Antlr4GenericParser('vhdl', 'design_file')
-    import time
-    start_time = time.time()
+    parser = Antlr4GenericParser('vhdl', 'expression')
+#     import time
+#     start_time = time.time()
 #     ret = parser.parser_io.communicate(text)
     tree = parser.parse(text, (0, len(text)))
-    print("--- %s seconds ---" % (time.time() - start_time))
-#     s = parser.completion_suggestions(text, (0, carret_index))
-#     for i in s: 
-#         print(i)
+#     print("--- %s seconds ---" % (time.time() - start_time))
+    s = parser.completion_suggestions(text, (0, carret_index))
+    for i in s: 
+        print(i)
 #     parser.parse(test_text, (0, len(test_text)))
 # 
 #     i, carret_token = parser.tokens.token_at_pos(carret_index)
