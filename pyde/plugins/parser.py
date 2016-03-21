@@ -369,14 +369,14 @@ class ParseTreeBuilder:
 Suggestion = namedtuple('Suggestion', 'type feature node parse_node')
 
 class NextRulesVisitor(ParseTreeVisitor):
-    def __init__(self, rules, semantic_ast, semantic_node, semantic_parent, carret_token):
+    def __init__(self, rules, semantic_ast, semantic_node, semantic_parent, carret_index):
         self.rules = rules
         self.semantic_ast = semantic_ast
         self.next_rules = []
         self.rule_name_stack = []
         self.semantic_node = semantic_node
         self.semantic_parent = semantic_parent
-        self.carret_token = carret_token
+        self.carret_index = carret_index
 #         if self.semantic_node:
 #             self.parse_node = self.semantic_node._parse_node
 #         else:
@@ -395,14 +395,15 @@ class NextRulesVisitor(ParseTreeVisitor):
             elif self.semantic_parent:
                 parse_node = ParserRuleContext(self.semantic_parent._parse_node)
                 parse_node.type = node.root().name
-                parse_node.start = self.carret_token.index
-                parse_node.stop = self.carret_token.index - 1
+                parse_node.start = -1
+                parse_node.stop = -1
                 parse_node.text = ''
                 parse_node.features = {node.feature:0}
-                s = ContextSlice(self.carret_token.slice.start, self.carret_token.slice.start-1)
+                s = ContextSlice(self.carret_index, self.carret_index-1)
                 parse_node.append(Token(None, s))
                 semantic_node = self.semantic_ast[node.root().name](parse_node=parse_node, parent=self.semantic_parent)
                 setattr(semantic_node, node.feature, '')
+                parse_node = parse_node[0]
             else:
                 parse_node = None
                 semantic_node = None
@@ -454,12 +455,13 @@ class NextRulesVisitor(ParseTreeVisitor):
             elif self.semantic_parent and (node.ref in self.semantic_ast):
                 parse_node = ParserRuleContext(self.semantic_parent._parse_node)
                 parse_node.type = node.ref
-                parse_node.start = self.carret_token.index
-                parse_node.stop = self.carret_token.index - 1
+                parse_node.start = -1
+                parse_node.stop = -1
                 parse_node.text = ''
-                s = ContextSlice(self.carret_token.slice.start, self.carret_token.slice.start-1)
+                s = ContextSlice(self.carret_index, self.carret_index-1)
                 parse_node.append(Token(None, s))
                 semantic_node = self.semantic_ast[parse_node.type](parse_node=parse_node, parent=self.semantic_parent)
+                parse_node = parse_node[0]
             else:
                 parse_node = None
                 semantic_node = None
@@ -546,13 +548,13 @@ class Antlr4GenericParser:
         suggestions = []
         
         if suggestion['type'] == 'org.antlr.v4.runtime.NoViableAltException':
-            if suggestion['token'] >= carret_token.index:
+            if suggestion['token'] > carret_token.index:
                 parent = node
                 node = None
             else:
                 parent = None
                 
-            v = NextRulesVisitor(self.ast, self.semantic_ast, node, parent, carret_token)
+            v = NextRulesVisitor(self.ast, self.semantic_ast, node, parent, carret_token.slice.stop)
             v.visit(self.state_ast_rules[suggestion['state_stack'][0]])
             return v.next_rules
         elif node is not None:

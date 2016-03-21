@@ -110,8 +110,9 @@ class PyInterpretContentAssist(QObject):
         self.ca.complete.connect(self.complete, type=connection_type)
      
     def complete(self, acceptor):
-        self.complete_cmd.acceptor = acceptor
-        
-        self.complete_sig.connect(self.view.ast.completion_suggestions, type=QtCore.Qt.BlockingQueuedConnection)
-        self.complete_sig.emit(self.complete_cmd)
-        self.complete_sig.disconnect()
+        if self.win.active_view() == self.view:
+            self.complete_cmd.acceptor = acceptor
+            
+            self.complete_sig.connect(self.view.ast.completion_suggestions, type=QtCore.Qt.BlockingQueuedConnection)
+            self.complete_sig.emit(self.complete_cmd)
+            self.complete_sig.disconnect()
