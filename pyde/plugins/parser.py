@@ -94,7 +94,7 @@ class NodeVisitor:
     
             self.visit_all_enter(node)
             if node._parent is not None:
-                method = 'visit_' + node._parent.type + '_' + self.cur_feature
+                method = 'visit_' + node._parent._type + '_' + self.cur_feature
                 if hasattr(self, method):
                     getattr(self, method)(node)
     

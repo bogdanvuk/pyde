@@ -96,9 +96,9 @@ class ViewListContentAssist(FuncArgContentAssist):
 
 
 @diinit
-def execute_action(win : Dependency('win'), active_view = None):
+def execute_action(win : Dependency('win'), active_view = None, interactive=False):
     interpret = win.child_by_name('interpret').widget
-    interpret.execute_view_action(active_view)
+    interpret.execute_view_action(active_view, interactive)
 
 view_history_stack = []
 
@@ -183,25 +183,20 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
 @diinit
 def file_save(win : Dependency('win'), active_view: ViewListContentAssist):
     active_view.filebuf.save()
+    
+@diinit
+def search(text = '', win : Dependency('win') = None):
+    win.active_view().widget.search(text)
 
-def execute_action_template_shortcut(func):
+def execute_action_template_shortcut(func, interactive=False):
     @diinit
     def wrapper(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
         interpret = win.child_by_name('interpret').widget
-        execute_action.action(win, active_view)
+        execute_action.action(win, active_view, interactive)
         TemplFunc(func).apply(interpret)
         ca.activate(interpret.view)
         
     return wrapper
-
-@diinit
-def file_open_kbd(win : Dependency('win'), ca : Dependency('content_assist'), execute_action : Dependency('keyactions/execute_action'), active_view = None):
-    interpret = win.view['interpret'].widget
-    execute_action.action(win, active_view)
-    TemplFunc(file_open).apply(interpret)
-    
-
-# file_open()
 
 def dflt_view_action_factory(func_name):
     @diinit

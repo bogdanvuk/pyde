@@ -38,15 +38,23 @@ class TemplFunc:
         elif p.default is inspect._empty:
             return key
         else:
-            return str(p.default)
+            if isinstance(p.default, str):
+                return "'{}'".format(p.default)
+            else:
+                return str(p.default)
         
     def param_pos(self, key, text):
 #         p = self.sig.parameters[key]
         p = list(self.sig.parameters.values())[key]
         if issubclass(p.annotation, FuncArgContentAssist):
             return p.annotation().pos(text)
-        else:
+        elif p.default is inspect._empty:
             return None
+        else:
+            if isinstance(p.default, str):
+                return len(text) - 1
+            else:
+                return len(text)
         
 #         a = self.sig.parameters['path'].annotation
 #         if a:
@@ -91,8 +99,11 @@ class TemplPosition:
 class TemplContext(object):
 #     PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{\w+?(?:\.\w+?)*}|'
 #                       r'{\w+?(?:\.\w+?)*:[^}]+?})')
-    PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{[\w=]+?(?:\.[\w=]+?)*}|'
-                      r'{[\w=]+?(?:\.\[\w=]?)*:[^}]+?})')
+#     PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{[\w=]+?(?:\.[\w=]+?)*}|'
+#                       r'{[\w=]+?(?:\.\[\w=]?)*:[^}]+?})')
+
+    PARSE_RE = re.compile(r'({{|}}|{}|{:[^}]+?}|{[^(}.)]+?(?:\.[^(}.)]+?)*}'
+                          r'|{[^(}.)]+?(?:\.\[\w=]?)*:[^}]+?})')
     
     def __init__(self, templ, insert_pos):
         self.templ = templ
@@ -153,7 +164,8 @@ class TemplActuator:
     def resolve(self):
         self.tmpl = None
         self.tmpl_ctx = None
-        self.editor.clearAllIndicators(self.indicators[self.editor])
+        if self.editor in self.indicators:
+            self.editor.clearAllIndicators(self.indicators[self.editor])
     
     def move(self, pos_name):
         indicator = self.indicators[self.editor]

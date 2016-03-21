@@ -828,7 +828,7 @@ class QsciScintillaCompat(QsciScintilla):
         targend = self.SendScintilla(QsciScintilla.SCI_GETTARGETEND)
         self.__targetSearchStart = targend
         
-        return True
+        return pos
     
     def getFoundTarget(self):
         """
@@ -844,6 +844,7 @@ class QsciScintillaCompat(QsciScintilla):
         else:
             return (0, 0)
     
+   
     def findFirstTarget(self, expr_, re_, cs_, wo_,
                         begline=-1, begindex=-1, endline=-1, endindex=-1,
                         ws_=False):

@@ -13,7 +13,7 @@ class ArglistVisitor(NodeVisitor):
         self.language = language
         
     def visit_arglist(self, node):
-        func = get_obj_for_ctx(node.parent.callable, self.editor)
+        func = get_obj_for_ctx(node._parent.callable, self.editor)
         try:
             args, _, _, _, kwonlyargs, _, annotations = getfullargspec(func)
         except TypeError:
@@ -59,9 +59,9 @@ def IslandLanguageParserFactory(language):
             self.islands = []
             tokens = tree._parse_node.token
             for n in v.ca_nodes:
-                self.parser.parse(self.editor.text(), (n.parse_node.slice.start+1, n.parse_node.slice.stop-1))
+                self.parser.parse(self.editor.text(), (n._parse_node.slice.start+1, n._parse_node.slice.stop-1))
                 self.islands.append((self.parser.tokens, self.parser.parse_tree, self.parser.semantic_tree))
-                tokens[n.parse_node.start].island_grammar_root = self.parser.parse_tree 
+                tokens[n._parse_node.start].island_grammar_root = self.parser.parse_tree 
                     
             pass
 

@@ -76,6 +76,13 @@ ddic.provide_on_demand('cls/ca_vhdl', VhdlContentAssist, 'ca_vhdl')
 
 ddic.provide('cls/keyaction', KeyAction)
 
+ddic.provide('actions/search', actions.search)
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/search', 
+                       inst_kwargs={'action': actions.execute_action_template_shortcut(actions.search, interactive=True),
+                                    'key': Qt.Key_Y,
+                                    'modifier': Qt.AltModifier})
+
+
 ddic.provide('actions/file_open', actions.file_open)
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_open', 
                        inst_kwargs={'action': actions.execute_action_template_shortcut(actions.file_open),
@@ -153,8 +160,16 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/backward_char',
                        inst_kwargs={'action': actions.dflt_view_action_factory('backward_char'),
                                     'key': Qt.Key_J,
                                     'modifier': Qt.AltModifier})
+
 ddic.provide_on_demand(**provide_action_args('end_of_line', Qt.Key_H, Qt.AltModifier + Qt.ShiftModifier))
 ddic.provide_on_demand(**provide_action_args('beginning_of_line', Qt.Key_H, Qt.AltModifier))
+ddic.provide_on_demand(**provide_action_args('forward_word', Qt.Key_O, Qt.AltModifier))
+ddic.provide_on_demand(**provide_action_args('backward_word', Qt.Key_U, Qt.AltModifier))
+ddic.provide_on_demand(**provide_action_args('forward_page', Qt.Key_K, Qt.AltModifier + Qt.ShiftModifier))
+ddic.provide_on_demand(**provide_action_args('backward_page', Qt.Key_I, Qt.AltModifier + Qt.ShiftModifier))
+ddic.provide_on_demand(**provide_action_args('del_forward_char', Qt.Key_F, Qt.AltModifier))
+ddic.provide_on_demand(**provide_action_args('del_backward_char', Qt.Key_D, Qt.AltModifier))
+
 
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/content_assist_fill_query', 
                        inst_kwargs={'action': actions.content_assist_fill_query,

@@ -11,7 +11,7 @@ def get_ctx_text(ctx, editor):
     return editor.text()[ctx.slice.start:ctx.slice.stop]
     
 def get_obj_for_ctx(ctx, editor):
-    return eval(ctx.parse_node.text, editor.globals, editor.locals)
+    return eval(ctx._parse_node.text, editor.globals, editor.locals)
 
 Completion = namedtuple('Completion', 'template start_pos')
 

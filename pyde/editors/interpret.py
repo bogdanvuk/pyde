@@ -212,10 +212,33 @@ class PyInerpretEditor(PydeEditor):
     def cmd_text(self):
         return self.text()[self.prompt_begin:self.length()]
 
-    def execute_view_action(self, view):
+    def execute_view_action(self, view, interactive=False):
         self.focus_view = view
         self.view.set_focus()
+        self.interactive = interactive
+        if self.interactive:
+            self.SCN_MODIFIED.connect(self.text_modified)
 #         ddic['actions/switch_view'](self.view, self.view.last_location)
+
+    def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
+                   foldPrev, token, annotationLinesAdded):
+          
+        if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
+            ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
+            self._evaluate()
+
+    def _evaluate(self):
+        if self.focus_view is not None:
+            ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
+
+        cmd = self.cmd_text()
+        
+        try:
+            eval(cmd, self.globals, self.locals)
+        except:
+            print('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
+        
+        self.view.set_focus()
 
     def cancel(self):
         self.SendScintilla(QsciScintilla.SCI_DELETERANGE, self.prompt_begin, self.length() - self.prompt_begin)
@@ -226,7 +249,9 @@ class PyInerpretEditor(PydeEditor):
         if self.focus_view is not None:
             ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
             self.focus_view = None
-
+            if self.interactive:
+                self.SCN_MODIFIED.disconnect(self.text_modified)
+                
         cmd = self.cmd_text()
         
         self.pos = self.length()
