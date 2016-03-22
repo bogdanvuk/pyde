@@ -541,7 +541,7 @@ class DependencyContainer(DependencyScope):
 #     def create_on_demand(self, feature, inst_feature=None, args=(), kwargs={}):
 #         self.demanders.append(Demander(feature, inst_feature, list(args), dict(kwargs)))
 
-ddic = DependencyContainer()
+ddic = DependencyContainer(allowReplace=True)
 
 def NoAssertion(obj): return True
 

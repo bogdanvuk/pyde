@@ -96,7 +96,7 @@ class ViewListContentAssist(FuncArgContentAssist):
 
 
 @diinit
-def execute_action(win : Dependency('win'), active_view = None, interactive=False):
+def execute_action(win : Dependency('win'), active_view = None, interactive=-1):
     interpret = win.child_by_name('interpret').widget
     interpret.execute_view_action(active_view, interactive)
 
@@ -183,10 +183,47 @@ def file_open(path : LinpathContentAssist, win : Dependency('win')):
 @diinit
 def file_save(win : Dependency('win'), active_view: ViewListContentAssist):
     active_view.filebuf.save()
+
+class Search:
+    def __init__(self):
+        self.start_pos = -1
     
-@diinit
-def search(text = '', win : Dependency('win') = None):
-    win.active_view().widget.search(text)
+    __name__ = 'search'
+    
+    @diinit
+    def __call__(self, text = '', win : Dependency('win') = None, interactive : Dependency('interactive') = -1):
+        
+        w = win.active_view().widget
+        if interactive == -1:
+            self.start_pos = w.anchor
+        elif interactive == 0:
+            self.start_pos = w.pos
+        else:
+            pass
+
+        if text:
+            pos = w.search(text, start=self.start_pos)
+            if pos >= 0:
+                w.anchor = pos
+                w.pos = pos
+                w.SendScintilla(QsciScintilla.SCI_SETSELECTIONEND, pos+len(text))
+
+search = Search()
+
+# @diinit
+# def search(text = '', win : Dependency('win') = None, interactive : Dependency('interactive') = False):
+#     if not text:
+#         return
+# 
+#     if interactive:
+#         w = win.active_view().widget
+#         pos = w.search(text, start=w.anchor)
+#         if pos >= 0:
+#             w.anchor = pos
+#             w.pos = pos
+#             w.SendScintilla(QsciScintilla.SCI_SETSELECTIONEND, pos+len(text))
+#     else:    
+#         win.active_view().widget.search(text)
 
 def execute_action_template_shortcut(func, interactive=False):
     @diinit
@@ -280,6 +317,17 @@ def evaluate(active_view = None):
         ca_view.widget.select()
 
     active_view.widget.evaluate()
+    
+def evaluate_repeat(active_view = None):
+    w = active_view.widget
+    text = w.cmd_text()
+    offset = w.pos - w.prompt_begin
+    focus_view = w.focus_view
+    interactive = w.interactive
+    evaluate(active_view)
+    w.execute_view_action(focus_view, interactive > -1)
+    w.insert(text)
+    w.pos += offset
 # 
 # class Path(object):
 #     def __init__(self, path=None):

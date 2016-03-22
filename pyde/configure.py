@@ -188,12 +188,20 @@ def EvaluateKeyActionCondition(key_action, view, event):
 
 ddic.provide_on_demand(**provide_action_args('cancel', Qt.Key_G, Qt.ControlModifier))
 
-ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/cancel', 
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/evaluate', 
                        inst_kwargs={'action': actions.evaluate, #dflt_view_action_factory('evaluate'),
                                     'key': Qt.Key_Return,
                                     'modifier': Qt.ControlModifier,
                                     'condition': actions.dflt_view_condition_factory('evaluate'), #EvaluateKeyActionCondition 
                                     })
+
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/evaluate_repeat', 
+                       inst_kwargs={'action': actions.evaluate_repeat, #dflt_view_action_factory('evaluate'),
+                                    'key': Qt.Key_R,
+                                    'modifier': Qt.ControlModifier,
+                                    'condition': actions.dflt_view_condition_factory('evaluate'), #EvaluateKeyActionCondition 
+                                    })
+
 
 ddic.provide('config/wspace/path', '/data/projects/pyde/wspace')
 

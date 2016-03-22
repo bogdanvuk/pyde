@@ -155,9 +155,8 @@ class PydeEditor(QsciScintillaCompat):
         
         return pos
     
-    def findFirstTarget(self, expr_, re_, cs_, wo_,
-                        start=-1, end=-1,
-                        ws_=False):
+    def search(self, expr_, start=-1, end=-1, 
+                        re_=False, cs_=False, wo_=False, ws_=False):
         """
         Public method to search in a specified range of text without
         setting the selection.
@@ -208,15 +207,15 @@ class PydeEditor(QsciScintillaCompat):
         
         return False
     
-    def search(self, text):
-        if text:
-            pos = self.findFirstTarget(text, False, False, False, start = self.anchor)
-            if pos >= 0:
-    #             self.clearAllIndicators(self.indicators['search'])
-    #             self.setIndicatorRange(self.indicators['search'], pos, len(text))
-                self.anchor = pos
-                self.pos = pos
-                self.SendScintilla(QsciScintilla.SCI_SETSELECTIONEND, pos+len(text))
+#     def search(self, text):
+#         if text:
+#             pos = self.findFirstTarget(text, False, False, False, start = self.anchor)
+#             if pos >= 0:
+#     #             self.clearAllIndicators(self.indicators['search'])
+#     #             self.setIndicatorRange(self.indicators['search'], pos, len(text))
+#                 self.anchor = pos
+#                 self.pos = pos
+#                 self.SendScintilla(QsciScintilla.SCI_SETSELECTIONEND, pos+len(text))
         
     def content_assist(self):
         self.autoCompleteFromAll()

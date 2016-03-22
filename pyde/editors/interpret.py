@@ -183,6 +183,8 @@ class PyInerpretEditor(PydeEditor):
         self.prompt_begin = 0
 
         self.focus_view = None
+        ddic.provide('interactive', False)
+        self.interactive = False
         
     @property
     def prompt_begin(self):
@@ -203,6 +205,9 @@ class PyInerpretEditor(PydeEditor):
 #     def active_range(self):
 #         return (self.prompt_begin, self.length())
 
+    def is_interactive(self):
+        return self.interactive
+
     def cycle_frame(self, old):
         return False
 
@@ -215,9 +220,11 @@ class PyInerpretEditor(PydeEditor):
     def execute_view_action(self, view, interactive=False):
         self.focus_view = view
         self.view.set_focus()
-        self.interactive = interactive
-        if self.interactive:
+        if interactive:
+            self.interactive = 0
             self.SCN_MODIFIED.connect(self.text_modified)
+        else:
+            self.interactive = -1
 #         ddic['actions/switch_view'](self.view, self.view.last_location)
 
     def text_modified(self, pos, mtype, text, length, linesAdded, line, foldNow,
@@ -226,18 +233,19 @@ class PyInerpretEditor(PydeEditor):
         if ((mtype & QsciScintilla.SC_MOD_INSERTTEXT) != 0) or \
             ((mtype & QsciScintilla.SC_MOD_DELETETEXT) != 0):
             self._evaluate()
+            self.interactive += 1
 
     def _evaluate(self):
         if self.focus_view is not None:
             ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
 
         cmd = self.cmd_text()
-        
+        ddic['interactive'] = self.interactive
         try:
             eval(cmd, self.globals, self.locals)
         except:
             print('\n{0}: {1}\n'.format(sys.exc_info()[0].__name__, sys.exc_info()[1]))
-        
+        ddic['interactive'] = -1
         self.view.set_focus()
 
     def cancel(self):
@@ -249,7 +257,7 @@ class PyInerpretEditor(PydeEditor):
         if self.focus_view is not None:
             ddic['actions/switch_view'](self.focus_view, self.focus_view.widget.loc)
             self.focus_view = None
-            if self.interactive:
+            if self.interactive >= 0:
                 self.SCN_MODIFIED.disconnect(self.text_modified)
                 
         cmd = self.cmd_text()
