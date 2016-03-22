@@ -1,5 +1,6 @@
 from pyde.ddi import Dependency, Amendment
 import os
+import re
 
 class ViewMode:
     def __init__(self, view):
@@ -9,6 +10,15 @@ class ViewMode:
 #             editor.modes = []
 #         
 #         editor.modes.append(self)
+
+def ViewModeRegexFactory(mode_name, re_str):
+    class CustomViewMode(ViewMode):
+        name = mode_name
+        def __init__(self, view : Amendment('view/', lambda e: re.match(re_str, getattr(e, 'file_name', '')))):
+            super().__init__(view)
+
+    return CustomViewMode
+
 
 def ViewModeExtensionFactory(mode_name, extensions):
     class CustomViewMode(ViewMode):

@@ -109,7 +109,8 @@ class Layout(QObject):
         widget.loc = loc
         if not hasattr(widget, 'last_loc'):
             widget.last_loc = loc
-            
+        
+        widget.show()
         widget.setFocus()
     
     def split(self, loc, orientation=Qt.Vertical, ratio=(1,1)):

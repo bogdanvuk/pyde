@@ -5,7 +5,7 @@ from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
 from pyde.plugins.ast_manager import IPythonEditorAstManager, EditorAstManager
 from pyde.plugins.editor_mode import IPythonMode,\
-    ViewModeExtensionFactory
+    ViewModeExtensionFactory, ViewModeRegexFactory
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
 from PyQt4.QtCore import Qt
@@ -28,6 +28,7 @@ import os
 import time
 from pyde.plugins.filebuf import Filebuf
 from pyde.plugins.ca_vhdl import VhdlContentAssist
+from pyde.editors.web import WebWidget
 
 # ddic.create_scope('view')
 #ddic.provide('cls/layout', PydeFrame)
@@ -36,6 +37,7 @@ ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
 ddic.provide_on_demand('cls/win', MainWindow, 'widget/')
 ddic.provide_on_demand('cls/editor_generic', PydeEditor, 'widget/')
 ddic.provide_on_demand('cls/ipython', PyInerpretEditor, 'widget/')
+ddic.provide_on_demand('cls/web', WebWidget, 'widget/')
 ddic.provide_on_demand('cls/statusbar', Statusbar, 'widget/')
 ddic.provide('cls/view', View)
 
@@ -50,9 +52,9 @@ ddic.provide_on_demand('mode/cls/bash', ViewModeExtensionFactory('bash', ['.sh']
 ddic.provide_on_demand('mode/cls/java', ViewModeExtensionFactory('java', ['.java']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/cpp', ViewModeExtensionFactory('cpp', ['.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/vhdl', ViewModeExtensionFactory('vhdl', ['.vhdl', '.vhd']), 'mode/inst/')
+ddic.provide_on_demand('mode/cls/web', ViewModeRegexFactory('web', 'http(s?)://.*'), 'mode/inst/')
 ddic.provide_on_demand('status_provider/cls/def_status_provider', DefStatusProvider, 'status_provider/inst/')
 ddic.provide_on_demand('filebuf/cls/def_filebuf', Filebuf, 'filebuf/inst/')
-
 
 ddic.provide('parser/antlr4_generic', Antlr4GenericParser)
 ddic.provide('parser/cls/python', Antlr4ParserFactory('python3', 'file_input'))
