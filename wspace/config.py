@@ -8,7 +8,7 @@ def reload_config_for_win(win: Dependency('win')):
     ddic.provide('view/scratch.py', ddic['cls/view']('scratch.py',win,file_name='/data/projects/pyde/wspace/scratch.py'))
     ddic.provide('view/QsciScintillaCompat.py', ddic['cls/view']('QsciScintillaCompat.py',win,file_name='/data/projects/pyde/pyde/QsciScintillaCompat.py'))
     ddic.provide('view/and.vhd', ddic['cls/view']('and.vhd',win,file_name='/home/bvukobratovic/Downloads/and.vhd'))
-    ddic.provide('view/google.com', ddic['cls/view']('google.com',win,file_name='http://www.youtube.com/watch?v=3aR27FLbb04'))
+    ddic.provide('view/google.com', ddic['cls/view']('google.com',win,file_name='http://www.google.com'))
     win.widget.resize(1215, 776)
     win.widget.showMaximized()
     from PyQt4.QtCore import Qt

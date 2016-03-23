@@ -8,10 +8,11 @@ from PyQt4.QtGui import QColor
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None)), orig_editor=None):
-        if orig_editor:
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None))): #, orig_editor=None):
+        self.view = view
+        if view.widget is not None:
             super(PydeEditor, self).__init__()
-            self.setDocument(orig_editor.document())
+            self.setDocument(view.widget.document())
         else:
             super(PydeEditor, self).__init__(view.parent.widget)
             view.widget = self
@@ -37,7 +38,7 @@ class PydeEditor(QsciScintillaCompat):
 #         self.SCN_PAINTED.connect(self.__painted)
 
     def clone(self):
-        return self.__class__(view=None, orig_editor = self)
+        return self.__class__(view=self.view) #, orig_editor = self)
 
     def __getitem__(self, item):
         return self.text().__getitem__(item)

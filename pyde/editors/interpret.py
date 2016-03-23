@@ -132,7 +132,19 @@ from pyde.ddi import ddic, Amendment
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
 
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'ipython') and (v.widget is None))):
+    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'ipython') and (v.widget is None))): #, orig_editor=None):
+        if view.widget is None:
+            self.globals = {}
+            self.globals['ddic'] = ddic
+            for a in ddic['actions']:
+                self.globals[a] = ddic['actions'][a]
+                
+            self.locals = {}
+#             ddic.provide('interactive', -1)
+        else:
+            self.globals = view.widget.globals
+            self.locals = view.widget.locals
+        
         super().__init__(view)
 
         # Set the default font
@@ -169,21 +181,13 @@ class PyInerpretEditor(PydeEditor):
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
         
-        self.globals = {}
-        self.globals['ddic'] = ddic
-        for a in ddic['actions']:
-            self.globals[a] = ddic['actions'][a]
-            
-        self.locals = {}
         self.markerDefine(QsciScintilla.RightArrow,
             self.ARROW_MARKER_NUM)
 #         self.setMarkerBackgroundColor(QColor("#ee1111"),
 #             self.ARROW_MARKER_NUM)
 
         self.prompt_begin = 0
-
         self.focus_view = None
-        ddic.provide('interactive', False)
         self.interactive = False
         
     @property

@@ -29,7 +29,7 @@ class TemplFunc:
         if hasattr(editor, 'templating'):
             editor.templating.insert(self)
         else:
-            self.editor.insert(self.text)
+            editor.insert(self.text)
         
     def param_val(self, key):
         p = self.sig.parameters[key]

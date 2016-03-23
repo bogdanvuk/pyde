@@ -12,6 +12,7 @@ class MainWindow(QtGui.QMainWindow):
     view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
     
     def __init__(self, view: Amendment('win')): #, layout: Dependency('win_layout')):
+        self.view = view
         QtGui.QMainWindow.__init__(self)
 
         view.widget = self

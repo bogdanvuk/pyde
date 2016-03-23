@@ -77,7 +77,7 @@ class View(QObject): #(DependencyScope):
         if self.active_widget is None:
             self.active_widget = value
             
-        value.view = self
+#         value.view = self
     
     def focus_changed(self, old, new):
         if new in self._widget:
