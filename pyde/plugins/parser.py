@@ -239,7 +239,7 @@ class ParserRuleContext(list):
 
 class SemanticNode:
     def __init__(self, rule, parse_node = None, parent = None):
-        self._features = list(rule.features.keys())
+        self._features = [] #list(rule.features.keys())
         self._parse_node = parse_node
         self._type = rule.type
         self._rule = rule
@@ -561,8 +561,34 @@ class Antlr4GenericParser:
             node, feature = semantic_for_state_stack(node, suggestion['state_stack'])
             while (node):
                 parse_node_child = parser_node_child_by_feature(node._parse_node, feature)
-                if parse_node_child:
-                    suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node_child))
+                if parse_node_child is None:
+                    child_type = self.semantic_ast[node._type].features[feature[0]]['name']
+                    parse_node_child = ParserRuleContext(node._parse_node)
+                    child_node = self.semantic_ast[child_type](parse_node=parse_node_child, parent=node)
+                    parse_node_child.type = child_type
+                    parse_node_child.start = -1
+                    parse_node_child.stop = -1
+                    parse_node_child.text = ''
+#                     parse_node_child.features = {node.feature:0}
+                    s = ContextSlice(carret_token.slice.stop, carret_token.slice.stop-1)
+                    parse_node_child.append(Token(None, s))
+
+                suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node_child))
+                    
+#                     parse_node = parse_node[0]
+
+#                     parse_node.type = node._type
+#                     parse_node.start = -1
+#                     parse_node.stop = -1
+#                     parse_node.text = ''
+#                     parse_node.features = {node._features:0}
+#                     s = ContextSlice(carret_token.index, carret_token.index-1)
+#                     parse_node.append(Token(None, s))
+#                     setattr(node, node.feature, '')
+#                     parse_node = parse_node[0]
+# 
+#                     suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node))
+                
                 node, feature = semantic_feature_in_parent(node)
                                 
         return suggestions

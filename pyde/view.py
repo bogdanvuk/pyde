@@ -54,7 +54,7 @@ class View(QObject): #(DependencyScope):
 #         clone = self.__class__(name=self.name, parent=self.parent, **kwargs)
 #         self.clones.append(clone)
 #         clone.widget = self.widget.clone()
-#         ddic.provide('view/', clone)
+#         ddic.provide('view/*', clone)
 #         return clone
             
     @property

@@ -5,6 +5,7 @@ from weakref import WeakValueDictionary
 from PyQt4 import QtCore
 from functools import wraps, partial
 from itertools import islice
+import fnmatch
 
 def update_args(func, args, kwargs, update):
     ret = (
@@ -24,8 +25,10 @@ def update_args(func, args, kwargs, update):
 
 class Demander:
     
-    def __init__(self, provider, inst_feature, args = (), kwargs = {}, deps={}):
+    def __init__(self, provider, inst_feature, args = (), kwargs = {}, deps={}, mask=[], feature=None):
         self.provider = provider
+        self.feature = feature
+        self.mask = mask
         self.inst_feature = inst_feature
         self.args = args
         self.kwargs = kwargs
@@ -36,8 +39,9 @@ class Demander:
         self.simple_dep = []
         self.instances = {}
         self.dependencies_by_feature = {}
-        self.satisfied = set() #WeakValueDictionary()
+        self.satisfied = {} # WeakValueDictionary() # set() #WeakValueDictionary()
         self.extract_dependencies()
+        self.demanded_feature = []
 #             for name, d in self.dependencies.items():
 #                 if d.feature in ddic:
 #                     self.satisfied_on_feature_provided(d.feature, ddic[d.feature])
@@ -64,7 +68,7 @@ class Demander:
 
             for arg_name, a in self.dependencies.items():
                 if anonymous(a.feature):
-                    self.recurrent_dep.append(arg_name)
+                    self.recurrent_dep.append((a, arg_name))
                 else:
                     self.simple_dep.append(arg_name)
                     
@@ -87,11 +91,11 @@ class Demander:
             
         return False
 
-    def recurrent_dep_satisfied(self, feature, dep_name):
-        dep = self.dependencies[dep_name]
-        if ((feature_scope(feature) + '/') == dep.feature) and \
-            (feature in ddic):
-            provider = ddic[feature]
+    def recurrent_dep_satisfied(self, feature, provider, dep, dep_name):
+#         dep = self.dependencies[dep_name]
+        if ((feature_scope(feature) + '/') == dep.feature):# and \
+#            (feature in ddic):
+#             provider = ddic[feature]
             if (dep.assertion(provider)):
                 return True
 
@@ -116,12 +120,12 @@ class Demander:
             if dep.feature == feature:
                 self.satisfied.remove(dep_name)
             
-    def feature_provided_for_recurrent_dep(self, feature, forbidden=[], amend=False):
-        for dep_name in self.recurrent_dep:
-            dep = self.dependencies[dep_name]
+    def feature_provided_for_recurrent_dep(self, feature, provider, forbidden=[], amend=False):
+        for dep, dep_name in self.recurrent_dep:
+#             dep = self.dependencies[dep_name]
             if dep.amendment == amend:
                 if (feature,dep_name) not in forbidden:
-                    if self.recurrent_dep_satisfied(feature, dep_name):
+                    if self.recurrent_dep_satisfied(feature, provider, dep, dep_name):
                         return dep_name
             
         return None
@@ -144,8 +148,8 @@ class Demander:
 
     def satisfied_on_recurrent_features(self, features, forbidden = [], amend=False):
         recurrent_dep_satisfied = {}
-        for f in features:
-            dep_name = self.feature_provided_for_recurrent_dep(f, forbidden, amend)
+        for f, p in features:
+            dep_name = self.feature_provided_for_recurrent_dep(f, p, forbidden, amend)
             if dep_name is not None:
                 recurrent_dep_satisfied[dep_name] = f
 
@@ -180,6 +184,7 @@ class DependencyScope(QtCore.QObject):
     def __init__(self, name, parent=None, providers_cls = dict):
         super().__init__()
         self.providers = providers_cls()
+        self._provided_metadata = {}
         self.parent = parent
         self.name = name
 
@@ -212,20 +217,22 @@ class DependencyScope(QtCore.QObject):
         return self.providers.__iter__()
     
     def _provide(self, feature, provider):
-        scope, base = split_feature(feature)
-        
-        if scope:
-            try:
-                self[scope]._provide(base, provider)
-            except KeyError:
-                self.create_scope(scope)
-                self[scope]._provide(base, provider)
-        else:
-            if base.isnumeric():
-                base = int(base)
-
-            self.providers[base] = provider
-            self.provided.emit(self, str(base))
+        self.providers[feature] = provider
+        self._provided_metadata[feature] = {'deps':[]}
+#         scope, base = split_feature(feature)
+#         
+#         if scope:
+#             try:
+#                 self[scope]._provide(base, provider)
+#             except KeyError:
+#                 self.create_scope(scope)
+#                 self[scope]._provide(base, provider)
+#         else:
+#             if base.isnumeric():
+#                 base = int(base)
+# 
+#             self.providers[base] = provider
+#             self.provided.emit(self, str(base))
 
     def unprovide(self, feature):
         self.parent.unprovide(sep.join([self.name, feature]))
@@ -249,6 +256,11 @@ class DependencyScope(QtCore.QObject):
             del self.providers[base]
 
     def __getitem__(self, feature):
+        try:
+            return self.providers[feature]
+        except KeyError:
+            raise KeyError("Unknown feature named {0}".format(feature))
+
         scope, base = split_feature(feature)
         try:
             if scope:
@@ -294,16 +306,42 @@ def feature_base(feature):
 def feature_scope(feature):
     return split_feature(feature)[0]
 
+
+class DemandedFeature(object):
+    
+    def __init__(self, demander, arg_name, dependecy, already_provided):
+        self.demander = demander
+        self.arg_name = arg_name
+        self.dependency = dependecy
+        if already_provided:
+            self.provided(already_provided, ddic[already_provided])
+        else:
+            self.feature = None
+    
+    def provided(self, feature, provider):
+        if (self.dependency.assertion(provider)):
+            self.feature = feature
+            self.demander.satisfied[self.arg_name] = (feature, provider) # .add(self.arg_name)
+            return True
+        else:
+            return False
+
 class DependencyContainer(DependencyScope):
     
     def __init__(self, allowReplace=False):
         DependencyScope.__init__(self, name=None, parent=None)
         self._provided_together = []
+        self.demander_cnt = 0
+        self._provide_candidates = []
+        self._provided = []
+        self._amended_together = []
         self._inst_level = 0
         self.demanders = []
         self._demanders_to_inst = []
         self.allowReplace = allowReplace
         self.provide_loop_mutex = False
+        self.demanded_features = {}
+        self.provided_last = {}
 
 #     def create_scope(self, feature):
 #         super().create_scope(feature)
@@ -311,17 +349,21 @@ class DependencyContainer(DependencyScope):
 #         self._register_simple_dep(feature)
 #        self.check_demands(feature, scope)
 
+    def filter(self, pat):
+        for f in fnmatch.filter(self.providers.keys(), pat):
+            yield f, self.providers[f]
+
     def inst_demander(self, demander, recurrent_dep_satisfied={}, provide_intern=True):
-        dependencies = {}
-        for dep_name in demander.simple_dep:
-            dep = demander.dependencies[dep_name]
-            dependencies[dep_name] = self[dep.feature]
+#         dependencies = {}
+#         for dep_name in demander.simple_dep:
+#             dep = demander.dependencies[dep_name]
+#             dependencies[dep_name] = self[dep.feature]
 #             dependencies[d] = demander.satisfied[demander.dependencies[d].feature]
         
-        for d, f in recurrent_dep_satisfied.items():
-            dependencies[d] = self[f]
+#         for d, f in recurrent_dep_satisfied.items():
+#             dependencies[d] = self[f]
 
-        args, kwargs = update_args(demander.provider, demander.args, demander.kwargs, dependencies)
+        args, kwargs = update_args(demander.provider, demander.args, demander.kwargs, {k:v for k, (_, v) in demander.satisfied.items()})
         demander_inst = demander.provider(*args, **kwargs)
         if demander.inst_feature:
             
@@ -330,7 +372,14 @@ class DependencyContainer(DependencyScope):
 #                 demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
 #             else:
             demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
-            demander.instances[demander_inst_feature] = list(recurrent_dep_satisfied.values()) + [demander.dependencies[d].feature for d in demander.simple_dep]
+            for _, (feature, _) in demander.satisfied.items():
+                self._provided_metadata[feature]['deps'].append(demander_inst_feature)
+
+#             self._proviers_
+            return demander_inst_feature
+        else:
+            return None
+#             demander.instances[demander_inst_feature] = list(recurrent_dep_satisfied.values()) + [demander.dependencies[d].feature for d in demander.simple_dep]
 #         return demander_inst, demander_inst_feature 
 
 #             for _, dep_provider in dependencies.items():
@@ -434,7 +483,7 @@ class DependencyContainer(DependencyScope):
             feature_ext = feature_ext[1:]
 
         self._provide(feature_ext, provider)
-        self._provided_together.append(feature_ext)        
+        self._provided_together.append((feature_ext, provider))        
         
         return feature_ext
     
@@ -463,24 +512,109 @@ class DependencyContainer(DependencyScope):
 
         self._provide(feature_ext, provider)
         
-        if self._inst_level == 0:
-            self._provided_together = []
-            self.forbidden = {}
-        
-        self._provided_together.append(feature_ext)        
-
         self._inst_level += 1
-        self.inst_demanders_on_simple_dep(feature_ext, True)
-        self.check_demands(amend=True)
-
-        self.inst_demanders_on_simple_dep(feature_ext, False)
-        self.check_demands(amend=False)
-
-        self._inst_level -= 1
+        self._provide_candidates.append(set())
+        self._provided.append(feature_ext)
         
+#         if self._inst_level == 0:
+#             self._provided_together = []
+#             self.forbidden = {}
+        if feature_ext == 'win':
+            pass
+
+        for pattern, df_list in self.demanded_features.items():
+            if fnmatch.fnmatch(feature_ext, pattern):
+                for df in df_list:
+#                     provide_candidates.append(df)
+                    if (feature_ext, df.demander.feature) == ('view/actions.py', 'cls/ipython_editor_ast_manager'):
+                        pass
+                    
+#                     self._provide_candidates[-1][(df.arg_name, df.demander.feature)] = df
+                    self._provide_candidates[-1].add(df)
+                    df.proposed = (feature_ext, provider)
+
+#                     df.provided(feature_ext, provider)
+#                     if df.demander.all_satisfied():
+#                         provide_candidates[df.demander.feature] = df
+        
+#         ut.sort(key=lambda x: x.count, reverse=True)
+        
+#         filtered = []
+#         for name, pc in self._provide_candidates[-1].items():
+#             for pat in pc.demander.mask:
+#                 for (provider_feature, demander_feature) in self._provide_candidates[-1]:
+#                     if fnmatch.fnmatch(demander_feature, pat):
+#                         filtered.append((provider_feature, demander_feature))
+#                         
+#         for f in filtered:
+#             del self._provide_candidates[-1][f]
+
+        
+#         self._provide_candidates.update(provide_candidates)
+       
+#         for i, (_, pc) in enumerate(self._provide_candidates.items()):
+        pc = True
+        while pc is not None:
+#             for name, pc in self._provide_candidates[-1].items():
+            for pc in sorted(self._provide_candidates[-1], key=lambda x: x.demander.id, reverse=True ):
+                if pc.dependency.amendment:
+                    if pc.provided(pc.proposed[0], pc.proposed[1]):
+                        if pc.demander.all_satisfied():
+                            break
+            else:
+                break
+            
+#             del self._provide_candidates[-1][name]
+            self._provide_candidates[-1].remove(pc)
+            self.inst_demander(pc.demander)
+            
+#         for i, (_, pc) in enumerate(self._provide_candidates.items()):
+        pc = True
+        while pc is not None:
+#             for name, pc in self._provide_candidates[-1].items():
+            for pc in sorted(self._provide_candidates[-1], key=lambda x: x.demander.id, reverse=True ):            
+                if not pc.dependency.amendment:
+#                     if name == ('view/actions.py', 'cls/ipython_editor_ast_manager'):
+#                         pass
+                    if pc.demander.feature == 'cls/content_assist':
+                        pass
+                    if pc.provided(pc.proposed[0], pc.proposed[1]):
+                        if pc.demander.all_satisfied():
+                            break
+            else:
+                break
+            
+#             del self._provide_candidates[-1][name]
+            self._provide_candidates[-1].remove(pc)
+            self.inst_demander(pc.demander)
+
+#         for _, pc in provide_candidates.items():
+#             if not pc.dependency.amendment:
+#                 df.provided(feature_ext, provider)
+#                 if df.demander.all_satisfied():
+#                     del provide_candidates[feature]
+#                     self.inst_demander(pc.demander)
+                
+#                 pass
+        
+#         self._provided_together.append((feature_ext, provider))        
+# 
+        
+#         self.inst_demanders_on_simple_dep(feature_ext, True)
+#         self.check_demands(amend=True)
+# 
+#         self.inst_demanders_on_simple_dep(feature_ext, False)
+#         self.check_demands(amend=False)
+# 
+        self._inst_level -= 1
+        self._provide_candidates.pop()
+        self._provided.pop()
+         
         if self._inst_level == 0:
-            self._provided_together.clear()
-            self.forbidden.clear()
+            self._provide_candidates.clear()
+            self._provided.clear()
+#             self._provided_together.clear()
+#             self.forbidden.clear()
         
         return feature_ext
 
@@ -493,7 +627,7 @@ class DependencyContainer(DependencyScope):
 #             return self._provide_intern(feature, provider)
 
     
-    def provide_on_demand(self, feature=None, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}):
+    def provide_on_demand(self, feature=None, provider=None, inst_feature=None, inst_args=(), inst_kwargs={}, deps={}, mask=[]):
 #         assert inst_feature is not None, "Have to provide feature to be instantiated!"
 
         provider_supplied = True if provider is not None else False
@@ -502,8 +636,29 @@ class DependencyContainer(DependencyScope):
         if not provider_supplied:
             provider = ddic[feature]
             
-        demander = Demander(provider, inst_feature, list(inst_args), dict(inst_kwargs), deps)
-        demander.check_unsatisfied_simple_dep()
+        demander = Demander(provider, inst_feature, list(inst_args), dict(inst_kwargs), deps, mask=list(mask), feature=feature)
+        for name, d in demander.dependencies.items():
+            if d.feature not in self.demanded_features:
+                self.demanded_features[d.feature] = []
+                
+                for f_name in ddic:
+                    if fnmatch.fnmatch(f_name, d.feature):
+                        self.provided_last[d.feature] = f_name
+                        already_provided = f_name
+                        break
+                else:
+                    self.provided_last[d.feature] = None
+                    already_provided = None
+            else:
+                already_provided = self.provided_last[d.feature]
+            
+            df = DemandedFeature(demander, name, d, already_provided)
+            demander.id = self.demander_cnt
+            self.demander_cnt += 1
+            self.demanded_features[d.feature].append(df)
+            demander.demanded_feature.append(df)
+            
+#         demander.check_unsatisfied_simple_dep()
 
         self.demanders.append(demander)
         

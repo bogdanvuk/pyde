@@ -7,7 +7,7 @@ from pyde.ddi import Amendment
 
 class WebWidget(QWebView):
 
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'web') and (v.widget is None))): #, orig_editor=None):
+    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and (v.mode.name == 'web') and (v.widget is None))): #, orig_editor=None):
         self.view = view
         QWebView.__init__(self)
         view.widget = self

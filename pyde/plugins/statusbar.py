@@ -6,12 +6,12 @@ from pyde.plugins.editor_mode import ViewMode
 class StatusbarMode(ViewMode):
     name = '__statusbar__'
     
-    def __init__(self, view : Amendment('view/', lambda v: v.name == '__statusbar__')):
+    def __init__(self, view : Amendment('view/*', lambda v: v.name == '__statusbar__')):
         super().__init__(view)
 
 class Statusbar(QLineEdit):
 
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == '__statusbar__') and (v.widget is None))):
+    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and (v.mode.name == '__statusbar__') and (v.widget is None))):
         super().__init__()
         self.view = view
         self.view.widget = self
@@ -25,7 +25,7 @@ class Statusbar(QLineEdit):
         return False
 
 class DefStatusProvider:
-    def __init__(self, view: Amendment('view/', lambda v: (v.name != '__statusbar__') and (not hasattr(v, 'status_provider')))):
+    def __init__(self, view: Amendment('view/*', lambda v: (v.name != '__statusbar__') and (not hasattr(v, 'status_provider')))):
         super().__init__()
         self.view = view
         self.view.status_provider = self

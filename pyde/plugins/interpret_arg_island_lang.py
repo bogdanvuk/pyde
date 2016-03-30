@@ -29,7 +29,7 @@ class ArglistVisitor(NodeVisitor):
 
 def IslandLanguageParserFactory(language):
     class IslandLanguageParser(QObject):
-        def __init__(self, parser_cls : Dependency('parser/cls/' + language), python_ast_manager : Dependency('editor_ast_manager/inst/', lambda e: e.mode.name == "ipython")):
+        def __init__(self, parser_cls : Dependency('parser/cls/' + language), python_ast_manager : Dependency('editor_ast_manager/inst/*', lambda e: e.mode.name == "ipython")):
             super().__init__()
             self.parser = parser_cls()
             self.editor = python_ast_manager.editor

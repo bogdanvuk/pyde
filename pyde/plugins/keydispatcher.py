@@ -11,7 +11,7 @@ class KeyDispatcher(QObject):
         ddic.provide_on_demand(provider=self.view_added)
         self.actions = []
         
-    def view_added(self, widget : Dependency('widget/', lambda w: hasattr(w, 'view'))):
+    def view_added(self, widget : Dependency('widget/*', lambda w: hasattr(w, 'view'))):
         widget.installEventFilter(self)
     
     def register_keyaction(self, action, uri_filter='*'):
