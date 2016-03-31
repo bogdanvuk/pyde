@@ -4,14 +4,17 @@ from PyQt4.QtGui import QLineEdit, QFont
 from pyde.plugins.editor_mode import ViewMode
 
 class StatusbarMode(ViewMode):
-    name = '__statusbar__'
+    name = 'statusbar'
     
-    def __init__(self, view : Amendment('view/*', lambda v: v.name == '__statusbar__')):
+    def __init__(self, view : Amendment('view/*', lambda v: getattr(v, 'special', '') == 'statusbar')):
         super().__init__(view)
+        
+    def view_short_name(self):
+        return 'statusbar'
 
 class Statusbar(QLineEdit):
 
-    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and (v.mode.name == '__statusbar__') and (v.widget is None))):
+    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and (getattr(v, 'special', '') == 'statusbar') and (v.widget is None))):
         super().__init__()
         self.view = view
         self.view.widget = self
@@ -25,7 +28,7 @@ class Statusbar(QLineEdit):
         return False
 
 class DefStatusProvider:
-    def __init__(self, view: Amendment('view/*', lambda v: (v.name != '__statusbar__') and (not hasattr(v, 'status_provider')))):
+    def __init__(self, view: Amendment('view/*', lambda v: (getattr(v, 'special', '') != 'statusbar') and (not hasattr(v, 'status_provider')) and hasattr(v, 'mode'))):
         super().__init__()
         self.view = view
         self.view.status_provider = self
@@ -43,11 +46,11 @@ class DefStatusProvider:
         else:
             self.fields.insert(position, field)
     
-    def capture_statusbar(self, view):
+    def capture_statusbar(self, widget):
         self.active = True
         self.refresh()
 
-    def release_statusbar(self, view):
+    def release_statusbar(self, widget):
         self.active = False
         
     def set(self, name, val):
@@ -61,14 +64,15 @@ class DefStatusProvider:
         self.refresh()
     
     def refresh(self):
-        if 'view/__statusbar__' in ddic:
+        if self.view.parent.child_by_name('statusbar'):
             vals = []
             formatting = ''
             for f in self.fields:
                 formatting += f['formatting']
                 vals.append(f['val'])
                 
-            ddic['view/__statusbar__'].widget.setText(formatting.format(*vals))
+            self.view.parent.child_by_name('statusbar').widget.setText(formatting.format(*vals))
+            self.view.parent.child_by_name('statusbar').widget.setCursorPosition(0);
     
     def cycle_frame(self, old):
         return False

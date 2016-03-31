@@ -1,17 +1,23 @@
 from PyQt4 import QtCore
-from pyde.ddi import DependencyScope, ddic
+from pyde.ddi import DependencyScope, ddic, NoAssertion
 from weakref import WeakValueDictionary
 from PyQt4.QtCore import QObject
+
+def find_first_view(assertion=NoAssertion):
+    for f in ddic.search('view/*', assertion):
+        return ddic[f]
+    
+def find_view(assertion=NoAssertion):
+    return [ddic[f] for f in ddic.search('view/*', assertion)]
 
 class View(QObject): #(DependencyScope):
     focus_in = QtCore.pyqtSignal(QtCore.QObject)
     focus_out = QtCore.pyqtSignal(QtCore.QObject)
     
-    def __init__(self, name, parent=None, widget=None, **kwargs):
+    def __init__(self, parent=None, widget=None, **kwargs):
 #         super().__init__(name, parent)
         super().__init__()
         self.child = []
-        self.name = name
         self.config = kwargs
         if parent:
             parent.child.append(self)
@@ -29,6 +35,17 @@ class View(QObject): #(DependencyScope):
             
         ddic['app'].focusChanged.connect(self.focus_changed)
 
+    @property
+    def name(self):
+        if hasattr(self, 'mode'):
+            return self.mode.view_short_name()
+        else:
+            return self._name
+    
+    @name.setter
+    def name(self, value):
+        self._name = value
+
     def child_by_name(self, name):
         for c in self.child:
             if c.name == name:
@@ -42,6 +59,13 @@ class View(QObject): #(DependencyScope):
         ddic.provide('widget/', w)
         
         return w
+
+    def close(self):
+        del self._widget[self._widget.index(self.active_widget)]
+        self.active_widget.hide()
+        ddic.unprovide(self.active_widget)
+        if not self._widget:
+            self.delete()
 
     def remove_widget(self, w):
         del self._widget[self._widget.index(w)]
@@ -62,7 +86,7 @@ class View(QObject): #(DependencyScope):
         if self.parent:
             uri = self.parent.uri + [self.name]
         else:
-            uri = [self.name]
+            uri = [] #[self.name]
             
         return uri
     
@@ -115,11 +139,11 @@ class View(QObject): #(DependencyScope):
         config = []
         for child in self.child:
             config_dump = []
-            for name, c in child.config.items():
-                config_dump.append("{}='{}'".format(name, str(c)))
+            for name in child.config:
+                config_dump.append("{}='{}'".format(name, getattr(child, name)))
 
-            view_config = ','.join(["'" + child.name + "'", var_name] + config_dump)
-            config.append("ddic.provide('view/{0}', ddic['cls/view']({1}))".format(child.name, view_config))
+            view_config = ','.join([var_name] + config_dump)
+            config.append("ddic.provide('view/', ddic['cls/view']({}))".format(view_config))
         
         if hasattr(self.widget, 'dump_config'):
             config.append(self.widget.dump_config('.'.join([var_name, 'widget'])))

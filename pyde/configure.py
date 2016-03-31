@@ -28,7 +28,7 @@ import os
 import time
 from pyde.plugins.filebuf import Filebuf
 from pyde.plugins.ca_vhdl import VhdlContentAssist
-from pyde.editors.web import WebWidget
+from pyde.editors.web import WebWidget, WebViewMode
 
 # ddic.create_scope('view')
 #ddic.provide('cls/layout', PydeFrame)
@@ -52,7 +52,7 @@ ddic.provide_on_demand('mode/cls/bash', ViewModeExtensionFactory('bash', ['.sh']
 ddic.provide_on_demand('mode/cls/java', ViewModeExtensionFactory('java', ['.java']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/cpp', ViewModeExtensionFactory('cpp', ['.c', '.cpp', '.cxx', '.h', '.hpp', '.hxx']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/vhdl', ViewModeExtensionFactory('vhdl', ['.vhdl', '.vhd']), 'mode/inst/')
-ddic.provide_on_demand('mode/cls/web', ViewModeRegexFactory('web', 'http(s?)://.*'), 'mode/inst/')
+ddic.provide_on_demand('mode/cls/web', WebViewMode, 'mode/inst/')
 ddic.provide_on_demand('status_provider/cls/def_status_provider', DefStatusProvider, 'status_provider/inst/')
 ddic.provide_on_demand('filebuf/cls/def_filebuf', Filebuf, 'filebuf/inst/')
 
@@ -90,6 +90,19 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_open',
                        inst_kwargs={'action': actions.execute_action_template_shortcut(actions.file_open),
                                     'key': Qt.Key_O,
                                     'modifier': Qt.ControlModifier})
+
+ddic.provide('actions/url_open', actions.url_open)
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/url_open', 
+                       inst_kwargs={'action': actions.execute_action_template_shortcut(actions.url_open),
+                                    'key': Qt.Key_O,
+                                    'modifier': Qt.ControlModifier + Qt.ShiftModifier})
+
+ddic.provide('actions/web_search', actions.web_search)
+ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/web_search', 
+                       inst_kwargs={'action': actions.execute_action_template_shortcut(actions.web_search),
+                                    'key': Qt.Key_F,
+                                    'modifier': Qt.ControlModifier})
+
 
 ddic.provide('actions/file_save', actions.file_save)
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/file_save', 
@@ -163,6 +176,9 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/backward_char',
                                     'key': Qt.Key_J,
                                     'modifier': Qt.AltModifier})
 
+ddic.provide_on_demand(**provide_action_args('refresh', Qt.Key_F5))
+ddic.provide_on_demand(**provide_action_args('next_item', Qt.Key_L, Qt.ControlModifier))
+ddic.provide_on_demand(**provide_action_args('previous_item', Qt.Key_J, Qt.ControlModifier))
 ddic.provide_on_demand(**provide_action_args('end_of_line', Qt.Key_H, Qt.AltModifier + Qt.ShiftModifier))
 ddic.provide_on_demand(**provide_action_args('beginning_of_line', Qt.Key_H, Qt.AltModifier))
 ddic.provide_on_demand(**provide_action_args('forward_word', Qt.Key_O, Qt.AltModifier))
@@ -177,7 +193,7 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/content_assist_
                        inst_kwargs={'action': actions.content_assist_fill_query,
                                     'key': Qt.Key_Tab,
                                     'uri': '/*/content_assist'})
-
+  
 ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/content_assist', 
                        inst_kwargs={'action': actions.content_assist, 
                                     'key': Qt.Key_Tab})
@@ -224,6 +240,6 @@ for f in module_functions(config):
     ddic.provide_on_demand('config/wspace/' + f.__name__, f)
  
 # ddic.provide('win_layout', ddic['cls/layout']())
-ddic.provide('win', ddic['cls/view']('win'))
+ddic.provide('win', ddic['cls/view'](special='win'))
 
 pass

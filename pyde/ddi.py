@@ -7,6 +7,8 @@ from functools import wraps, partial
 from itertools import islice
 import fnmatch
 
+def NoAssertion(obj): return True
+
 def update_args(func, args, kwargs, update):
     ret = (
         inspect.getfullargspec(func))
@@ -684,21 +686,38 @@ class DependencyContainer(DependencyScope):
 #         else:
 #             self.check_and_inst_demander(demander, feature)
     
-    def unprovide(self, feature):
-#         provider = self[feature]
-#         if hasattr(provider, '_dependents'):
-#             for d in provider._dependents:
-#                 self.unprovide(d)
-                
-        del self[feature]
-        self._unregister_dep(feature)
+    def unprovide_by_name(self, feature):
+        if feature in self._provided_metadata:
+            for f in self._provided_metadata[feature]['deps']:
+                self.unprovide_by_name(f)
+            
+            del self._provided_metadata[feature]
+
+        if feature in self.providers:
+            del self.providers[feature]
+    
+    def unprovide(self, provider):
+        for f, p in self.providers.items():
+            if provider is p:
+                feature = f
+                break
+        else:
+            raise KeyError
+        
+        self.unprovide_by_name(feature)
+        
+    def search(self, pat, assertion=NoAssertion):
+        for f,p in self.providers.items():
+            if fnmatch.fnmatch(f, pat):
+                if assertion(p):
+                    yield f 
+        
+#         self._unregister_dep(feature)
     
 #     def create_on_demand(self, feature, inst_feature=None, args=(), kwargs={}):
 #         self.demanders.append(Demander(feature, inst_feature, list(args), dict(kwargs)))
 
 ddic = DependencyContainer(allowReplace=True)
-
-def NoAssertion(obj): return True
 
 class RequiredFeature(object):
     def __init__(self, feature, assertion=NoAssertion):

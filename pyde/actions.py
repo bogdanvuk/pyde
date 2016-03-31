@@ -54,7 +54,7 @@ def template2interpet(func):
     
     return w
 
-def provide_action_args(action_name, key, modifier):
+def provide_action_args(action_name, key, modifier=Qt.NoModifier):
     return {
             'feature' : 'cls/keyaction',
             'inst_feature' : 'keyactions/' + action_name,
@@ -106,12 +106,17 @@ view_history_stack = []
 def close_view(win : Dependency('win'), active_view = None):
     
 #     active_view.remove_widget(active_view.widget)
+    replacement_view = view_history_stack[-2]
     for w in active_view._widget:
-        switch_view(view_history_stack[-2], w.last_loc)
+        switch_view(replacement_view, w.last_loc)
         
     active_view.delete()
-    ddic.unprovide('view/{}'.format(active_view.name))
+#     ddic.unprovide('view/{}'.format(active_view.name))
+    ddic.unprovide(active_view)
     del view_history_stack[view_history_stack.index(active_view)]
+
+def web_search(text = '', active_view = None):
+    url_open('https://www.google.com/search?q={}'.format(text), active_view=active_view)
 
 @diinit
 def cycle_frame(win : Dependency('win'), active_view = None):
@@ -172,12 +177,29 @@ def switch_view(view : ViewListContentAssist, location=None, win : Dependency('w
         view_history_stack.append(view)
 
 @diinit
-def file_open(path : LinpathContentAssist, win : Dependency('win')):
+def file_open(path : LinpathContentAssist, win : Dependency('win'), active_view=None):
 #     active_view = win.active_view()
-    view = ddic['cls/view'](os.path.basename(path), win, file_name=path)
-    ddic.provide('view/' + view.name, view)
-    active_widget = QApplication.focusWidget()
+    view = ddic['cls/view'](win, file_name=path)
+    ddic.provide('view/', view)
+    if active_view is None:
+        active_widget = QApplication.focusWidget()
+    else:
+        active_widget = active_view.widget
+        
     switch_view(view, active_widget.loc)
+
+@diinit
+def url_open(url : 'http://', win : Dependency('win'), active_view=None):
+#     active_view = win.active_view()
+    view = ddic['cls/view'](win, url=url)
+    ddic.provide('view/', view)
+    if active_view is None:
+        active_widget = QApplication.focusWidget()
+    else:
+        active_widget = active_view.widget
+        
+    switch_view(view, active_widget.loc)
+
 #     win.place_view(view, active_view.widget.last_location)
 
 @diinit
@@ -248,37 +270,6 @@ def dflt_view_action_factory(func_name):
     dflt_view_action.__name__ = func_name
     return dflt_view_action
 
-@diinit
-def next_line(context : Dependency('context')):
-#def next_line(context = None):
-    
-    c = context.active_context()
-    
-    while c.parent is not None:
-        if hasattr(c, 'view'):
-            if hasattr(c.view, 'next_line'):
-                c.view.next_line()
-                return
-        
-        c = c.parent
-
-def backward_char(view=None):
-    if view is None:
-        view = ddic['win'].active_view()
-        
-    view.backward_char()
-
-    
-# def backward_char():
-#     app.active_widget().backward_char()
-#     
-# def forward_line():
-#     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEDOWN)
-# 
-# def backward_line():
-#     app.active_widget().SendScintilla(QsciScintilla.SCI_LINEUP)
-# 
-#
 @diinit
 def content_assist_fill_query(active_view):
     active_view.widget.fill_query()
