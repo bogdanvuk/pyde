@@ -373,9 +373,17 @@ class DependencyContainer(DependencyScope):
 #             if provide_intern:
 #                 demander_inst_feature = self._provide_intern(demander.inst_feature, demander_inst)
 #             else:
+            try:
+                demander_inst_feature = demander.inst_feature
+                if anonymous(demander_inst_feature):
+                    demander_inst_feature += str(id(demander_inst))
+                    
+                for _, (feature, _) in demander.satisfied.items():
+                    self._provided_metadata[feature]['deps'].append(demander_inst_feature)
+            except KeyError:
+                return None
+
             demander_inst_feature = self.provide(demander.inst_feature, demander_inst)
-            for _, (feature, _) in demander.satisfied.items():
-                self._provided_metadata[feature]['deps'].append(demander_inst_feature)
 
 #             self._proviers_
             return demander_inst_feature

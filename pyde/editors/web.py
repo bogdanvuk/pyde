@@ -19,20 +19,31 @@ class WebWidget(QWebView):
 
     def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and (v.mode.name == 'web') and (v.widget is None))): #, orig_editor=None):
         self.view = view
-        QWebView.__init__(self)
-        view.widget = self
+        if view.widget is not None:
+            super().__init__()
+        else:
+            super().__init__(view.parent.widget)
+            view.widget = self
+            self.view.status_provider.add_field('title', position=0, formatting='"{}" ')
+
+        self.urlChanged.connect(self.url_changed)
+        self.titleChanged.connect(self.title_changed)
+            
         self.load(QUrl(view.url))
         self.page().setContentEditable(True)
         QNetworkProxyFactory.setUseSystemConfiguration(True);
         QWebSettings.globalSettings().setAttribute(QWebSettings.PluginsEnabled, True);
         QWebSettings.globalSettings().setAttribute(QWebSettings.AutoLoadImages, True);
-        self.urlChanged.connect(self.url_changed)
-        self.titleChanged.connect(self.title_changed)
-        self.view.status_provider.add_field('title', position=0, formatting='"{}" ')
 
     def url_changed(self, url):
         self.view.url = url.toString()
         self.view.status_provider.set('view', self.view.name)
+        for w in self.view._widget:
+            if w.url() != url:
+                w.load(url)
+
+    def clone(self):
+        return self.__class__(view=self.view)
     
     def title_changed(self, title):
         self.view.status_provider.set('title', title)

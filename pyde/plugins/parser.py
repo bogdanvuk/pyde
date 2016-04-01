@@ -562,18 +562,28 @@ class Antlr4GenericParser:
             while (node):
                 parse_node_child = parser_node_child_by_feature(node._parse_node, feature)
                 if parse_node_child is None:
-                    child_type = self.semantic_ast[node._type].features[feature[0]]['name']
-                    parse_node_child = ParserRuleContext(node._parse_node)
-                    child_node = self.semantic_ast[child_type](parse_node=parse_node_child, parent=node)
-                    parse_node_child.type = child_type
-                    parse_node_child.start = -1
-                    parse_node_child.stop = -1
-                    parse_node_child.text = ''
-#                     parse_node_child.features = {node.feature:0}
-                    s = ContextSlice(carret_token.slice.stop, carret_token.slice.stop-1)
-                    parse_node_child.append(Token(None, s))
-
-                suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node_child))
+                    feature_rule = self.semantic_ast[node._type].features[feature[0]]
+                    for rule in feature_rule['rules']:
+                        if rule.type == 'RULE_REF':
+                            child_type = rule.ref
+                            break
+                    else:
+                        child_type = None
+#                     child_type = self.semantic_ast[node._type].features[feature[0]]['name']
+                    
+                    if child_type is not None:
+                        parse_node_child = ParserRuleContext(node._parse_node)
+                        child_node = self.semantic_ast[child_type](parse_node=parse_node_child, parent=node)
+                        parse_node_child.type = child_type
+                        parse_node_child.start = -1
+                        parse_node_child.stop = -1
+                        parse_node_child.text = ''
+    #                     parse_node_child.features = {node.feature:0}
+                        s = ContextSlice(carret_token.slice.stop, carret_token.slice.stop-1)
+                        parse_node_child.append(Token(None, s))
+                
+                if parse_node_child is not None:
+                    suggestions.append(Suggestion(type=node._type, feature=feature, node=node, parse_node=parse_node_child))
                     
 #                     parse_node = parse_node[0]
 

@@ -178,7 +178,8 @@ class PyInerpretEditor(PydeEditor):
         # here: http://www.scintilla.org/ScintillaDoc.html)
         self.SendScintilla(QsciScintilla.SCI_SETHSCROLLBAR, 0)
         self.SendScintilla(QsciScintilla.SCI_SETVSCROLLBAR, 0)
-        self.SendScintilla(QsciScintilla.SCI_AUTOCSETTYPESEPARATOR, ord('`'))
+#         self.SendScintilla(QsciScintilla.SCI_AUTOCSETTYPESEPARATOR, ord('`'))
+        self.SendScintilla(QsciScintilla.SCI_AUTOCSETTYPESEPARATOR, 1)
         
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
