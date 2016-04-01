@@ -181,7 +181,7 @@ class Layout(QObject):
                 config.append('{}.split({}, {})'.format(var_name, loc, 'Qt.Vertical' if widget.orientation() == Qt.Vertical else 'Qt.Horizontal'))
                 config.append('{}.get_widget({}).setSizes({})'.format(var_name, loc, widget.sizes()))
             elif isinstance(widget, QtGui.QStackedWidget):
-                config.append("ddic['actions/switch_view'](ddic['view/{}'], {})".format(widget.widget(0).view.name, loc))
+                config.append("ddic['actions/switch_view']({}.child_by_name('{}'), {})".format(var_name.rpartition('.')[0], widget.widget(0).view.name, loc))
 #         
 #         config.append('from pyde.pyde_frame import ChildLayout, Layout')
 #         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))

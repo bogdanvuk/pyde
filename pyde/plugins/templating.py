@@ -14,10 +14,9 @@ class FuncArgContentAssist(QObject):
 
 class TemplFunc:
     @diinit
-    def __init__(self, func, actuator : Dependency('templ_actuator')):
+    def __init__(self, func):
         self.func = func
         self.sig = signature(func)
-        self.actuator = actuator
         params = []
         for _,p in self.sig.parameters.items():
             params.append('{' + str(p).split(':')[0] + '}')
@@ -128,7 +127,7 @@ class TemplContext(object):
 class TemplActuator:
     indic_val_offset = 10
     
-    def __init__(self, view : Dependency('view/')):
+    def __init__(self, view : Dependency('view/*', lambda v: v.widget is not None)):
         self.indicators = {}
         self.view = view
         self.editor = view.widget

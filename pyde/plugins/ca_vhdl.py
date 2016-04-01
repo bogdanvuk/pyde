@@ -21,7 +21,7 @@ class VhdlContentAssist(QObject):
     complete_sig = pyqtSignal(object)
     
     def __init__(self, 
-                 view : Dependency('view/', lambda e: e.mode.name == "vhdl"),
+                 view : Dependency('view/*', lambda e: e.mode.name == "vhdl"),
                  ca : Dependency('content_assist'),
                  win : Dependency('win')):
         super().__init__()

@@ -5,7 +5,7 @@ import os
 class Filebuf(QObject):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'status_provider'))):
+    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'status_provider'))):
         super().__init__()
         self.view = view
         self.view.filebuf = self

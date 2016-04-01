@@ -6,7 +6,7 @@ class Lexer:
     mode_lexer_map = {
                       'ipython' : Qsci.QsciLexerPython
                       }
-    def __init__(self, widget: Dependency('widget/', lambda v: hasattr(v.view, 'mode'))):
+    def __init__(self, widget: Dependency('widget/*', lambda v: hasattr(v.view, 'mode'))):
         view = widget.view
         mode = view.mode
         if mode.name in self.mode_lexer_map:

@@ -10,26 +10,23 @@ import ast
 # import os
 # from inspect import signature
 
-if __name__ == "__main__":
-#     t = ast.parse('f(a,b,c,d)')
-
+def main():
     app = QtGui.QApplication(sys.argv)
     ddic.provide('app', app)
     import pyde.configure
     
-#     wspace_path = '/data/projects/pyde/wspace'    
-#     sys.path.append(wspace_path)
-# 
-#     from pyde.dflt_plugins import import_plugins
-#     
-#     import_plugins()
-#     
-#     from pyde.dflt_keybindings import bind_keys
-#     bind_keys()
-# 
-#     from desktop import reload_desktop  # @UnresolvedImport
-#     reload_desktop()
-# 
-#     app.win.show()
     ddic['win'].widget.show()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
+#     import cProfile
+#     cProfile.run('main()', sort='tottime')
+
+#     import time
+#      
+#     start = time.time()
+#     main()
+#     end = time.time()
+#     print(end - start)
+

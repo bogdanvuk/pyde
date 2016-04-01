@@ -131,13 +131,13 @@ from pyde.ddi import ddic, Amendment
         
 class PyInerpretEditor(PydeEditor):
     ARROW_MARKER_NUM = 8
-
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and (v.mode.name == 'ipython') and (v.widget is None))): #, orig_editor=None):
+                            
+    def __init__(self, view: Amendment('view/*', lambda v: all([hasattr(v, a) for a in ['mode', 'status_provider', 'filebuf']]) and (v.mode.name == 'ipython') and (v.widget is None))): #, orig_editor=None):
         if view.widget is None:
             self.globals = {}
             self.globals['ddic'] = ddic
-            for a in ddic['actions']:
-                self.globals[a] = ddic['actions'][a]
+            for name, a in ddic.filter('actions/*'):
+                self.globals[name.partition('/')[-1]] = a
                 
             self.locals = {}
 #             ddic.provide('interactive', -1)
@@ -178,6 +178,9 @@ class PyInerpretEditor(PydeEditor):
         # here: http://www.scintilla.org/ScintillaDoc.html)
         self.SendScintilla(QsciScintilla.SCI_SETHSCROLLBAR, 0)
         self.SendScintilla(QsciScintilla.SCI_SETVSCROLLBAR, 0)
+#         self.SendScintilla(QsciScintilla.SCI_AUTOCSETTYPESEPARATOR, ord('`'))
+        self.SendScintilla(QsciScintilla.SCI_AUTOCSETTYPESEPARATOR, 1)
+        
         
         self.setMinimumSize(fontmetrics.width("00000"), fontmetrics.height()+4)
         

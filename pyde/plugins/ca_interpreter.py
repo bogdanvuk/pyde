@@ -52,13 +52,14 @@ class CompleteCommand:
                 self.acceptor[k.name] = Completion(k.name, start)
     
     def complete_path_part(self, editor, node, feature, parse_node):
-        parts = [p.parse_node.text for p in node.part][:feature[1]]
-        path = '/'
-        if parts:
-            path += os.path.join(*parts)
+#         parts = [p.parse_node.text for p in node.part][:feature[1]]
+#         path = '/'
+#         if parts:
+#             path += os.path.join(*parts)
 #         if feature[1] == len(node.part):
 #             path = node.parse_node.text[:-1]
 #             
+        path = node._parse_node.text
         for f in os.listdir(path):
             if os.path.isdir(os.path.join(path, f)):
                 f += '/'
@@ -94,7 +95,7 @@ class PyInterpretContentAssist(QObject):
     complete_sig = QtCore.pyqtSignal(object)
     
     def __init__(self, 
-                 view : Dependency('view/', lambda e: e.mode.name == "ipython"),
+                 view : Dependency('view/*', lambda e: e.mode.name == "ipython"),
                  ca : Dependency('content_assist'),
                  win : Dependency('win')):
         super().__init__()

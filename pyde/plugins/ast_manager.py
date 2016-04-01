@@ -8,7 +8,7 @@ class EditorAstManager(QtCore.QObject):
     tree_modified = QtCore.pyqtSignal(object) #['QWidget'])
     suggestions_created = QtCore.pyqtSignal(object, object, object) #['QWidget'])
     
-    def __init__(self, view : Amendment('view/')):
+    def __init__(self, view : Amendment('view/*', lambda v: v.widget is not None)):
         super().__init__()
         self.qthread = QtCore.QThread()
         self.moveToThread(self.qthread)
@@ -20,7 +20,7 @@ class EditorAstManager(QtCore.QObject):
 #             start_rule = 'main'
             
 #         self.parser = Antlr4GenericParser(language, start_rule)
-        self.parser = ddic['parser/cls'][view.mode.name]()
+        self.parser = ddic['parser/cls/{}'.format(view.mode.name)]()
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.parse)
         self.timer.start(1000)

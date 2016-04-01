@@ -8,7 +8,7 @@ from PyQt4.QtGui import QColor
 class PydeEditor(QsciScintillaCompat):
     
 #     @diinit
-    def __init__(self, view: Amendment('view/', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None))): #, orig_editor=None):
+    def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None))): #, orig_editor=None):
         self.view = view
         if view.widget is not None:
             super(PydeEditor, self).__init__()

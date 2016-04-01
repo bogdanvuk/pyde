@@ -18,7 +18,7 @@ class ContentAssist(QObject):
     
     def deactivate(self):
         ddic['ca_view'].delete()
-        ddic.unprovide('ca_view')
+        ddic.unprovide_by_name('ca_view')
         pass
 
     def activate(self, view):
@@ -29,7 +29,7 @@ class ContentAssist(QObject):
         self.complete.emit(ca_items)
         
         if ca_items:
-            ddic.provide('ca_view', self.cls_view('ca_view', view, items=ca_items))
+            ddic.provide('ca_view', self.cls_view(view, items=ca_items, name = 'ca_view'))
             
 class GetCaStartCmd:
     def __call__(self, editor, ast):
