@@ -1,4 +1,4 @@
-from PyQt4.Qsci import QsciScintilla
+from PyQt5.Qsci import QsciScintilla
 import string
 import os
 from pyde.ddi import ddic, diinit, Dependency
@@ -6,9 +6,9 @@ from pyde.keyaction import KeyActionDfltCondition
 from functools import wraps, partial
 from inspect import getfullargspec, getargspec, signature
 from pyde.plugins.templating import TemplFunc, FuncArgContentAssist
-from PyQt4.QtCore import Qt
+from PyQt5.QtCore import Qt
 import gc
-from PyQt4.QtGui import QApplication
+from PyQt5.QtWidgets import QApplication
 
 def all2kwargs(func, *args, **kwargs):
     arg_names, _, defaults, _, _, _, _ = getfullargspec(func)

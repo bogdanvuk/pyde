@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 from collections import namedtuple
 
 # class DesktopDocument(object):
@@ -22,7 +22,7 @@ class PydeFrameVisitor:
         for i,c in enumerate(node.frames):
             self.visit(node.children()[i], i)
 
-class PydeFrame(QtGui.QSplitter):
+class PydeFrame(QtWidgets.QSplitter):
     
     def __init__(self, layout=None, parent=None):
         if layout is None:
@@ -30,7 +30,7 @@ class PydeFrame(QtGui.QSplitter):
         else:
             orientation = layout.orientation  
         
-        QtGui.QSplitter.__init__(self, orientation, parent)
+        QtWidgets.QSplitter.__init__(self, orientation, parent)
 
         if layout is not None:
             self.set_layout(layout)
@@ -47,7 +47,7 @@ class PydeFrame(QtGui.QSplitter):
                 self.addWidget(child_frame)
                 self.frames[i] = child_frame
             else:
-                self.addWidget(QtGui.QStackedWidget(self))
+                self.addWidget(QtWidgets.QStackedWidget(self))
                 
             self.setStretchFactor(i,c.stretch)
                 
@@ -82,7 +82,7 @@ class PydeFrame(QtGui.QSplitter):
     
     def dump_config(self, var_name):
         config = []
-        config.append('from PyQt4.QtCore import Qt')
+        config.append('from PyQt5.QtCore import Qt')
         config.append('from pyde.pyde_frame import ChildLayout, Layout')
         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
         return '\n'.join(config)

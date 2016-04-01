@@ -1,7 +1,7 @@
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtCore import QObject, Qt, QSize
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import QObject, Qt, QSize
 from pyde.ddi import Amendment
-from PyQt4.QtGui import QSizePolicy
+from PyQt5.QtWidgets import QSizePolicy
 
 def test(win):
     return win.widget is not None
@@ -13,13 +13,13 @@ class Layout(QObject):
         super().__init__()
         win.layout = self
         
-        self.centralwidget = QtGui.QWidget(win.widget)
-        self.gridLayout = QtGui.QGridLayout(self.centralwidget)
+        self.centralwidget = QtWidgets.QWidget(win.widget)
+        self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         win.widget.setCentralWidget(self.centralwidget)
 
-        self.widget = QtGui.QSplitter(Qt.Vertical)
-        self.widget.addWidget(QtGui.QStackedWidget())
-#         self.widget = QtGui.QStackedWidget()
+        self.widget = QtWidgets.QSplitter(Qt.Vertical)
+        self.widget.addWidget(QtWidgets.QStackedWidget())
+#         self.widget = QtWidgets.QStackedWidget()
         self.gridLayout.addWidget(self.widget, 0, 0, 1, 1)
         
         self.recent = []
@@ -62,10 +62,10 @@ class Layout(QObject):
 #         yield from self._search_locs_rec(layout, loc)
 
     def _search_locs_rec(self, widget, loc):
-        if isinstance(widget, QtGui.QSplitter):
+        if isinstance(widget, QtWidgets.QSplitter):
             for i in range(2):
                 yield from self._search_locs_rec(widget.widget(i), loc + [i])
-        elif isinstance(widget, QtGui.QStackedWidget):
+        elif isinstance(widget, QtWidgets.QStackedWidget):
             yield (loc, widget.widget(0))
             
     def search_locs(self, loc=[]):
@@ -74,10 +74,10 @@ class Layout(QObject):
         
     def _iter_layout_rec(self, widget, loc):
         yield (loc, widget)
-        if isinstance(widget, QtGui.QSplitter):
+        if isinstance(widget, QtWidgets.QSplitter):
             for i in range(2):
                 yield from self._iter_layout_rec(widget.widget(i), loc + [i])
-        elif isinstance(widget, QtGui.QStackedWidget):
+        elif isinstance(widget, QtWidgets.QStackedWidget):
             yield (loc, widget.widget(0))
             
     def iter_layout(self, loc=[]):
@@ -119,11 +119,11 @@ class Layout(QObject):
             stacked = parent_splitter.widget(loc[-1])
             sizes = parent_splitter.sizes()
 
-            child_splitter = QtGui.QSplitter(orientation)
+            child_splitter = QtWidgets.QSplitter(orientation)
             child_splitter.setSizePolicy(stacked.sizePolicy())
             child_splitter.addWidget(stacked)
                 
-            child_splitter.addWidget(QtGui.QStackedWidget())
+            child_splitter.addWidget(QtWidgets.QStackedWidget())
             
             parent_splitter.insertWidget(loc[-1], child_splitter)
 
@@ -141,7 +141,7 @@ class Layout(QObject):
         else:
             child_splitter = self.widget
             child_splitter.setOrientation(orientation)
-            child_splitter.addWidget(QtGui.QStackedWidget())
+            child_splitter.addWidget(QtWidgets.QStackedWidget())
             self.layout = [[], []]
             
         if orientation == Qt.Horizontal:
@@ -175,81 +175,14 @@ class Layout(QObject):
     
     def dump_config(self, var_name):
         config = []
-        config.append('from PyQt4.QtCore import Qt')
+        config.append('from PyQt5.QtCore import Qt')
         for loc, widget in self.iter_layout():
-            if isinstance(widget, QtGui.QSplitter):
+            if isinstance(widget, QtWidgets.QSplitter):
                 config.append('{}.split({}, {})'.format(var_name, loc, 'Qt.Vertical' if widget.orientation() == Qt.Vertical else 'Qt.Horizontal'))
                 config.append('{}.get_widget({}).setSizes({})'.format(var_name, loc, widget.sizes()))
-            elif isinstance(widget, QtGui.QStackedWidget):
+            elif isinstance(widget, QtWidgets.QStackedWidget):
                 config.append("ddic['actions/switch_view']({}.child_by_name('{}'), {})".format(var_name.rpartition('.')[0], widget.widget(0).view.name, loc))
 #         
 #         config.append('from pyde.pyde_frame import ChildLayout, Layout')
 #         config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
-        return '\n'.join(config)
-
-
-    
-class FrameWidget(QtGui.QSplitter):
-    
-    def __init__(self, layout=None, parent=None):
-        if layout is None:
-            orientation = QtCore.Qt.Vertical
-        else:
-            orientation = layout.orientation  
-        
-        QtGui.QSplitter.__init__(self, orientation, parent)
-
-        if layout is not None:
-            self.set_layout(layout)
-
-    def set_layout(self, layout):
-        self.remove_layout()
-        self.setOrientation(layout.orientation)
-        self.layout = layout
-        self.frames = [None]*len(layout.children)
-        self.assigned_views = [None]*len(layout.children)
-        for i,c in enumerate(layout.children):
-            if hasattr(c.layout, 'children'):
-                child_frame = PydeFrame(c, self)
-                self.addWidget(child_frame)
-                self.frames[i] = child_frame
-            else:
-                self.addWidget(QtGui.QStackedWidget(self))
-                
-            self.setStretchFactor(i,c.stretch)
-                
-    def remove_layout(self):
-        for i in range(self.count()):
-            self.widget(i).hide()
-
-    def add_view(self, view, location):
-        loc = location[0]
-        location = location[1:]
-        if location:
-            self.widget.add_view(view, location)
-        elif self.assigned_views[loc] != view:
-            self.assigned_views[loc] = view
-            self.widget(loc).insertWidget(0, view.widget)
-            self.widget(loc).setCurrentWidget(view.widget)
-    
-    
-    def _dump_config_rec(self, layout):
-        
-        child_config = []
-        for c in layout.children:
-            if hasattr(c.layout, 'children'):
-                ret = self._dump_config_rec(c.layout)
-            else:
-                ret = 'None'
-                
-            child_config.append('ChildLayout({},{})'.format(c.stretch, ret))
-
-        orientation = ['Qt.Vertical', 'Qt.Vertical'][layout.orientation - 1]
-        return 'Layout({}, [{}])'.format(orientation, ','.join(child_config))
-    
-    def dump_config(self, var_name):
-        config = []
-        config.append('from PyQt4.QtCore import Qt')
-        config.append('from pyde.pyde_frame import ChildLayout, Layout')
-        config.append('{}.set_layout({})'.format(var_name, self._dump_config_rec(self.layout)))
         return '\n'.join(config)

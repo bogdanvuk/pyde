@@ -1,4 +1,4 @@
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 from pyde.ddi import Dependency
 
 def KeyActionDfltCondition(key_action, active_view, event):

@@ -1,5 +1,5 @@
-from PyQt4.QtGui import QWidget
-from PyQt4.QtCore import pyqtSlot, QObject
+from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import pyqtSlot, QObject
 from pyde.application import app
 
 class MarkActivator(QObject):

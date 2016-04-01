@@ -1,6 +1,6 @@
-from pyde.ddi import Dependency, Amendment, ddic
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import QLineEdit, QFont
+from pyde.ddi import Amendment
+from PyQt5.QtWidgets import QLineEdit 
+from PyQt5.QtGui import QFont
 from pyde.plugins.editor_mode import ViewMode
 
 class StatusbarMode(ViewMode):
@@ -78,7 +78,7 @@ class DefStatusProvider:
         return False
 
 
-# class StatusBar(QtGui.QStatusBar):
+# class StatusBar(QtWidgets.QStatusBar):
 #     def __init__(self, app: Dependency('app'), win : Dependency('win')):
 #         super().__init__(win.widget)
 # 

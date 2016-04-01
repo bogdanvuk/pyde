@@ -8,7 +8,7 @@ from pyde.plugins.editor_mode import IPythonMode,\
     ViewModeExtensionFactory, ViewModeRegexFactory
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
-from PyQt4.QtCore import Qt
+from PyQt5.QtCore import Qt
 from pyde.plugins.content_assist import ContentAssist, ContentAssistWidget
 from pyde.plugins.ca_interpreter import PyInterpretContentAssist
 from pyde.plugins.keydispatcher import KeyDispatcher
@@ -23,7 +23,7 @@ from pyde.plugins.dump_config import DumpConfig
 from pyde.pyde_frame import PydeFrame, ChildLayout
 from pyde.layout import Layout
 from pyde.view import View
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 import os
 import time
 from pyde.plugins.filebuf import Filebuf

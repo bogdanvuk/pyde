@@ -1,5 +1,5 @@
 from pyde.pyde_frame import PydeFrame, ChildLayout, Layout
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 from pyde.ddi import Dependency, ddic
 
 def get_layout():

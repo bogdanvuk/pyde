@@ -1,10 +1,10 @@
-from PyQt4.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSlot
 from pyde.ddi import Dependency
 #from pyde.plugins.parser import ContextVisitor, NodeVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec
 import os
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 from collections import namedtuple
 
 def get_ctx_text(ctx, editor):
@@ -109,7 +109,8 @@ class PyInterpretContentAssist(QObject):
             connection_type=QtCore.Qt.AutoConnection
 
         self.ca.complete.connect(self.complete, type=connection_type)
-     
+    
+    @pyqtSlot(dict)
     def complete(self, acceptor):
         if self.win.active_view() == self.view:
             self.complete_cmd.acceptor = acceptor

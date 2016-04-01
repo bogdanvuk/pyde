@@ -1,4 +1,4 @@
-from PyQt4.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, pyqtSlot
 from pyde.ddi import Dependency
 from pyde.plugins.templating import TemplFunc
 from collections import namedtuple
@@ -35,7 +35,8 @@ class VhdlContentAssist(QObject):
             connection_type=Qt.AutoConnection
 
         self.ca.complete.connect(self.complete, type=connection_type)
-     
+
+    @pyqtSlot(dict)     
     def complete(self, acceptor):
         if self.win.active_view() == self.view:
             self.complete_cmd.acceptor = acceptor

@@ -1,4 +1,4 @@
-from PyQt4.Qt import QObject
+from PyQt5.Qt import QObject
 from pyde.ddi import Dependency, ddic
 import textwrap
 import os

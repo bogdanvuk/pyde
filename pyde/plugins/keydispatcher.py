@@ -1,7 +1,7 @@
-from PyQt4.QtCore import QObject, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSlot
 from pyde.ddi import Dependency, ddic
-from PyQt4.QtGui import QWidget
-from PyQt4 import QtCore, QtGui
+from PyQt5.QtWidgets import QWidget
+from PyQt5 import QtCore, QtWidgets
 import fnmatch
 from pyde.plugins.parser import uri2str
 
@@ -48,6 +48,6 @@ class KeyDispatcher(QObject):
                     active_view = active_view.parent
         
 
-        return QtGui.QWidget.eventFilter(self, source, event)
+        return QtWidgets.QWidget.eventFilter(self, source, event)
 
     

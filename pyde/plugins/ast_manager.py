@@ -1,5 +1,5 @@
-from PyQt4.Qsci import QsciScintilla
-from PyQt4 import QtCore, QtGui
+from PyQt5.Qsci import QsciScintilla
+from PyQt5 import QtCore, QtWidgets
 from pyde.ddi import Dependency, Amendment, ddic
 from pyde.plugins.parser import Antlr4GenericParser
 

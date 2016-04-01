@@ -2,7 +2,7 @@ from collections import namedtuple
 import inspect
 from inspect import getfullargspec, signature
 from weakref import WeakValueDictionary
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 from functools import wraps, partial
 from itertools import islice
 import fnmatch
