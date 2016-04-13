@@ -1,5 +1,5 @@
-from pyde.ddi import Amendment
-from PyQt5.QtWidgets import QLineEdit 
+from ddi.ddi import Amendment
+from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtGui import QFont
 from pyde.plugins.editor_mode import ViewMode
 

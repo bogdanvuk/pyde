@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSignal, Qt, pyqtSlot
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 from pyde.plugins.templating import TemplFunc
 from collections import namedtuple
 from pyde.plugins.parser import parser_node_child_by_feature

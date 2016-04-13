@@ -1,7 +1,7 @@
 from PyQt5.Qsci import QsciScintilla
 import string
 import os
-from pyde.ddi import ddic, diinit, Dependency
+from ddi.ddi import ddic, diinit, Dependency
 from pyde.keyaction import KeyActionDfltCondition
 from functools import wraps, partial
 from inspect import getfullargspec, getargspec, signature

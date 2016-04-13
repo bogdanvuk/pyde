@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
 from PyQt5 import Qsci
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 
 
 class PythonEdit(PydeEditor):

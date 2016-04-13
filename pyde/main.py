@@ -1,6 +1,6 @@
 
 import sys
-from pyde.ddi import ddic
+from ddi.ddi import ddic
 from PyQt5 import QtWidgets
 import ast
 # from pyde.application import app

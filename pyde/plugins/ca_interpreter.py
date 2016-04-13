@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSlot
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 #from pyde.plugins.parser import ContextVisitor, NodeVisitor
 from pyde.plugins.templating import TemplFunc
 from inspect import getfullargspec

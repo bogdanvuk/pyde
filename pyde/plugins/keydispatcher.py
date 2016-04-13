@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QObject, pyqtSlot
-from pyde.ddi import Dependency, ddic
+from ddi.ddi import Dependency, ddic
 from PyQt5.QtWidgets import QWidget
 from PyQt5 import QtCore, QtWidgets
 import fnmatch

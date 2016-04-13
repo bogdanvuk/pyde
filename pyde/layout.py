@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QObject, Qt, QSize
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 from PyQt5.QtWidgets import QSizePolicy
 
 def test(win):

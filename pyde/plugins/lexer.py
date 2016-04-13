@@ -1,4 +1,4 @@
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 from PyQt5.Qt import QFont
 from PyQt5 import Qsci
 

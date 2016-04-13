@@ -4,7 +4,7 @@ import re
 from PyQt5.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
-from pyde.ddi import diinit, Dependency
+from ddi.ddi import diinit, Dependency
 import inspect
 
 class FuncArgContentAssist(QObject):

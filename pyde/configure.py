@@ -1,4 +1,4 @@
-from pyde.ddi import ddic, Dependency
+from ddi.ddi import ddic, Dependency
 from pyde.main_win import MainWindow
 import sys
 from pyde.editors.interpret import PyInerpretEditor

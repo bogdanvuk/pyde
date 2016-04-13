@@ -1,6 +1,6 @@
 from PyQt5.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor

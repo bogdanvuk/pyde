@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 from PyQt5.QtWidgets import QApplication
 from pyde.pyde_frame import PydeFrameVisitor
 

@@ -1,4 +1,4 @@
-from pyde.ddi import Dependency, Amendment
+from ddi.ddi import Dependency, Amendment
 import os
 import re
 import weakref

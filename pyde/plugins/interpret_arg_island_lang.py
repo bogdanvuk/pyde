@@ -1,4 +1,4 @@
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 from PyQt5.QtCore import QObject, pyqtSlot
 from pyde.plugins.parser import NodeVisitor
 from pyde.plugins.ca_interpreter import get_obj_for_ctx

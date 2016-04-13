@@ -1,6 +1,6 @@
 from pyde.pyde_frame import PydeFrame, ChildLayout, Layout
 from PyQt5 import QtCore
-from pyde.ddi import Dependency, ddic
+from ddi.ddi import Dependency, ddic
 
 def get_layout():
 #     pyde.application.app.add_layout(PydeFrame(None, children=[PythonEdit(), PyInerpretEditor()], stretch=[5, 1]))

@@ -4,7 +4,7 @@ from PyQt5.QtWebKitWidgets import QWebView, QWebPage
 from PyQt5.QtNetwork import QNetworkProxyFactory
 from PyQt5.QtCore import Qt, QUrl, QEvent, QCoreApplication
 from PyQt5.QtGui import QKeyEvent
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 from pyde.plugins.editor_mode import ViewMode
 
 class WebViewMode(ViewMode):

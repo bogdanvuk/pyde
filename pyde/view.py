@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-from pyde.ddi import DependencyScope, ddic, NoAssertion
+from ddi.ddi import ddic, NoAssertion
 from weakref import WeakValueDictionary
 from PyQt5.QtCore import QObject, pyqtSlot
 

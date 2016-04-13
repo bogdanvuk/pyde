@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from PyQt5.Qsci import QsciScintilla
 from difflib import SequenceMatcher
-from pyde.ddi import Dependency, diinit, Amendment, ddic
+from ddi.ddi import Dependency, diinit, Amendment, ddic
 from pyde.view import View
 from PyQt5 import QtCore
 

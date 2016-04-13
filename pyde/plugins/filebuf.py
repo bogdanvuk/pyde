@@ -1,5 +1,5 @@
 from PyQt5.Qt import QObject
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 import os
 
 class Filebuf(QObject):

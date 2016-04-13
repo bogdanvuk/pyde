@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-from pyde.ddi import Dependency
+from ddi.ddi import Dependency
 
 def KeyActionDfltCondition(key_action, active_view, event):
 #     return (fnmatch.fnmatch(uri2str(active_view.uri), key_action.view_uri) and
