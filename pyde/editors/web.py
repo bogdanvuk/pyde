@@ -1,9 +1,10 @@
 
-from PyQt4.QtWebKit import QWebView, QWebSettings, QWebPage
-from PyQt4.QtNetwork import QNetworkProxyFactory
-from PyQt4.QtCore import Qt, QUrl, QEvent, QCoreApplication
-from PyQt4.QtGui import QKeyEvent
-from pyde.ddi import Amendment
+from PyQt5.QtWebKit import QWebSettings
+from PyQt5.QtWebKitWidgets import QWebView, QWebPage
+from PyQt5.QtNetwork import QNetworkProxyFactory
+from PyQt5.QtCore import Qt, QUrl, QEvent, QCoreApplication
+from PyQt5.QtGui import QKeyEvent
+from ddi.ddi import Amendment
 from pyde.plugins.editor_mode import ViewMode
 
 class WebViewMode(ViewMode):
@@ -81,9 +82,9 @@ class WebWidget(QWebView):
 
 # import sys
 # 
-# from PyQt4.QtWebKit import QWebView
-# from PyQt4.QtGui import QApplication
-# from PyQt4.QtCore import QUrl
+# from PyQt5.QtWebKit import QWebView
+# from PyQt5.QtGui import QApplication
+# from PyQt5.QtCore import QUrl
 # 
 # app = QApplication(sys.argv)
 # 

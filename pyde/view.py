@@ -1,7 +1,7 @@
-from PyQt4 import QtCore
-from pyde.ddi import DependencyScope, ddic, NoAssertion
+from PyQt5 import QtCore
+from ddi.ddi import ddic, NoAssertion
 from weakref import WeakValueDictionary
-from PyQt4.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSlot
 
 def find_first_view(assertion=NoAssertion):
     for f in ddic.search('view/*', assertion):
@@ -16,7 +16,7 @@ class View(QObject): #(DependencyScope):
     
     def __init__(self, parent=None, widget=None, **kwargs):
 #         super().__init__(name, parent)
-        super().__init__()
+        super().__init__(parent)
         self.child = []
         self.config = kwargs
         if parent:
@@ -102,7 +102,7 @@ class View(QObject): #(DependencyScope):
             self.active_widget = value
             
 #         value.view = self
-    
+    @QtCore.pyqtSlot(object, object)
     def focus_changed(self, old, new):
         if new in self._widget:
             self.active_widget = new

@@ -1,6 +1,6 @@
-from pyde.ddi import Dependency
-from PyQt4.Qt import QFont
-from PyQt4 import Qsci
+from ddi.ddi import Dependency
+from PyQt5.Qt import QFont
+from PyQt5 import Qsci
 
 class Lexer:
     mode_lexer_map = {

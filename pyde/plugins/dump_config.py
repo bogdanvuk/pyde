@@ -1,5 +1,5 @@
-from PyQt4.Qt import QObject
-from pyde.ddi import Dependency, ddic
+from PyQt5.Qt import QObject
+from ddi.ddi import Dependency, ddic
 import textwrap
 import os
 
@@ -22,7 +22,7 @@ class DumpConfig(QObject):
     
     def dump(self):
         with open(os.path.join(self.wspace_path, 'config.py'), 'w') as f:
-            f.write('from pyde.ddi import Dependency, ddic\n\n')
+            f.write('from ddi.ddi import Dependency, ddic\n\n')
 #             f.write(self.dump_config_for('win_layout'))
             f.write(self.dump_config_for('win'))
             f.write('\n\n')

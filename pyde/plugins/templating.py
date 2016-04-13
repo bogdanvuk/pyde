@@ -1,12 +1,10 @@
-from pyde.application import ddic
-from PyQt4.QtGui import QWidget, QColor
-from PyQt4.QtCore import pyqtSlot, QObject, Qt
+from PyQt5.QtGui import QColor
+from PyQt5.QtCore import QObject, Qt
 import re
-import string
-from PyQt4.Qsci import QsciScintilla
+from PyQt5.Qsci import QsciScintilla
 from collections import OrderedDict
 from inspect import signature
-from pyde.ddi import diinit, Dependency
+from ddi.ddi import diinit, Dependency
 import inspect
 
 class FuncArgContentAssist(QObject):

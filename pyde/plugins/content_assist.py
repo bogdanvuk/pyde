@@ -1,9 +1,9 @@
-from PyQt4.QtCore import QObject, pyqtSignal
-from PyQt4.Qsci import QsciScintilla
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PyQt5.Qsci import QsciScintilla
 from difflib import SequenceMatcher
-from pyde.ddi import Dependency, diinit, Amendment, ddic
+from ddi.ddi import Dependency, diinit, Amendment, ddic
 from pyde.view import View
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 class ContentAssist(QObject):
     complete = pyqtSignal(dict)

@@ -8,10 +8,10 @@
 #-------------------------------------------------------------------------
 import sys
 
-from PyQt4.Qsci import QsciScintilla, QsciLexerPython
+from PyQt5.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
-from PyQt4.QtGui import QFont, QFontMetrics, QColor
-from pyde.ddi import ddic, Amendment
+from PyQt5.QtGui import QFont, QFontMetrics, QColor
+from ddi.ddi import ddic, Amendment
 
 # class ContextVisitor(NodeVisitor):
 # 

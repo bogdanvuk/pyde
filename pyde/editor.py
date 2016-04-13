@@ -1,9 +1,9 @@
-from PyQt4.Qsci import QsciScintilla
+from PyQt5.Qsci import QsciScintilla
 from pyde.QsciScintillaCompat import QsciScintillaCompat
-from pyde.ddi import Amendment
+from ddi.ddi import Amendment
 import os
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 
 class PydeEditor(QsciScintillaCompat):
     

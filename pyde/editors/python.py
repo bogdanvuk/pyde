@@ -7,12 +7,12 @@
 # This code is in the public domain
 #-------------------------------------------------------------------------
 import sys
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.Qsci import QsciScintilla, QsciLexerPython
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.Qsci import QsciScintilla, QsciLexerPython
 from pyde.editor import PydeEditor
-from PyQt4 import Qsci
-from pyde.ddi import Dependency
+from PyQt5 import Qsci
+from ddi.ddi import Dependency
 
 
 class PythonEdit(PydeEditor):

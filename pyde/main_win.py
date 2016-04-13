@@ -1,19 +1,16 @@
-from pyde.pyde_widget import PydeWidget
-from PyQt4 import QtGui, QtCore
-from pyde.ddi import Dependency, ddic, Amendment
-from PyQt4.QtGui import QApplication
-from collections import OrderedDict
-from pyde.view import View
+from PyQt5 import QtWidgets, QtCore
+from ddi.ddi import Amendment
+from PyQt5.QtWidgets import QApplication
 from pyde.pyde_frame import PydeFrameVisitor
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
 
     uri = []    
-    view_added = QtCore.pyqtSignal(QtGui.QWidget) #['QWidget'])
+    view_added = QtCore.pyqtSignal(QtWidgets.QWidget) #['QWidget'])
     
     def __init__(self, view: Amendment('win')): #, layout: Dependency('win_layout')):
         self.view = view
-        QtGui.QMainWindow.__init__(self)
+        QtWidgets.QMainWindow.__init__(self)
 
         view.widget = self
         self.setWindowTitle("Writer")

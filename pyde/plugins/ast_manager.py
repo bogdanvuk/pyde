@@ -1,6 +1,6 @@
-from PyQt4.Qsci import QsciScintilla
-from PyQt4 import QtCore, QtGui
-from pyde.ddi import Dependency, Amendment, ddic
+from PyQt5.Qsci import QsciScintilla
+from PyQt5 import QtCore, QtWidgets
+from ddi.ddi import Dependency, Amendment, ddic
 from pyde.plugins.parser import Antlr4GenericParser
 
 class EditorAstManager(QtCore.QObject):

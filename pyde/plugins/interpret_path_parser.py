@@ -1,10 +1,10 @@
-from pyde.ddi import Dependency
-from PyQt4.QtCore import QObject, pyqtSlot
+from ddi.ddi import Dependency
+from PyQt5.QtCore import QObject, pyqtSlot
 from pyde.plugins.parser import NodeVisitor
 from pyde.plugins.ca_interpreter import get_obj_for_ctx
 from inspect import getfullargspec
 from pyde.actions import FuncArgContentAssist
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
 class ArglistVisitor(NodeVisitor):
     def __init__(self, editor):
