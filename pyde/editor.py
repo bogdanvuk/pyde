@@ -6,6 +6,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 
 class PydeEditor(QsciScintillaCompat):
+    ARROW_MARKER_NUM = 8
+    DBG_POS_MARKER_NUM = 9
     
 #     @diinit
     def __init__(self, view: Amendment('view/*', lambda v: hasattr(v, 'mode') and hasattr(v, 'status_provider') and hasattr(v, 'filebuf') and (v.widget is None))): #, orig_editor=None):
@@ -27,6 +29,7 @@ class PydeEditor(QsciScintillaCompat):
 #                 self.file_name = None
                 
         self.SendScintilla(QsciScintilla.SCI_SETCARETSTYLE, 2)
+        self.markerDefine(QsciScintilla.SC_MARK_ARROWS, self.DBG_POS_MARKER_NUM)
 #         self.SCN_MODIFIED.connect(self.__modified)
         self.cursorPositionChanged.connect(self.__cursorPositionChanged)
         self.view.status_provider.add_field('line_pos', formatting='{:>15}')

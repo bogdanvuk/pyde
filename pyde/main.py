@@ -14,6 +14,8 @@ import sys
 from PyQt5.QtWidgets import (QWidget, QToolTip,
     QPushButton, QApplication)
 from PyQt5.QtGui import QFont    
+import pexpect
+import re
 
 
 # class Example(QWidget):
@@ -55,6 +57,16 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
+#     text = """     /usr/lib/python3.4/bdb.py(431)run()
+# -> exec(cmd, globals, locals)
+#   <string>(1)<module>()
+# > /home/bvukobratovic/Documents/proba.py(1)<module>()
+# -> def proba(a):
+# """
+#     re_frame_source = r'> ([^(]+)\((\d)\)(.+$)'
+#     re_cur_frame_source = r'^' + re_frame_source 
+#     m = re.search(re_cur_frame_source, text, flags=re.MULTILINE)
+
     main()
 #     import cProfile
 #     cProfile.run('main()', sort='tottime')

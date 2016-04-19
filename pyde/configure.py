@@ -5,7 +5,7 @@ from pyde.editors.interpret import PyInerpretEditor
 from pyde.plugins.parser import Antlr4ParserFactory, Antlr4GenericParser
 from pyde.plugins.ast_manager import IPythonEditorAstManager, EditorAstManager
 from pyde.plugins.editor_mode import IPythonMode,\
-    ViewModeExtensionFactory, ViewModeRegexFactory
+    ViewModeExtensionFactory, ViewModeRegexFactory, DebugModeExtensionFactory
 from pyde.keyaction import KeyAction, KeyActionDfltCondition
 from pyde import actions
 from PyQt5.QtCore import Qt
@@ -29,7 +29,7 @@ import time
 from pyde.plugins.filebuf import Filebuf
 from pyde.plugins.ca_vhdl import VhdlContentAssist
 from pyde.editors.web import WebWidget, WebViewMode
-from pyde.plugins.pydbg import PyDbg
+from pyde.plugins.pydbg import PyDbg, PyDbgInterpretEditor
 
 # ddic.create_scope('view')
 #ddic.provide('cls/layout', PydeFrame)
@@ -37,6 +37,7 @@ ddic.provide_on_demand('cls/win_layout', Layout, 'win_layout')
 ddic.provide_on_demand('cls/dump_config', DumpConfig, 'dump_config')
 ddic.provide_on_demand('cls/win', MainWindow, 'widget/*')
 ddic.provide_on_demand('cls/editor_generic', PydeEditor, 'widget/*')
+ddic.provide_on_demand('cls/dbginterpret', PyDbgInterpretEditor, 'widget/*', mask=['cls/editor_generic'])
 ddic.provide_on_demand('cls/ipython', PyInerpretEditor, 'widget/*', mask=['cls/editor_generic'])
 ddic.provide_on_demand('cls/web', WebWidget, 'widget/*')
 ddic.provide_on_demand('cls/statusbar', Statusbar, 'widget/*')
@@ -48,6 +49,7 @@ ddic.provide_on_demand('cls/key_dispatcher', KeyDispatcher, 'key_dispatcher')
 ddic.provide_on_demand('cls/pydbg', PyDbg, 'debugger/inst/')
 
 ddic.provide_on_demand('mode/cls/python', ViewModeExtensionFactory('python', ['.py']), 'mode/inst/')
+ddic.provide_on_demand('mode/cls/dbgpy', DebugModeExtensionFactory('dbgpy', ['.py']), 'mode/inst/')
 ddic.provide_on_demand('mode/cls/ipython', IPythonMode, 'mode/inst/')
 ddic.provide_on_demand('mode/cls/statusbar', StatusbarMode, 'mode/inst/')
 ddic.provide_on_demand('mode/cls/bash', ViewModeExtensionFactory('bash', ['.sh']), 'mode/inst/')
@@ -178,6 +180,7 @@ ddic.provide_on_demand('cls/keyaction', inst_feature='keyactions/backward_char',
                                     'key': Qt.Key_J,
                                     'modifier': Qt.AltModifier})
 
+ddic.provide_on_demand(**provide_action_args('debug_step', Qt.Key_F6))
 ddic.provide_on_demand(**provide_action_args('debug', Qt.Key_F11))
 ddic.provide_on_demand(**provide_action_args('refresh', Qt.Key_F5))
 ddic.provide_on_demand(**provide_action_args('next_item', Qt.Key_L, Qt.ControlModifier))

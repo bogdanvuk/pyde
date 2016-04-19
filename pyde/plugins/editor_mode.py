@@ -30,7 +30,6 @@ def ViewModeRegexFactory(mode_name, re_str):
 
     return CustomViewMode
 
-
 def ViewModeExtensionFactory(mode_name, extensions):
     class CustomViewMode(FileNameViewMode):
         name = mode_name
@@ -38,6 +37,19 @@ def ViewModeExtensionFactory(mode_name, extensions):
             super().__init__(view)
 
     return CustomViewMode
+
+class DebugViewMode(ViewMode):
+
+    def view_short_name(self):
+        return 'Debug - {}'.format(os.path.basename(self.view.debug_file))
+
+def DebugModeExtensionFactory(mode_name, extensions):
+    class CustomDebugMode(DebugViewMode):
+        name = mode_name
+        def __init__(self, view : Amendment('view/*', lambda e: os.path.splitext(getattr(e, 'debug_file', ''))[1] in extensions)):
+            super().__init__(view)
+
+    return CustomDebugMode
 
 class IPythonMode(ViewMode):
     name = 'ipython'

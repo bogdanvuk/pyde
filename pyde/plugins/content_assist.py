@@ -101,7 +101,7 @@ class ContentAssistWidget(QtCore.QObject):
         if self.ca_list:
             self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSHOW,
                                      self.editor.pos - min_pos, 
-                                     (' '.join(self.ca_list)).encode())
+                                     (chr(1).join(self.ca_list)).encode())
             self.editor.SendScintilla(QsciScintilla.SCI_AUTOCSELECT,
                           1,
                           self.ca_list[0].encode())

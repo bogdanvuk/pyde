@@ -114,7 +114,10 @@ class View(QObject): #(DependencyScope):
         if view is None:
             self.parent.set_focus(self)
         else:
-            self.layout.place(view, view.widget.loc)
+            loc = view.widget.loc
+            if loc is None:
+                loc = self.active_view().widget.loc
+            self.layout.place(view, loc)
             view.widget.setFocus()
 
     def add(self, view):
